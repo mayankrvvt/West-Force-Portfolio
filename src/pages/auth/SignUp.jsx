@@ -1,20 +1,206 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import gsap from "gsap";
 
 import Input from "../../components/common/Input";
-import { signUpUser } from "../../services/authService";
+
+import {
+  signupDemoUser,
+  createDemoSession,
+} from "../../services/demoAuth";
 
 export default function SignUp() {
   const navigate = useNavigate();
+
+  const pageRef = useRef(null);
+  const cardRef = useRef(null);
+  const glowRef = useRef(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  /* -----------------------------------------
+     Entrance animations
+  ----------------------------------------- */
+
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    const card = cardRef.current;
+    const glow = glowRef.current;
+
+    if (!page || !card || !glow) {
+      return;
+    }
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    const ctx = gsap.context(() => {
+      if (reduceMotion) {
+        return;
+      }
+
+      gsap.fromTo(
+        card,
+        {
+          opacity: 0,
+          y: 45,
+          scale: 0.97,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1,
+          ease: "power3.out",
+        }
+      );
+
+      gsap.fromTo(
+        glow,
+        {
+          opacity: 0,
+          scale: 0.7,
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 1.4,
+          delay: 0.15,
+          ease: "power2.out",
+        }
+      );
+
+      gsap.to(".signup-orb-one", {
+        x: 70,
+        y: -45,
+        duration: 7,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      gsap.to(".signup-orb-two", {
+        x: -55,
+        y: 50,
+        duration: 9,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      gsap.to(".signup-orb-three", {
+        x: 35,
+        y: 35,
+        duration: 6,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    }, page);
+
+    return () => {
+      ctx.revert();
+    };
+  }, []);
+
+  /* -----------------------------------------
+     Background mouse interaction
+  ----------------------------------------- */
+
+  const handlePointerMove = (event) => {
+    if (
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches
+    ) {
+      return;
+    }
+
+    const page = pageRef.current;
+    const glow = glowRef.current;
+
+    if (!page || !glow) {
+      return;
+    }
+
+    const rect = page.getBoundingClientRect();
+
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    gsap.to(glow, {
+      x: x - 250,
+      y: y - 250,
+      duration: 1.2,
+      ease: "power3.out",
+      overwrite: true,
+    });
+  };
+
+  /* -----------------------------------------
+     Card tilt
+  ----------------------------------------- */
+
+  const handleCardPointerMove = (event) => {
+    if (
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches
+    ) {
+      return;
+    }
+
+    const card = cardRef.current;
+
+    if (!card) {
+      return;
+    }
+
+    const rect = card.getBoundingClientRect();
+
+    const x =
+      (event.clientX - rect.left) / rect.width - 0.5;
+
+    const y =
+      (event.clientY - rect.top) / rect.height - 0.5;
+
+    gsap.to(card, {
+      rotateY: x * 3,
+      rotateX: y * -3,
+      transformPerspective: 1200,
+      duration: 0.45,
+      ease: "power3.out",
+      overwrite: true,
+    });
+  };
+
+  const handleCardPointerLeave = () => {
+    const card = cardRef.current;
+
+    if (!card) {
+      return;
+    }
+
+    gsap.to(card, {
+      rotateY: 0,
+      rotateX: 0,
+      duration: 0.7,
+      ease: "power3.out",
+    });
+  };
+
+  /* -----------------------------------------
+     Form handling
+  ----------------------------------------- */
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -29,6 +215,10 @@ export default function SignUp() {
     }
   };
 
+  /* -----------------------------------------
+     Sign up
+  ----------------------------------------- */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -37,8 +227,8 @@ export default function SignUp() {
     const fullName = formData.fullName.trim();
     const email = formData.email.trim();
     const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
 
-    // Validation
     if (!fullName) {
       setError("Please enter your full name.");
       return;
@@ -54,36 +244,42 @@ export default function SignUp() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Create account through Supabase
-      const data = await signUpUser({
+      const result = signupDemoUser({
         fullName,
         email,
         password,
       });
 
-      console.log("Signup successful:", data);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
 
-      /*
-       * If email confirmation is enabled in Supabase,
-       * the user needs to verify their email before signing in.
-       *
-       * We send them to the sign-in page after successful signup.
-       */
-      navigate("/auth/sign-in");
-    } catch (error) {
-      console.error("Signup error:", error);
+      createDemoSession();
+
+      console.log("Signup successful:", result);
+
+      navigate("/onboarding/create-portfolio", {
+        replace: true,
+      });
+    } catch (signupError) {
+      console.error("Sign up error:", signupError);
 
       setError(
-        error?.message ||
-          "Unable to create your account. Please try again."
+        "Something went wrong while creating your account."
       );
     } finally {
       setLoading(false);
@@ -91,13 +287,44 @@ export default function SignUp() {
   };
 
   return (
-    <main className="auth-page">
-      <div className="auth-card">
+    <main
+      ref={pageRef}
+      className="signin-page signup-page"
+      onPointerMove={handlePointerMove}
+    >
+      {/* Animated background */}
 
+      <div
+        className="signin-background"
+        aria-hidden="true"
+      >
+        <div
+          ref={glowRef}
+          className="signin-mouse-glow"
+        />
+
+        <div className="signin-orb signin-orb-one signup-orb-one" />
+
+        <div className="signin-orb signin-orb-two signup-orb-two" />
+
+        <div className="signin-orb signin-orb-three signup-orb-three" />
+
+        <div className="signin-grid-pattern" />
+      </div>
+
+      {/* Sign up card */}
+
+      <div
+        ref={cardRef}
+        className="signin-card signup-card"
+        onPointerMove={handleCardPointerMove}
+        onPointerLeave={handleCardPointerLeave}
+      >
         {/* Logo */}
+
         <Link
           to="/"
-          className="auth-logo"
+          className="signin-logo"
           aria-label="WestForce home"
         >
           <img
@@ -106,41 +333,41 @@ export default function SignUp() {
           />
         </Link>
 
-        {/* Header */}
-        <p className="eyebrow">
-          WESTFORCE PORTFOLIO
-        </p>
+        {/* Heading */}
 
-        <h1>Create your portfolio</h1>
+        <div className="signin-heading">
+          <p className="signin-eyebrow">
+            WESTFORCE PORTFOLIO
+          </p>
 
-        <p>
-          Start building your professional profile.
-        </p>
+          <h1>Create your account</h1>
 
-        {/* Error message */}
+          <p>
+            Build your professional portfolio and
+            showcase your career.
+          </p>
+        </div>
+
+        {/* Error */}
+
         {error && (
           <div
+            className="signin-error"
             role="alert"
-            style={{
-              marginBottom: "18px",
-              padding: "12px 14px",
-              borderRadius: "10px",
-              background: "#fff1f2",
-              border: "1px solid #fecdd3",
-              color: "#be123c",
-              fontSize: "13px",
-              lineHeight: "1.5",
-            }}
           >
             {error}
           </div>
         )}
 
-        {/* Signup form */}
-        <form onSubmit={handleSubmit}>
+        {/* Form */}
 
+        <form
+          className="signin-form"
+          onSubmit={handleSubmit}
+        >
           {/* Full name */}
-          <div className="input-group">
+
+          <div className="signin-field">
             <label htmlFor="fullName">
               Full name
             </label>
@@ -158,7 +385,8 @@ export default function SignUp() {
           </div>
 
           {/* Email */}
-          <div className="input-group">
+
+          <div className="signin-field">
             <label htmlFor="email">
               Email
             </label>
@@ -176,7 +404,8 @@ export default function SignUp() {
           </div>
 
           {/* Password */}
-          <div className="input-group">
+
+          <div className="signin-field">
             <label htmlFor="password">
               Password
             </label>
@@ -193,26 +422,56 @@ export default function SignUp() {
             />
           </div>
 
+          {/* Confirm password */}
+
+          <div className="signin-field">
+            <label htmlFor="confirmPassword">
+              Confirm password
+            </label>
+
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              autoComplete="new-password"
+              disabled={loading}
+            />
+          </div>
+
           {/* Submit */}
+
           <button
             type="submit"
+            className="signin-button"
             disabled={loading}
           >
-            {loading
-              ? "Creating account..."
-              : "Create account"}
-          </button>
+            <span>
+              {loading
+                ? "Creating account..."
+                : "Create account"}
+            </span>
 
+            {!loading && (
+              <span className="signin-button-arrow">
+                →
+              </span>
+            )}
+          </button>
         </form>
 
         {/* Sign in */}
-        <p className="auth-switch">
+
+        <div className="signin-divider" />
+
+        <p className="signin-signup">
           Already have an account?{" "}
           <Link to="/auth/sign-in">
             Sign in
           </Link>
         </p>
-
       </div>
     </main>
   );

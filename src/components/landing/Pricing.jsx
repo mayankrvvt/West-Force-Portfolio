@@ -25,6 +25,7 @@ export default function Pricing() {
         <div className="pricing-grid">
           {plans.map((plan) => (
             <article
+                key={plan.name}
                 className={`price-card ${plan.featured ? "featured" : ""}`}
                 onPointerMove={handlePointerMove}
             >

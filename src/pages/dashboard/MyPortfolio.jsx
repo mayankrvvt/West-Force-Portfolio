@@ -1,9 +1,8 @@
-import DashboardLayout from "../../components/layout/DashboardLayout";
 import PortfolioPreview from "../../components/portfolio/PortfolioPreview";
 
 export default function MyPortfolio() {
   return (
-    <DashboardLayout title="My Portfolio">
+    <div className="dashboard-page">
       <PortfolioPreview
         profile={{
           name: "Candidate Name",
@@ -12,6 +11,6 @@ export default function MyPortfolio() {
             "Your professional portfolio preview will appear here.",
         }}
       />
-    </DashboardLayout>
+    </div>
   );
 }

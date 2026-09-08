@@ -3,19 +3,29 @@ import {
   Route,
 } from "react-router-dom";
 
+// ---------------------------------------------------------
 // Public pages
+// ---------------------------------------------------------
+
 import Home from "../pages/public/Home";
 import Pricing from "../pages/public/Pricing";
 import HowItWorks from "../pages/public/HowItWorks";
 
-// Authentication
+// ---------------------------------------------------------
+// Auth pages
+// ---------------------------------------------------------
+
 import SignIn from "../pages/auth/SignIn";
 import SignUp from "../pages/auth/SignUp";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 
+// ---------------------------------------------------------
 // Onboarding
+// ---------------------------------------------------------
+
 import Welcome from "../pages/onboarding/Welcome";
+import CreatePortfolio from "../pages/onboarding/CreatePortfolio";
 import PersonalDetails from "../pages/onboarding/PersonalDetails";
 import Documents from "../pages/onboarding/Documents";
 import Experience from "../pages/onboarding/Experience";
@@ -24,7 +34,10 @@ import Skills from "../pages/onboarding/Skills";
 import Certificates from "../pages/onboarding/Certificates";
 import ReviewProfile from "../pages/onboarding/ReviewProfile";
 
+// ---------------------------------------------------------
 // Dashboard
+// ---------------------------------------------------------
+
 import Dashboard from "../pages/dashboard/Dashboard";
 import MyPortfolio from "../pages/dashboard/MyPortfolio";
 import DashboardDocuments from "../pages/dashboard/Documents";
@@ -35,25 +48,33 @@ import Jobs from "../pages/dashboard/Jobs";
 import Profile from "../pages/dashboard/Profile";
 import Settings from "../pages/dashboard/Settings";
 
+// ---------------------------------------------------------
 // Public portfolio
+// ---------------------------------------------------------
+
 import PublicPortfolio from "../pages/portfolio/PublicPortfolio";
 import PortfolioNotFound from "../pages/portfolio/PortfolioNotFound";
 
-// Authentication protection
-import ProtectedRoute from "../components/common/ProtectedRoute";
+// ---------------------------------------------------------
+// Layout / protection
+// ---------------------------------------------------------
 
-export default function Routes() {
+import ProtectedRoute from "../components/common/ProtectedRoute";
+import DashboardLayout from "../components/layout/DashboardLayout";
+
+// ---------------------------------------------------------
+// Routes component
+// ---------------------------------------------------------
+
+function AppRoutes() {
   return (
     <RouterRoutes>
 
-      {/* =========================
-          PUBLIC ROUTES
-      ========================== */}
+      {/* =====================================================
+          PUBLIC
+      ====================================================== */}
 
-      <Route
-        path="/"
-        element={<Home />}
-      />
+      <Route path="/" element={<Home />} />
 
       <Route
         path="/pricing"
@@ -65,10 +86,9 @@ export default function Routes() {
         element={<HowItWorks />}
       />
 
-
-      {/* =========================
-          AUTHENTICATION ROUTES
-      ========================== */}
+      {/* =====================================================
+          AUTH
+      ====================================================== */}
 
       <Route
         path="/auth/sign-in"
@@ -90,18 +110,24 @@ export default function Routes() {
         element={<ResetPassword />}
       />
 
-
-      {/* =========================
+      {/* =====================================================
           PROTECTED ROUTES
-      ========================== */}
+      ====================================================== */}
 
       <Route element={<ProtectedRoute />}>
 
-        {/* ---------- Onboarding ---------- */}
+        {/* ---------------------------------------------------
+            ONBOARDING
+        ---------------------------------------------------- */}
 
         <Route
-          path="/onboarding"
+          path="/onboarding/welcome"
           element={<Welcome />}
+        />
+
+        <Route
+          path="/onboarding/create-portfolio"
+          element={<CreatePortfolio />}
         />
 
         <Route
@@ -135,74 +161,89 @@ export default function Routes() {
         />
 
         <Route
-          path="/onboarding/review"
+          path="/onboarding/review-profile"
           element={<ReviewProfile />}
         />
 
+        {/* =================================================
+            DASHBOARD LAYOUT
 
-        {/* ---------- Dashboard ---------- */}
+            IMPORTANT:
+            DashboardLayout appears ONLY ONCE.
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+            All dashboard pages render inside its Outlet.
+        ================================================== */}
 
-        <Route
-          path="/dashboard/portfolio"
-          element={<MyPortfolio />}
-        />
+        <Route element={<DashboardLayout />}>
 
-        <Route
-          path="/dashboard/documents"
-          element={<DashboardDocuments />}
-        />
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
 
-        <Route
-          path="/dashboard/resume"
-          element={<Resume />}
-        />
+          <Route
+            path="/dashboard/portfolio"
+            element={<MyPortfolio />}
+          />
 
-        <Route
-          path="/dashboard/certificates"
-          element={<DashboardCertificates />}
-        />
+          <Route
+            path="/dashboard/documents"
+            element={<DashboardDocuments />}
+          />
 
-        <Route
-          path="/dashboard/applications"
-          element={<Applications />}
-        />
+          <Route
+            path="/dashboard/resume"
+            element={<Resume />}
+          />
 
-        <Route
-          path="/dashboard/jobs"
-          element={<Jobs />}
-        />
+          <Route
+            path="/dashboard/certificates"
+            element={<DashboardCertificates />}
+          />
 
-        <Route
-          path="/dashboard/profile"
-          element={<Profile />}
-        />
+          <Route
+            path="/dashboard/applications"
+            element={<Applications />}
+          />
 
-        <Route
-          path="/dashboard/settings"
-          element={<Settings />}
-        />
+          <Route
+            path="/dashboard/jobs"
+            element={<Jobs />}
+          />
+
+          <Route
+            path="/dashboard/profile"
+            element={<Profile />}
+          />
+
+          <Route
+            path="/dashboard/settings"
+            element={<Settings />}
+          />
+
+        </Route>
 
       </Route>
 
-
-      {/* =========================
+      {/* =====================================================
           PUBLIC PORTFOLIO
-      ========================== */}
+      ====================================================== */}
 
       <Route
         path="/portfolio/:slug"
         element={<PublicPortfolio />}
       />
 
+      {/* Portfolio not found */}
 
-      {/* =========================
+      <Route
+        path="/portfolio-not-found"
+        element={<PortfolioNotFound />}
+      />
+
+      {/* =====================================================
           FALLBACK
-      ========================== */}
+      ====================================================== */}
 
       <Route
         path="*"
@@ -212,3 +253,9 @@ export default function Routes() {
     </RouterRoutes>
   );
 }
+
+// ---------------------------------------------------------
+// DEFAULT EXPORT
+// ---------------------------------------------------------
+
+export default AppRoutes;

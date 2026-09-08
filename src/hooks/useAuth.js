@@ -1,46 +1,33 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../services/supabaseClient";
+
+import { getDemoSession } from "../services/demoAuth";
 
 export default function useAuth() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(() => {
+    return getDemoSession();
+  });
 
   useEffect(() => {
-    let mounted = true;
-
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (mounted) {
-        setUser(user);
-        setLoading(false);
-      }
+    const handleAuthChange = () => {
+      setSession(getDemoSession());
     };
 
-    getUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (mounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      }
+    window.addEventListener(
+      "demo-auth-change",
+      handleAuthChange
     );
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      window.removeEventListener(
+        "demo-auth-change",
+        handleAuthChange
+      );
     };
   }, []);
 
   return {
-    user,
-    loading,
-    isAuthenticated: !!user,
+    user: session?.user ?? null,
+    loading: false,
+    isAuthenticated: !!session,
   };
 }

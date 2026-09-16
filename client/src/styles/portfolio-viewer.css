@@ -1,0 +1,1368 @@
+/* =========================================================
+   WESTFORCE PORTFOLIO DASHBOARD VIEWER
+========================================================= */
+
+
+/* =========================================================
+   MAIN TWO-COLUMN LAYOUT
+========================================================= */
+
+.portfolio-dashboard-layout {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    280px;
+
+  gap: 24px;
+
+  align-items: start;
+
+  width: 100%;
+
+  min-width: 0;
+}
+
+
+/* =========================================================
+   COLLAPSED GRID
+========================================================= */
+
+.portfolio-dashboard-layout.toolbar-collapsed {
+  grid-template-columns:
+    minmax(0, 1fr)
+    64px;
+
+  gap: 18px;
+}
+
+
+/* =========================================================
+   PORTFOLIO VIEWER WRAPPER
+========================================================= */
+
+.portfolio-viewer-wrapper {
+  position: relative;
+
+  min-width: 0;
+
+  width: 100%;
+
+  height: calc(100vh - 155px);
+
+  overflow: hidden;
+
+  background: #eef2f7;
+
+  border-radius: 0;
+}
+
+
+/* =========================================================
+   PORTFOLIO VIEWER
+========================================================= */
+
+.portfolio-viewer {
+  position: relative;
+
+  width: 100%;
+
+  height: 100%;
+
+  min-width: 0;
+
+  overflow-y: auto;
+
+  /*
+   * IMPORTANT:
+   * No horizontal scrolling.
+   *
+   * The portfolio now adapts to the
+   * actual dashboard viewer width.
+   */
+  overflow-x: hidden;
+
+  background: #ffffff;
+
+  container-type: inline-size;
+}
+
+
+/* =========================================================
+   CANADIAN PORTFOLIO
+========================================================= */
+
+.portfolio-viewer .public-portfolio {
+  position: relative;
+
+  width: 100%;
+
+  /*
+   * Removed the old 950px minimum.
+   *
+   * This was causing the portfolio to
+   * become wider than the dashboard.
+   */
+  min-width: 0;
+
+  min-height: 100%;
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PORTFOLIO SIDEBAR
+========================================================= */
+
+.portfolio-viewer .portfolio-sidebar {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: 292px;
+
+  min-height: 100%;
+
+  z-index: 20;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PORTFOLIO MAIN
+========================================================= */
+
+.portfolio-viewer .portfolio-main {
+  margin-left: 292px;
+
+  width:
+    calc(100% - 292px);
+
+  min-height: 100%;
+
+  box-sizing: border-box;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.portfolio-viewer .portfolio-hero {
+  min-height: 680px;
+
+  box-sizing: border-box;
+}
+
+
+.portfolio-viewer .portfolio-hero-content {
+  max-width: 690px;
+
+  box-sizing: border-box;
+}
+
+
+/*
+ * Prevent the hero artwork from pushing
+ * outside the portfolio.
+ */
+
+.portfolio-viewer .hero-visual {
+  max-width: 390px;
+
+  right: 4%;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.portfolio-viewer .portfolio-section {
+  padding-left:
+    clamp(40px, 6vw, 100px);
+
+  padding-right:
+    clamp(40px, 6vw, 100px);
+
+  box-sizing: border-box;
+}
+
+
+.portfolio-viewer .portfolio-footer {
+  padding-left:
+    clamp(40px, 6vw, 100px);
+
+  padding-right:
+    clamp(40px, 6vw, 100px);
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   RIGHT TOOLBAR
+========================================================= */
+
+.dashboard-toolbar {
+  position: sticky;
+
+  top: 0;
+
+  width: 280px;
+
+  min-width: 280px;
+
+  height: fit-content;
+
+  padding:
+    4px 0 30px;
+
+  box-sizing: border-box;
+
+  transition:
+    width 0.28s ease,
+    min-width 0.28s ease;
+}
+
+
+/* =========================================================
+   COLLAPSED TOOLBAR
+========================================================= */
+
+.dashboard-toolbar.collapsed {
+  width: 64px;
+
+  min-width: 64px;
+
+  padding:
+    54px 0 20px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+}
+
+
+/* =========================================================
+   TOOLBAR COLLAPSE BUTTON
+========================================================= */
+
+.toolbar-collapse-button {
+  position: absolute;
+
+  left: -15px;
+
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  width: 32px;
+
+  height: 64px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  border:
+    1px solid #dbe3ec;
+
+  border-right: none;
+
+  border-radius:
+    12px 0 0 12px;
+
+  background:
+    #ffffff;
+
+  color:
+    #6d7e97;
+
+  box-shadow:
+    -5px 0 18px
+    rgba(
+      17,
+      30,
+      57,
+      0.06
+    );
+
+  cursor: pointer;
+
+  z-index: 100;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.toolbar-collapse-button:hover {
+  background:
+    #f5f8fc;
+
+  color:
+    #111e39;
+
+  box-shadow:
+    -7px 0 24px
+    rgba(
+      17,
+      30,
+      57,
+      0.1
+    );
+}
+
+
+.toolbar-collapse-button svg {
+  transition:
+    transform 0.2s ease;
+}
+
+
+.toolbar-collapse-button:hover svg {
+  transform:
+    scale(1.12);
+}
+
+
+/* =========================================================
+   TOOLBAR CARD
+========================================================= */
+
+.toolbar-card {
+  margin-bottom: 18px;
+}
+
+
+.toolbar-label {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #17233b;
+
+  font-family:
+    "DM Sans",
+    sans-serif;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing:
+    0.08em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.toolbar-card h3 {
+  margin:
+    0 0 8px;
+
+  color:
+    #111e39;
+
+  font-family:
+    Manrope,
+    sans-serif;
+
+  font-size:
+    25px;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.15;
+}
+
+
+.toolbar-card p {
+  margin: 0;
+
+  color:
+    #6c7890;
+
+  font-family:
+    "DM Sans",
+    sans-serif;
+
+  font-size:
+    13px;
+
+  line-height:
+    1.65;
+}
+
+
+/* =========================================================
+   TOOLBAR BUTTON
+========================================================= */
+
+.toolbar-button {
+  position: relative;
+
+  width: 100%;
+
+  min-height: 76px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  margin-bottom: 10px;
+
+  padding:
+    15px 16px;
+
+  border:
+    1px solid #e2e7ef;
+
+  border-radius:
+    15px;
+
+  background:
+    #ffffff;
+
+  color:
+    #111e39;
+
+  text-align:
+    left;
+
+  cursor:
+    pointer;
+
+  box-sizing:
+    border-box;
+
+  box-shadow:
+    0 5px 18px
+    rgba(
+      17,
+      30,
+      57,
+      0.04
+    );
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.toolbar-button:disabled {
+  opacity:
+    0.55;
+
+  cursor:
+    not-allowed;
+}
+
+
+.toolbar-button > span {
+  width:
+    42px;
+
+  height:
+    42px;
+
+  flex-shrink:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    12px;
+
+  background:
+    #f5f7fb;
+
+  color:
+    #111e39;
+}
+
+
+.toolbar-button > div {
+  min-width:
+    0;
+
+  flex:
+    1;
+}
+
+
+.toolbar-button strong {
+  display:
+    block;
+
+  margin:
+    0 0 4px;
+
+  color:
+    #111e39;
+
+  font-family:
+    Manrope,
+    sans-serif;
+
+  font-size:
+    14px;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.2;
+}
+
+
+.toolbar-button small {
+  display:
+    block;
+
+  color:
+    #7a879b;
+
+  font-family:
+    "DM Sans",
+    sans-serif;
+
+  font-size:
+    11px;
+
+  line-height:
+    1.4;
+}
+
+
+.toolbar-button::after {
+  content:
+    "›";
+
+  flex-shrink:
+    0;
+
+  color:
+    #8a98ad;
+
+  font-size:
+    24px;
+
+  line-height:
+    1;
+}
+
+
+.toolbar-button:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    #c9d8e8;
+
+  box-shadow:
+    0 12px 30px
+    rgba(
+      17,
+      30,
+      57,
+      0.08
+    );
+}
+
+
+.toolbar-button:hover:not(:disabled)
+> span {
+  background:
+    #eaf4ff;
+
+  color:
+    #087dc1;
+}
+
+
+/* =========================================================
+   PUBLISH BUTTON
+========================================================= */
+
+.toolbar-highlight {
+  border-color:
+    #ffb0a9;
+}
+
+
+.toolbar-highlight > span {
+  background:
+    #eaf4ff;
+
+  color:
+    #087dc1;
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.toolbar-divider {
+  width:
+    100%;
+
+  height:
+    1px;
+
+  margin:
+    22px 0;
+
+  background:
+    #e2e7ef;
+}
+
+
+/* =========================================================
+   AI / JOB CARDS
+========================================================= */
+
+.toolbar-coming-soon {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    13px;
+
+  width:
+    100%;
+
+  margin-bottom:
+    10px;
+
+  padding:
+    14px;
+
+  border:
+    1px solid #e2e7ef;
+
+  border-radius:
+    15px;
+
+  background:
+    #f8fafc;
+
+  box-sizing:
+    border-box;
+}
+
+
+.toolbar-coming-soon > span {
+  width:
+    42px;
+
+  height:
+    42px;
+
+  flex-shrink:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    12px;
+
+  background:
+    #eaf4ff;
+
+  color:
+    #1679bd;
+
+  font-family:
+    Manrope,
+    sans-serif;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+}
+
+
+.toolbar-coming-soon > div {
+  min-width:
+    0;
+}
+
+
+.toolbar-coming-soon strong {
+  display:
+    block;
+
+  margin-bottom:
+    3px;
+
+  color:
+    #111e39;
+
+  font-family:
+    Manrope,
+    sans-serif;
+
+  font-size:
+    13px;
+
+  font-weight:
+    800;
+}
+
+
+.toolbar-coming-soon small {
+  display:
+    block;
+
+  color:
+    #8a97aa;
+
+  font-family:
+    "DM Sans",
+    sans-serif;
+
+  font-size:
+    10px;
+}
+
+
+/* =========================================================
+   COLLAPSED ICON TOOLBAR
+========================================================= */
+
+.toolbar-collapsed-icons {
+  width:
+    100%;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+}
+
+
+.toolbar-collapsed-icons button {
+  width:
+    48px;
+
+  height:
+    48px;
+
+  flex-shrink:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    1px solid #e2e7ef;
+
+  border-radius:
+    14px;
+
+  background:
+    #ffffff;
+
+  color:
+    #17233b;
+
+  cursor:
+    pointer;
+
+  box-shadow:
+    0 5px 18px
+    rgba(
+      17,
+      30,
+      57,
+      0.04
+    );
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.toolbar-collapsed-icons button:hover {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    #c9d8e8;
+
+  background:
+    #eaf4ff;
+
+  color:
+    #087dc1;
+
+  box-shadow:
+    0 10px 25px
+    rgba(
+      17,
+      30,
+      57,
+      0.08
+    );
+}
+
+
+.toolbar-collapsed-icons button:disabled {
+  opacity:
+    0.4;
+
+  cursor:
+    not-allowed;
+}
+
+
+.toolbar-collapsed-divider {
+  width:
+    38px;
+
+  height:
+    1px;
+
+  margin:
+    8px 0;
+
+  background:
+    #e2e7ef;
+}
+
+
+.toolbar-ai-icon,
+.toolbar-job-icon {
+  font-family:
+    Manrope,
+    sans-serif;
+
+  font-size:
+    9px !important;
+
+  font-weight:
+    800;
+}
+
+
+.toolbar-ai-icon {
+  background:
+    #eaf4ff !important;
+
+  color:
+    #1679bd !important;
+}
+
+
+/* =========================================================
+   VIEWER SCROLLBAR
+========================================================= */
+
+.portfolio-viewer::-webkit-scrollbar {
+  width:
+    9px;
+
+  height:
+    9px;
+}
+
+
+.portfolio-viewer::-webkit-scrollbar-track {
+  background:
+    #eef2f7;
+}
+
+
+.portfolio-viewer::-webkit-scrollbar-thumb {
+  background:
+    #c5cfdb;
+
+  border-radius:
+    10px;
+}
+
+
+.portfolio-viewer::-webkit-scrollbar-thumb:hover {
+  background:
+    #9eacbd;
+}
+
+
+/* =========================================================
+   CONTAINER RESPONSIVE PORTFOLIO
+========================================================= */
+
+/*
+ * These rules respond to the ACTUAL width of
+ * the portfolio viewer rather than the browser width.
+ *
+ * This is important because the portfolio is
+ * inside the dashboard.
+ */
+
+
+/* Medium viewer */
+
+@container (max-width: 1150px) {
+
+  .portfolio-viewer .portfolio-sidebar {
+    width:
+      255px;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    margin-left:
+      255px;
+
+    width:
+      calc(100% - 255px);
+  }
+
+
+  .portfolio-viewer .portfolio-hero {
+    min-height:
+      660px;
+
+    padding-left:
+      58px;
+
+    padding-right:
+      40px;
+  }
+
+
+  .portfolio-viewer .portfolio-hero-content {
+    max-width:
+      58%;
+  }
+
+
+  .portfolio-viewer .hero-visual {
+    width:
+      330px;
+
+    height:
+      330px;
+
+    right:
+      2%;
+
+    transform:
+      translateY(-50%)
+      scale(.88);
+  }
+
+
+  .portfolio-viewer .portfolio-section {
+    padding-left:
+      58px;
+
+    padding-right:
+      58px;
+  }
+
+
+  .portfolio-viewer .portfolio-footer {
+    padding-left:
+      58px;
+
+    padding-right:
+      58px;
+  }
+
+}
+
+
+/* Smaller viewer */
+
+@container (max-width: 1000px) {
+
+  .portfolio-viewer .portfolio-sidebar {
+    width:
+      230px;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    margin-left:
+      230px;
+
+    width:
+      calc(100% - 230px);
+  }
+
+
+  .portfolio-viewer .portfolio-hero {
+    min-height:
+      620px;
+
+    padding-left:
+      42px;
+
+    padding-right:
+      30px;
+  }
+
+
+  .portfolio-viewer .portfolio-hero-content {
+    max-width:
+      62%;
+  }
+
+
+  .portfolio-viewer .portfolio-hero h1 {
+    font-size:
+      clamp(
+        52px,
+        7vw,
+        76px
+      );
+  }
+
+
+  .portfolio-viewer .hero-visual {
+    width:
+      285px;
+
+    height:
+      285px;
+
+    right:
+      -1%;
+
+    transform:
+      translateY(-50%)
+      scale(.82);
+
+    opacity:
+      .9;
+  }
+
+
+  .portfolio-viewer .portfolio-section {
+    padding-left:
+      42px;
+
+    padding-right:
+      42px;
+  }
+
+
+  .portfolio-viewer .portfolio-footer {
+    padding-left:
+      42px;
+
+    padding-right:
+      42px;
+  }
+
+}
+
+
+/* Very small viewer */
+
+@container (max-width: 850px) {
+
+  .portfolio-viewer .portfolio-sidebar {
+    width:
+      210px;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    margin-left:
+      210px;
+
+    width:
+      calc(100% - 210px);
+  }
+
+
+  .portfolio-viewer .portfolio-hero {
+    min-height:
+      600px;
+
+    padding:
+      60px 30px;
+  }
+
+
+  .portfolio-viewer .portfolio-hero-content {
+    max-width:
+      100%;
+  }
+
+
+  .portfolio-viewer .hero-visual {
+    display:
+      none;
+  }
+
+
+  .portfolio-viewer .portfolio-section {
+    padding:
+      60px 30px;
+  }
+
+
+  .portfolio-viewer .portfolio-footer {
+    padding:
+      30px;
+  }
+
+}
+
+
+/* =========================================================
+   DASHBOARD RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .portfolio-dashboard-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      250px;
+  }
+
+
+  .dashboard-toolbar {
+    width:
+      250px;
+
+    min-width:
+      250px;
+  }
+
+
+  .portfolio-dashboard-layout.toolbar-collapsed {
+    grid-template-columns:
+      minmax(0, 1fr)
+      64px;
+  }
+
+
+  .dashboard-toolbar.collapsed {
+    width:
+      64px;
+
+    min-width:
+      64px;
+  }
+
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+  .portfolio-dashboard-layout {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .portfolio-dashboard-layout.toolbar-collapsed {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .dashboard-toolbar,
+  .dashboard-toolbar.collapsed {
+    position:
+      relative;
+
+    width:
+      100%;
+
+    min-width:
+      0;
+
+    padding:
+      20px 0 30px;
+  }
+
+
+  .toolbar-collapse-button {
+    left:
+      50%;
+
+    top:
+      -15px;
+
+    transform:
+      translateX(-50%)
+      rotate(90deg);
+
+    border:
+      1px solid #dbe3ec;
+
+    border-radius:
+      12px 12px 0 0;
+  }
+
+
+  .toolbar-collapsed-icons {
+    flex-direction:
+      row;
+
+    justify-content:
+      center;
+
+    flex-wrap:
+      wrap;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .portfolio-viewer .public-portfolio {
+    min-width:
+      0;
+  }
+
+
+  .portfolio-viewer .portfolio-sidebar {
+    position:
+      relative;
+
+    width:
+      100%;
+
+    min-height:
+      auto;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    margin-left:
+      0;
+
+    width:
+      100%;
+  }
+
+
+  .portfolio-viewer .portfolio-hero {
+    min-height:
+      640px;
+  }
+
+}
+
+
+/* =========================================================
+   PRINT
+========================================================= */
+
+@media print {
+
+  .dashboard-toolbar {
+    display:
+      none !important;
+  }
+
+
+  .portfolio-dashboard-layout {
+    display:
+      block !important;
+  }
+
+
+  .portfolio-viewer-wrapper {
+    height:
+      auto !important;
+
+    overflow:
+      visible !important;
+  }
+
+
+  .portfolio-viewer {
+    height:
+      auto !important;
+
+    overflow:
+      visible !important;
+  }
+
+
+  .portfolio-viewer .public-portfolio {
+    width:
+      100% !important;
+
+    min-width:
+      0 !important;
+  }
+
+}

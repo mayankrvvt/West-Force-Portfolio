@@ -5,6 +5,9 @@ build/
 .env.local
 .env.*.local
 .DS_Store
+<<<<<<< HEAD
 server/serviceAccountKey.json
 server/.env
 node_modules/
+=======
+>>>>>>> 7b890eb6c29d52e96da707a723c886008e88e3a0

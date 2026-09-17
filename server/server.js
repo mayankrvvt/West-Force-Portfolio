@@ -9,9 +9,9 @@ require("./config/firebaseAdmin");
 const userRoutes = require("./routes/userRoutes");
 const portfolioRoutes = require("./routes/portfolioRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");
 
 const app = express();
-
 
 // -------------------------
 // CORS
@@ -20,19 +20,37 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
     credentials: true,
   })
 );
-
 
 // -------------------------
 // Body Parser
 // -------------------------
 
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
 
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
 
 // -------------------------
 // Health Check
@@ -51,15 +69,17 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-
 // -------------------------
 // API Routes
 // -------------------------
 
 app.use("/api/users", userRoutes);
+
 app.use("/api/portfolios", portfolioRoutes);
+
 app.use("/api/uploads", uploadRoutes);
 
+app.use("/api/resumes", resumeRoutes);
 
 // -------------------------
 // 404 Handler
@@ -70,7 +90,6 @@ app.use((req, res) => {
     message: "API route not found.",
   });
 });
-
 
 // -------------------------
 // Error Handler
@@ -83,7 +102,6 @@ app.use((error, req, res, next) => {
     message: "Internal server error.",
   });
 });
-
 
 // -------------------------
 // Start Server
@@ -98,6 +116,10 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(
         `WestForce API running on http://localhost:${PORT}`
+      );
+
+      console.log(
+        `Gemini Resume API available at http://localhost:${PORT}/api/resumes`
       );
     });
   } catch (error) {

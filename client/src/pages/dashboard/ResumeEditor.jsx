@@ -1,3 +1,5 @@
+import "../../styles/resume-editor.css"
+
 import {
   ArrowLeft,
   Download,
@@ -1338,9 +1340,9 @@ function ResumeDocument({
                 }
               >
 
-                <h3>
+                <h5>
                   {item.name}
-                </h3>
+                </h5>
 
                 {item.technologies && (
                   <strong>

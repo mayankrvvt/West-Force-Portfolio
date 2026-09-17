@@ -1,18 +1,25 @@
 {
+  "name": "westforce-server",
+  "private": true,
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
   "dependencies": {
+    "@google/genai": "^2.23.0",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase-admin": "^14.4.0",
+    "mammoth": "^1.12.3",
     "mongoose": "^9.10.1",
-    "multer": "^2.4.0"
+    "multer": "^2.4.0",
+    "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  },
-  "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
   }
 }

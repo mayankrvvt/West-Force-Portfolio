@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   apiRequest,
-  uploadFile,
+  waitForAuthUser,
 } from "../../utils/api";
 
 import {
@@ -21,101 +21,117 @@ import {
   enhanceResume,
 } from "../../services/resumeService";
 
-
 export default function AIResumeBuilder() {
   const navigate = useNavigate();
 
-  const fileInputRef =
-    useRef(null);
+  const fileInputRef = useRef(null);
 
-  const [portfolio, setPortfolio] =
-    useState(null);
+  // =====================================================
+  // STATE
+  // =====================================================
 
-  const [file, setFile] =
-    useState(null);
+  const [portfolio, setPortfolio] = useState(null);
 
-  const [mode, setMode] =
-    useState("choose");
+  const [file, setFile] = useState(null);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [mode, setMode] = useState("choose");
 
-  const [uploading, setUploading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [error, setError] =
-    useState("");
-
-  /* =========================================================
-     RESUME TARGETING
-  ========================================================= */
-
-  const [industry, setIndustry] =
-    useState("Technology");
+  const [error, setError] = useState("");
 
   const [targetRole, setTargetRole] =
-    useState("");
+    useState("Software Engineer");
 
-  const [country] =
+  const [country, setCountry] =
     useState("Canada");
 
   const [experienceLevel, setExperienceLevel] =
     useState("Entry Level");
 
-  const [jobDescription, setJobDescription] =
-    useState("");
+  const [selected, setSelected] = useState([
+    "summary",
+    "experience",
+    "keywords",
+    "ats",
+  ]);
 
-  const [resumeStyle, setResumeStyle] =
-    useState("Canadian Professional");
+  const [result, setResult] = useState(null);
 
-  /* =========================================================
-     ENHANCEMENT OPTIONS
-  ========================================================= */
-
-  const [selected, setSelected] =
-    useState([
-      "summary",
-      "experience",
-      "keywords",
-      "ats",
-    ]);
-
-  const [result, setResult] =
-    useState(null);
-
-
-  /* =========================================================
-     LOAD PORTFOLIO
-  ========================================================= */
+  // =====================================================
+  // LOAD USER PORTFOLIO
+  // =====================================================
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadPortfolio() {
       try {
-        const result =
-          await apiRequest(
-            "/api/portfolios/me"
-          );
+        setError("");
 
-        setPortfolio(
-          result?.portfolio ||
-          result?.data ||
-          result
+        // Wait until Firebase finishes restoring the user's session.
+        const user = await waitForAuthUser();
+
+        if (!user) {
+          throw new Error(
+            "You must be signed in to use the AI Resume Builder."
+          );
+        }
+
+        console.log(
+          "Firebase user authenticated:",
+          user.uid
         );
+
+        // Now request the portfolio with the authenticated token.
+        const response = await apiRequest(
+          "/api/portfolios/me"
+        );
+
+        if (cancelled) return;
+
+        const portfolioData =
+          response?.portfolio ||
+          response?.data ||
+          response;
+
+        if (!portfolioData) {
+          throw new Error(
+            "No portfolio was found for your account."
+          );
+        }
+
+        console.log(
+          "Portfolio loaded successfully:",
+          portfolioData
+        );
+
+        setPortfolio(portfolioData);
       } catch (err) {
-        console.warn(
-          "Portfolio could not be loaded:",
+        if (cancelled) return;
+
+        console.error(
+          "Failed to load portfolio:",
           err
+        );
+
+        setError(
+          err?.message ||
+            "Your portfolio could not be loaded."
         );
       }
     }
 
     loadPortfolio();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-
-  /* =========================================================
-     SELECT FILE
-  ========================================================= */
+  // =====================================================
+  // SELECT RESUME FILE
+  // =====================================================
 
   const handleFile = (event) => {
     const selectedFile =
@@ -125,40 +141,82 @@ export default function AIResumeBuilder() {
       return;
     }
 
+    // ---------------------------------------------------
+    // Validate file type
+    // ---------------------------------------------------
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        selectedFile.type
+      )
+    ) {
+      setError(
+        "Please upload a PDF, DOC or DOCX resume."
+      );
+
+      event.target.value = "";
+
+      return;
+    }
+
+    // ---------------------------------------------------
+    // Validate file size
+    // ---------------------------------------------------
+
+    const maxSize =
+      10 * 1024 * 1024;
+
+    if (selectedFile.size > maxSize) {
+      setError(
+        "Resume file must be smaller than 10 MB."
+      );
+
+      event.target.value = "";
+
+      return;
+    }
+
+    // ---------------------------------------------------
+    // Save actual File object
+    // ---------------------------------------------------
+
     setFile(selectedFile);
+
     setResult(null);
+
     setError("");
+
     setMode("enhance");
   };
 
-
-  /* =========================================================
-     TOGGLE ENHANCEMENT
-  ========================================================= */
+  // =====================================================
+  // TOGGLE ENHANCEMENT OPTION
+  // =====================================================
 
   const toggleOption = (id) => {
     setSelected((current) =>
       current.includes(id)
         ? current.filter(
-            (item) =>
-              item !== id
+            (item) => item !== id
           )
-        : [
-            ...current,
-            id,
-          ]
+        : [...current, id]
     );
   };
 
-
-  /* =========================================================
-     BUILD RESUME
-  ========================================================= */
+  // =====================================================
+  // BUILD NEW RESUME FROM PROFILE
+  // =====================================================
 
   const handleBuild = async () => {
-    if (!targetRole.trim()) {
+    if (!portfolio) {
       setError(
-        "Please enter the job title you are applying for."
+        "Your portfolio information is still loading. Please try again."
       );
 
       return;
@@ -166,56 +224,70 @@ export default function AIResumeBuilder() {
 
     try {
       setLoading(true);
+
       setError("");
 
-      const result =
+      setResult(null);
+
+      console.log(
+        "Starting AI Resume Builder..."
+      );
+
+      const response =
         await buildResume({
           portfolio,
 
-          industry,
-
-          targetRole:
-            targetRole.trim(),
+          targetRole,
 
           country,
 
           experienceLevel,
-
-          jobDescription:
-            jobDescription.trim(),
-
-          resumeStyle,
         });
+
+      console.log(
+        "AI Resume Builder response:",
+        response
+      );
+
+      if (!response?.resume) {
+        throw new Error(
+          "Gemini did not return a resume."
+        );
+      }
 
       navigate(
         "/dashboard/resume-editor",
         {
           state: {
             resume:
-              result.resume,
+              response.resume,
           },
         }
       );
-
     } catch (err) {
-      console.error(err);
+      console.error(
+        "AI Resume Builder error:",
+        err
+      );
 
       setError(
         err.message ||
-        "Unable to build your resume."
+          "Unable to build your resume."
       );
-
     } finally {
       setLoading(false);
     }
   };
 
-
-  /* =========================================================
-     ENHANCE RESUME
-  ========================================================= */
+  // =====================================================
+  // ENHANCE EXISTING RESUME
+  // =====================================================
 
   const handleEnhance = async () => {
+    // ---------------------------------------------------
+    // Make sure a file exists
+    // ---------------------------------------------------
+
     if (!file) {
       setError(
         "Please upload a resume first."
@@ -223,6 +295,10 @@ export default function AIResumeBuilder() {
 
       return;
     }
+
+    // ---------------------------------------------------
+    // Make sure at least one option is selected
+    // ---------------------------------------------------
 
     if (!selected.length) {
       setError(
@@ -234,92 +310,77 @@ export default function AIResumeBuilder() {
 
     try {
       setLoading(true);
+
       setError("");
 
-      let uploadedUrl = "";
+      setResult(null);
 
-      /* =====================================================
-         CLOUDINARY UPLOAD
-      ===================================================== */
+      console.log(
+        "Starting AI Resume Enhancement..."
+      );
 
-      try {
-        setUploading(true);
+      console.log(
+        "Resume file:",
+        file.name
+      );
 
-        const uploadResult =
-          await uploadFile(
-            "/api/uploads",
-            file
-          );
+      // -------------------------------------------------
+      // IMPORTANT:
+      //
+      // Send the ACTUAL File object.
+      //
+      // Do NOT upload to Cloudinary first.
+      // The backend's /api/resumes/enhance endpoint
+      // uses Multer memoryStorage and sends the file
+      // to the resume text extractor.
+      // -------------------------------------------------
 
-        uploadedUrl =
-          uploadResult?.file?.url ||
-          "";
-
-      } catch (uploadError) {
-        console.warn(
-          "Cloudinary upload skipped:",
-          uploadError
-        );
-
-      } finally {
-        setUploading(false);
-      }
-
-
-      /* =====================================================
-         RESUME ENHANCEMENT
-      ===================================================== */
-
-      const result =
+      const response =
         await enhanceResume({
-          fileName:
-            file.name,
-
-          fileUrl:
-            uploadedUrl,
+          file,
 
           portfolio,
 
-          industry,
+          options: selected,
 
-          targetRole:
-            targetRole.trim(),
+          targetRole,
 
           country,
-
-          experienceLevel,
-
-          jobDescription:
-            jobDescription.trim(),
-
-          resumeStyle,
-
-          options:
-            selected,
         });
 
-      setResult(result);
+      console.log(
+        "AI Resume Enhancement response:",
+        response
+      );
 
+      if (!response?.resume) {
+        throw new Error(
+          "Gemini did not return an enhanced resume."
+        );
+      }
+
+      setResult(response);
     } catch (err) {
-      console.error(err);
+      console.error(
+        "AI Resume Enhancement error:",
+        err
+      );
 
       setError(
         err.message ||
-        "Unable to enhance your resume."
+          "Unable to enhance your resume."
       );
-
     } finally {
       setLoading(false);
     }
   };
 
+  // =====================================================
+  // OPEN GENERATED / ENHANCED RESUME
+  // =====================================================
 
-  /* =========================================================
-     OPEN EDITOR
-  ========================================================= */
-
-  const editEnhancedResume = () => {
-    if (!result) {
+  const editResume = () => {
+    if (!result?.resume) {
       return;
     }
 
@@ -334,17 +395,40 @@ export default function AIResumeBuilder() {
     );
   };
 
+  // =====================================================
+  // GO TO BUILD MODE
+  // =====================================================
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  const openBuildMode = () => {
+    setMode("build");
+
+    setError("");
+
+    setResult(null);
+  };
+
+  // =====================================================
+  // GO TO ENHANCE MODE
+  // =====================================================
+
+  const openEnhanceMode = () => {
+    setMode("enhance");
+
+    setError("");
+
+    setResult(null);
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <div className="dashboard-product">
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* =================================================
+          PAGE HEADER
+      ================================================= */}
 
       <header className="product-page-header">
 
@@ -359,19 +443,18 @@ export default function AIResumeBuilder() {
           </h1>
 
           <p>
-            Create a professional
-            Canadian-style resume for
-            any career or industry.
+            Build a new resume from your
+            WestForce profile or enhance an
+            existing resume with AI.
           </p>
 
         </div>
 
       </header>
 
-
-      {/* =====================================================
+      {/* =================================================
           ERROR
-      ===================================================== */}
+      ================================================= */}
 
       {error && (
         <div className="product-error">
@@ -379,21 +462,24 @@ export default function AIResumeBuilder() {
         </div>
       )}
 
-
-      {/* =====================================================
+      {/* =================================================
           CHOOSE MODE
-      ===================================================== */}
+      ================================================= */}
 
       {mode === "choose" && (
         <>
 
           <div className="resume-builder-choice-grid">
 
+            {/* ===========================================
+                BUILD FROM PROFILE
+            =========================================== */}
+
             <button
               type="button"
               className="resume-mode-card"
-              onClick={() =>
-                setMode("build")
+              onClick={
+                openBuildMode
               }
             >
 
@@ -408,15 +494,14 @@ export default function AIResumeBuilder() {
                 </span>
 
                 <h2>
-                  Build a Canadian Resume
+                  Build a Resume
                 </h2>
 
                 <p>
-                  Create a targeted,
-                  Canadian-style resume
-                  using the information
+                  Generate a professional
+                  resume using the information
                   already saved in your
-                  WestForce profile.
+                  WestForce portfolio.
                 </p>
 
               </div>
@@ -425,12 +510,15 @@ export default function AIResumeBuilder() {
 
             </button>
 
+            {/* ===========================================
+                ENHANCE EXISTING RESUME
+            =========================================== */}
 
             <button
               type="button"
               className="resume-mode-card"
-              onClick={() =>
-                setMode("enhance")
+              onClick={
+                openEnhanceMode
               }
             >
 
@@ -449,10 +537,9 @@ export default function AIResumeBuilder() {
                 </h2>
 
                 <p>
-                  Upload an existing
-                  resume and improve
-                  it for your target
-                  Canadian job.
+                  Upload an existing resume
+                  and choose which sections
+                  you want AI to improve.
                 </p>
 
               </div>
@@ -463,16 +550,15 @@ export default function AIResumeBuilder() {
 
           </div>
 
-
           <div className="product-notice">
 
             <Sparkles size={15} />
 
             <span>
-              Your resume remains under
-              your control. AI-generated
-              content can be reviewed and
-              edited before you download it.
+              Your resume content remains
+              under your control. AI suggestions
+              can be reviewed and edited before
+              you download the final version.
             </span>
 
           </div>
@@ -480,15 +566,18 @@ export default function AIResumeBuilder() {
         </>
       )}
 
-
-      {/* =====================================================
-          BUILD RESUME
-      ===================================================== */}
+      {/* =================================================
+          BUILD MODE
+      ================================================= */}
 
       {mode === "build" && (
         <section className="resume-builder-layout">
 
           <div className="product-card">
+
+            {/* ===========================================
+                HEADER
+            =========================================== */}
 
             <div className="product-card-header">
 
@@ -499,136 +588,34 @@ export default function AIResumeBuilder() {
                 </span>
 
                 <h2>
-                  Target your Canadian resume
+                  Tell us about the resume
                 </h2>
 
                 <p>
-                  Tell WestForce what type
-                  of position you are applying
-                  for. Your profile will be used
-                  as the source of information.
+                  Your existing WestForce
+                  profile will be used as the
+                  source of information.
                 </p>
 
               </div>
 
             </div>
 
+            {/* ===========================================
+                FORM
+            =========================================== */}
 
             <div className="resume-form-grid">
 
-              {/* =================================================
-                  INDUSTRY
-              ================================================= */}
+              {/* TARGET ROLE */}
 
               <div className="product-field">
 
                 <label>
-                  Industry
+                  Target role
                 </label>
 
                 <select
-                  className="product-input"
-                  value={industry}
-                  onChange={(event) =>
-                    setIndustry(
-                      event.target.value
-                    )
-                  }
-                >
-
-                  <option value="Technology">
-                    Technology
-                  </option>
-
-                  <option value="Business & Finance">
-                    Business & Finance
-                  </option>
-
-                  <option value="Marketing & Communications">
-                    Marketing & Communications
-                  </option>
-
-                  <option value="Sales">
-                    Sales
-                  </option>
-
-                  <option value="Healthcare">
-                    Healthcare
-                  </option>
-
-                  <option value="Education">
-                    Education
-                  </option>
-
-                  <option value="Administration">
-                    Administration
-                  </option>
-
-                  <option value="Customer Service">
-                    Customer Service
-                  </option>
-
-                  <option value="Hospitality & Tourism">
-                    Hospitality & Tourism
-                  </option>
-
-                  <option value="Engineering">
-                    Engineering
-                  </option>
-
-                  <option value="Skilled Trades">
-                    Skilled Trades
-                  </option>
-
-                  <option value="Construction">
-                    Construction
-                  </option>
-
-                  <option value="Retail">
-                    Retail
-                  </option>
-
-                  <option value="Human Resources">
-                    Human Resources
-                  </option>
-
-                  <option value="Legal">
-                    Legal
-                  </option>
-
-                  <option value="Transportation & Logistics">
-                    Transportation & Logistics
-                  </option>
-
-                  <option value="Government & Public Sector">
-                    Government & Public Sector
-                  </option>
-
-                  <option value="Non-Profit">
-                    Non-Profit
-                  </option>
-
-                  <option value="Other">
-                    Other
-                  </option>
-
-                </select>
-
-              </div>
-
-
-              {/* =================================================
-                  TARGET ROLE
-              ================================================= */}
-
-              <div className="product-field">
-
-                <label>
-                  Target job title
-                </label>
-
-                <input
-                  type="text"
                   className="product-input"
                   value={targetRole}
                   onChange={(event) =>
@@ -636,15 +623,83 @@ export default function AIResumeBuilder() {
                       event.target.value
                     )
                   }
-                  placeholder="e.g. Marketing Coordinator"
-                />
+                >
+
+                  <option>
+                    Software Engineer
+                  </option>
+
+                  <option>
+                    Full Stack Developer
+                  </option>
+
+                  <option>
+                    Frontend Developer
+                  </option>
+
+                  <option>
+                    Backend Developer
+                  </option>
+
+                  <option>
+                    Java Developer
+                  </option>
+
+                  <option>
+                    C++ Developer
+                  </option>
+
+                  <option>
+                    Data Analyst
+                  </option>
+
+                  <option>
+                    Custom
+                  </option>
+
+                </select>
 
               </div>
 
+              {/* COUNTRY */}
 
-              {/* =================================================
-                  EXPERIENCE
-              ================================================= */}
+              <div className="product-field">
+
+                <label>
+                  Country
+                </label>
+
+                <select
+                  className="product-input"
+                  value={country}
+                  onChange={(event) =>
+                    setCountry(
+                      event.target.value
+                    )
+                  }
+                >
+
+                  <option>
+                    Canada
+                  </option>
+
+                  <option>
+                    United States
+                  </option>
+
+                  <option>
+                    United Kingdom
+                  </option>
+
+                  <option>
+                    India
+                  </option>
+
+                </select>
+
+              </div>
+
+              {/* EXPERIENCE */}
 
               <div className="product-field">
 
@@ -654,17 +709,15 @@ export default function AIResumeBuilder() {
 
                 <select
                   className="product-input"
-                  value={experienceLevel}
+                  value={
+                    experienceLevel
+                  }
                   onChange={(event) =>
                     setExperienceLevel(
                       event.target.value
                     )
                   }
                 >
-
-                  <option>
-                    Student / Recent Graduate
-                  </option>
 
                   <option>
                     Entry Level
@@ -679,56 +732,7 @@ export default function AIResumeBuilder() {
                   </option>
 
                   <option>
-                    5–10 Years
-                  </option>
-
-                  <option>
-                    10+ Years
-                  </option>
-
-                  <option>
-                    Career Change
-                  </option>
-
-                </select>
-
-              </div>
-
-
-              {/* =================================================
-                  RESUME STYLE
-              ================================================= */}
-
-              <div className="product-field">
-
-                <label>
-                  Resume style
-                </label>
-
-                <select
-                  className="product-input"
-                  value={resumeStyle}
-                  onChange={(event) =>
-                    setResumeStyle(
-                      event.target.value
-                    )
-                  }
-                >
-
-                  <option>
-                    Canadian Professional
-                  </option>
-
-                  <option>
-                    Canadian Modern
-                  </option>
-
-                  <option>
-                    Canadian Minimal
-                  </option>
-
-                  <option>
-                    Canadian Executive
+                    5+ Years
                   </option>
 
                 </select>
@@ -737,63 +741,9 @@ export default function AIResumeBuilder() {
 
             </div>
 
-
-            {/* =================================================
-                JOB DESCRIPTION
-            ================================================= */}
-
-            <div className="product-field">
-
-              <label>
-                Job description
-                <span
-                  style={{
-                    marginLeft: 6,
-                    fontWeight: 400,
-                    opacity: 0.65,
-                  }}
-                >
-                  Optional
-                </span>
-              </label>
-
-              <textarea
-                className="product-input"
-                value={jobDescription}
-                onChange={(event) =>
-                  setJobDescription(
-                    event.target.value
-                  )
-                }
-                placeholder="Paste the Canadian job posting here. WestForce will use it to target your resume toward the position."
-                rows={8}
-                style={{
-                  resize: "vertical",
-                  minHeight: 160,
-                }}
-              />
-
-              <small
-                style={{
-                  display: "block",
-                  marginTop: 7,
-                  color: "#6c7890",
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                }}
-              >
-                Adding the job description
-                helps WestForce identify
-                relevant skills, keywords
-                and experience.
-              </small>
-
-            </div>
-
-
-            {/* =================================================
+            {/* ===========================================
                 PROFILE SOURCE
-            ================================================= */}
+            =========================================== */}
 
             <div className="resume-source-preview">
 
@@ -809,13 +759,16 @@ export default function AIResumeBuilder() {
 
                 <span>
                   {portfolio?.profile?.name ||
+                    portfolio?.personalDetails
+                      ?.fullName ||
                     "Your profile"}
 
                   {" · "}
 
                   {portfolio?.profile?.title ||
+                    portfolio?.personalDetails
+                      ?.headline ||
                     "Professional"}
-
                 </span>
 
               </div>
@@ -824,36 +777,35 @@ export default function AIResumeBuilder() {
 
             </div>
 
-
-            {/* =================================================
+            {/* ===========================================
                 BUILD BUTTON
-            ================================================= */}
+            =========================================== */}
 
             <button
               type="button"
               className="product-button primary"
               disabled={
                 loading ||
-                !portfolio ||
-                !targetRole.trim()
+                !portfolio
               }
-              onClick={handleBuild}
+              onClick={
+                handleBuild
+              }
             >
 
               <Sparkles size={16} />
 
               {loading
-                ? "Building Canadian Resume..."
-                : "Build Canadian Resume"}
+                ? "Building Resume..."
+                : "Build Resume with AI"}
 
             </button>
 
           </div>
 
-
-          {/* ===================================================
+          {/* =============================================
               AI PANEL
-          =================================================== */}
+          ============================================= */}
 
           <div className="product-ai-panel">
 
@@ -862,103 +814,71 @@ export default function AIResumeBuilder() {
             </div>
 
             <h2>
-              What WestForce will build
+              What AI will build
             </h2>
 
             <p>
-              Your resume will be structured
-              around your target position
-              rather than assuming a technical
-              career.
+              WestForce will organize your
+              existing profile into a clean,
+              editable Canadian-market resume.
             </p>
 
             <ul className="ai-feature-list">
 
               <li>
                 <Check size={14} />
-                Canadian-style structure
+                Professional summary
               </li>
 
               <li>
                 <Check size={14} />
-                Targeted professional summary
+                Experience achievements
               </li>
 
               <li>
                 <Check size={14} />
-                Relevant experience
+                Education
               </li>
 
               <li>
                 <Check size={14} />
-                Job-specific keywords
+                Technical skills
               </li>
 
               <li>
                 <Check size={14} />
-                Education & certifications
+                Projects
               </li>
 
               <li>
                 <Check size={14} />
-                ATS-friendly formatting
+                Certifications
               </li>
 
               <li>
                 <Check size={14} />
-                Dynamic sections
+                ATS-friendly structure
               </li>
 
             </ul>
-
-            <div
-              style={{
-                marginTop: 22,
-                paddingTop: 18,
-                borderTop:
-                  "1px solid rgba(17,30,57,.1)",
-              }}
-            >
-
-              <strong
-                style={{
-                  display: "block",
-                  marginBottom: 7,
-                  fontSize: 13,
-                }}
-              >
-                Built for every career
-              </strong>
-
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 12,
-                  lineHeight: 1.6,
-                }}
-              >
-                Technology, finance,
-                healthcare, education,
-                administration, trades,
-                hospitality, sales and more.
-              </p>
-
-            </div>
 
           </div>
 
         </section>
       )}
 
-
-      {/* =====================================================
-          ENHANCE RESUME
-      ===================================================== */}
+      {/* =================================================
+          ENHANCE MODE
+      ================================================= */}
 
       {mode === "enhance" && (
         <section className="resume-builder-layout">
 
           <div className="product-card">
+
+            {/* ===========================================
+                HEADER
+            =========================================== */}
 
             <div className="product-card-header">
 
@@ -974,23 +894,31 @@ export default function AIResumeBuilder() {
 
                 <p>
                   Upload your existing resume
-                  and choose what you want
-                  WestForce to improve.
+                  and choose what you want AI
+                  to improve.
                 </p>
 
               </div>
 
             </div>
 
+            {/* ===========================================
+                FILE INPUT
+            =========================================== */}
 
             <input
               ref={fileInputRef}
               type="file"
               accept=".pdf,.doc,.docx"
-              onChange={handleFile}
+              onChange={
+                handleFile
+              }
               hidden
             />
 
+            {/* ===========================================
+                UPLOAD ZONE
+            =========================================== */}
 
             <button
               type="button"
@@ -998,6 +926,7 @@ export default function AIResumeBuilder() {
               onClick={() =>
                 fileInputRef.current?.click()
               }
+              disabled={loading}
             >
 
               <UploadCloud size={32} />
@@ -1016,6 +945,9 @@ export default function AIResumeBuilder() {
 
             </button>
 
+            {/* ===========================================
+                SELECTED FILE
+            =========================================== */}
 
             {file && (
               <div className="product-file-chip">
@@ -1040,200 +972,16 @@ export default function AIResumeBuilder() {
               </div>
             )}
 
-
-            {/* =================================================
-                TARGETING FOR ENHANCEMENT
-            ================================================= */}
-
-            <div
-              className="product-card-header resume-improvement-heading"
-              style={{
-                marginTop: 25,
-              }}
-            >
-
-              <div>
-
-                <span className="resume-step">
-                  STEP 2
-                </span>
-
-                <h2>
-                  Target your resume
-                </h2>
-
-                <p>
-                  Tell us what position this
-                  resume is for so improvements
-                  can be relevant to the job.
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div className="resume-form-grid">
-
-              <div className="product-field">
-
-                <label>
-                  Industry
-                </label>
-
-                <select
-                  className="product-input"
-                  value={industry}
-                  onChange={(event) =>
-                    setIndustry(
-                      event.target.value
-                    )
-                  }
-                >
-
-                  <option>
-                    Technology
-                  </option>
-
-                  <option>
-                    Business & Finance
-                  </option>
-
-                  <option>
-                    Marketing & Communications
-                  </option>
-
-                  <option>
-                    Sales
-                  </option>
-
-                  <option>
-                    Healthcare
-                  </option>
-
-                  <option>
-                    Education
-                  </option>
-
-                  <option>
-                    Administration
-                  </option>
-
-                  <option>
-                    Customer Service
-                  </option>
-
-                  <option>
-                    Hospitality & Tourism
-                  </option>
-
-                  <option>
-                    Engineering
-                  </option>
-
-                  <option>
-                    Skilled Trades
-                  </option>
-
-                  <option>
-                    Construction
-                  </option>
-
-                  <option>
-                    Retail
-                  </option>
-
-                  <option>
-                    Human Resources
-                  </option>
-
-                  <option>
-                    Legal
-                  </option>
-
-                  <option>
-                    Transportation & Logistics
-                  </option>
-
-                  <option>
-                    Government & Public Sector
-                  </option>
-
-                  <option>
-                    Other
-                  </option>
-
-                </select>
-
-              </div>
-
-
-              <div className="product-field">
-
-                <label>
-                  Target job title
-                </label>
-
-                <input
-                  type="text"
-                  className="product-input"
-                  value={targetRole}
-                  onChange={(event) =>
-                    setTargetRole(
-                      event.target.value
-                    )
-                  }
-                  placeholder="e.g. Administrative Assistant"
-                />
-
-              </div>
-
-            </div>
-
-
-            <div className="product-field">
-
-              <label>
-                Job description
-                <span
-                  style={{
-                    marginLeft: 6,
-                    fontWeight: 400,
-                    opacity: 0.65,
-                  }}
-                >
-                  Optional
-                </span>
-              </label>
-
-              <textarea
-                className="product-input"
-                value={jobDescription}
-                onChange={(event) =>
-                  setJobDescription(
-                    event.target.value
-                  )
-                }
-                placeholder="Paste the job description to make the enhancement more targeted."
-                rows={6}
-                style={{
-                  resize: "vertical",
-                }}
-              />
-
-            </div>
-
-
-            {/* =================================================
-                IMPROVEMENTS
-            ================================================= */}
+            {/* ===========================================
+                STEP 2
+            =========================================== */}
 
             <div className="product-card-header resume-improvement-heading">
 
               <div>
 
                 <span className="resume-step">
-                  STEP 3
+                  STEP 2
                 </span>
 
                 <h2>
@@ -1244,13 +992,16 @@ export default function AIResumeBuilder() {
 
             </div>
 
+            {/* ===========================================
+                IMPROVEMENT OPTIONS
+            =========================================== */}
 
             <div className="product-option-list">
 
               <ImprovementOption
                 id="summary"
                 title="Professional Summary"
-                description="Make your opening profile clearer and targeted to the role."
+                description="Make your opening profile clearer and more targeted."
                 selected={selected}
                 toggle={toggleOption}
               />
@@ -1258,7 +1009,7 @@ export default function AIResumeBuilder() {
               <ImprovementOption
                 id="experience"
                 title="Experience"
-                description="Turn responsibilities into stronger achievement-focused statements."
+                description="Turn responsibilities into stronger achievement-focused bullets."
                 selected={selected}
                 toggle={toggleOption}
               />
@@ -1266,7 +1017,7 @@ export default function AIResumeBuilder() {
               <ImprovementOption
                 id="keywords"
                 title="Keywords & Skills"
-                description="Improve terminology and prioritize skills relevant to the target position."
+                description="Improve terminology and organize relevant technical skills."
                 selected={selected}
                 toggle={toggleOption}
               />
@@ -1281,8 +1032,8 @@ export default function AIResumeBuilder() {
 
               <ImprovementOption
                 id="projects"
-                title="Projects & Achievements"
-                description="Strengthen relevant projects, accomplishments and practical experience."
+                title="Projects"
+                description="Strengthen project descriptions and technical impact."
                 selected={selected}
                 toggle={toggleOption}
               />
@@ -1290,13 +1041,16 @@ export default function AIResumeBuilder() {
               <ImprovementOption
                 id="rewrite"
                 title="Full Resume Rewrite"
-                description="Apply recommended improvements across the entire resume."
+                description="Apply all recommended improvements across the resume."
                 selected={selected}
                 toggle={toggleOption}
               />
 
             </div>
 
+            {/* ===========================================
+                ENHANCE BUTTON
+            =========================================== */}
 
             <button
               type="button"
@@ -1306,21 +1060,24 @@ export default function AIResumeBuilder() {
                 !file ||
                 !selected.length
               }
-              onClick={handleEnhance}
+              onClick={
+                handleEnhance
+              }
             >
 
               <WandSparkles size={16} />
 
-              {uploading
-                ? "Uploading..."
-                : loading
-                ? "Enhancing..."
+              {loading
+                ? "Enhancing with AI..."
                 : "Enhance Resume with AI"}
 
             </button>
 
+            {/* ===========================================
+                OPEN EDITOR
+            =========================================== */}
 
-            {result && (
+            {result?.resume && (
               <button
                 type="button"
                 className="product-button"
@@ -1328,20 +1085,22 @@ export default function AIResumeBuilder() {
                   marginTop: 10,
                 }}
                 onClick={
-                  editEnhancedResume
+                  editResume
                 }
               >
+
                 Open Editable Resume
+
                 <ArrowRight size={15} />
+
               </button>
             )}
 
           </div>
 
-
-          {/* ===================================================
-              ENHANCEMENT PANEL
-          =================================================== */}
+          {/* =============================================
+              AI PANEL
+          ============================================= */}
 
           <div className="product-ai-panel">
 
@@ -1350,44 +1109,23 @@ export default function AIResumeBuilder() {
             </div>
 
             <h2>
-              Canadian Resume Enhancement
+              AI Enhancement
             </h2>
 
             {!result ? (
               <>
 
                 <p>
-                  WestForce can improve your
-                  resume for a specific Canadian
-                  position while keeping you in
-                  control of the final content.
+                  Upload your resume and
+                  choose the areas you want
+                  WestForce to improve.
                 </p>
 
                 <ul className="ai-feature-list">
 
                   <li>
                     <Check size={14} />
-                    Canadian resume structure
-                  </li>
-
-                  <li>
-                    <Check size={14} />
-                    Role-specific wording
-                  </li>
-
-                  <li>
-                    <Check size={14} />
-                    Relevant keywords
-                  </li>
-
-                  <li>
-                    <Check size={14} />
-                    Achievement-focused experience
-                  </li>
-
-                  <li>
-                    <Check size={14} />
-                    ATS-friendly formatting
+                    Review suggestions
                   </li>
 
                   <li>
@@ -1395,16 +1133,33 @@ export default function AIResumeBuilder() {
                     Edit every section
                   </li>
 
+                  <li>
+                    <Check size={14} />
+                    Compare before and after
+                  </li>
+
+                  <li>
+                    <Check size={14} />
+                    Run ATS analysis
+                  </li>
+
+                  <li>
+                    <Check size={14} />
+                    Preserve your real experience
+                  </li>
+
                 </ul>
 
               </>
             ) : (
+
               <EnhancementResult
                 result={result}
                 onEdit={
-                  editEnhancedResume
+                  editResume
                 }
               />
+
             )}
 
           </div>
@@ -1416,10 +1171,9 @@ export default function AIResumeBuilder() {
   );
 }
 
-
-/* =========================================================
-   IMPROVEMENT OPTION
-========================================================= */
+// =======================================================
+// IMPROVEMENT OPTION
+// =======================================================
 
 function ImprovementOption({
   id,
@@ -1457,21 +1211,45 @@ function ImprovementOption({
   );
 }
 
-
-/* =========================================================
-   RESULT
-========================================================= */
+// =======================================================
+// ENHANCEMENT RESULT
+// =======================================================
 
 function EnhancementResult({
   result,
   onEdit,
 }) {
+  const scoreBefore =
+    result?.scoreBefore ??
+    result?.atsAnalysis
+      ?.scoreBefore ??
+    "—";
+
+  const scoreAfter =
+    result?.scoreAfter ??
+    result?.atsAnalysis
+      ?.scoreAfter ??
+    "—";
+
+  const summary =
+    result?.summary ||
+    "Your resume has been enhanced using the selected improvements.";
+
+  const improvements =
+    result?.improvements ||
+    result?.changes ||
+    [];
+
   return (
     <div className="resume-enhancement-result">
 
       <span className="resume-mode-label">
         ENHANCEMENT COMPLETE
       </span>
+
+      {/* =============================================
+          SCORE COMPARISON
+      ============================================= */}
 
       <div className="resume-score-comparison">
 
@@ -1482,7 +1260,7 @@ function EnhancementResult({
           </small>
 
           <strong>
-            {result.scoreBefore}
+            {scoreBefore}
           </strong>
 
         </div>
@@ -1498,36 +1276,61 @@ function EnhancementResult({
           </small>
 
           <strong>
-            {result.scoreAfter}
+            {scoreAfter}
           </strong>
 
         </div>
 
       </div>
 
+      {/* =============================================
+          SUMMARY
+      ============================================= */}
+
       <p>
-        {result.summary}
+        {summary}
       </p>
 
-      <ul className="ai-feature-list">
+      {/* =============================================
+          IMPROVEMENTS
+      ============================================= */}
 
-        {(result.improvements || [])
-          .map((item) => (
-            <li key={item}>
-              <Check size={14} />
-              {item}
-            </li>
-          ))}
+      {improvements.length > 0 && (
+        <ul className="ai-feature-list">
 
-      </ul>
+          {improvements.map(
+            (item, index) => (
+              <li
+                key={`${item}-${index}`}
+              >
+                <Check size={14} />
+
+                {typeof item === "string"
+                  ? item
+                  : item?.description ||
+                    item?.change ||
+                    "Resume improvement applied."}
+              </li>
+            )
+          )}
+
+        </ul>
+      )}
+
+      {/* =============================================
+          EDIT
+      ============================================= */}
 
       <button
         type="button"
         className="product-button primary"
         onClick={onEdit}
       >
+
         Open Editable Resume
+
         <ArrowRight size={15} />
+
       </button>
 
     </div>

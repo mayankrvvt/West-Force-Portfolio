@@ -248,158 +248,296 @@ export default function SignIn() {
       case "auth/operation-not-allowed":
         return "Email/password sign-in is not enabled in Firebase.";
 
+      case "auth/user-token-expired":
+        return "Your session expired. Please sign in again.";
+
+      case "auth/requires-recent-login":
+        return "Please sign in again to continue.";
+
       default:
         return `Firebase error: ${errorCode || "unknown-error"}`;
     }
   };
 
   /* -----------------------------------------
+     Safely read backend response
+  ----------------------------------------- */
+
+  const readBackendResponse = async (response) => {
+    const contentType =
+      response.headers.get("content-type") || "";
+
+    /*
+     * JSON response
+     */
+    if (contentType.includes("application/json")) {
+      try {
+        return await response.json();
+      } catch (jsonError) {
+        console.error(
+          "Failed to parse backend JSON:",
+          jsonError
+        );
+
+        return {
+          success: false,
+          message: `Backend returned invalid JSON (${response.status}).`,
+        };
+      }
+    }
+
+    /*
+     * Empty / text / HTML response
+     */
+    const text = await response.text();
+
+    console.error(
+      "Backend returned a non-JSON response:",
+      {
+        status: response.status,
+        statusText: response.statusText,
+        contentType,
+        body: text,
+      }
+    );
+
+    return {
+      success: false,
+      message:
+        text ||
+        `Backend request failed (${response.status} ${response.statusText}).`,
+    };
+  };
+
+  /* -----------------------------------------
      Firebase Sign In
   ----------------------------------------- */
 
- const handleSubmit = async (event) => {
-  event.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  setError("");
+    setError("");
 
-  const email = formData.email.trim();
-  const password = formData.password;
+    const email = formData.email.trim();
+    const password = formData.password;
 
-  if (!email) {
-    setError("Please enter your email address.");
-    return;
-  }
+    /* -----------------------------------------
+       Validate form
+    ----------------------------------------- */
 
-  if (!password) {
-    setError("Please enter your password.");
-    return;
-  }
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
 
-  setLoading(true);
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
 
-  try {
-    /*
-     * Keep user logged in after refreshing
-     */
-    await setPersistence(
-      auth,
-      browserLocalPersistence
-    );
+    setLoading(true);
 
-    /*
-     * Sign in with Firebase
-     */
-    const userCredential =
-      await signInWithEmailAndPassword(
+    try {
+      /* -----------------------------------------
+         Keep user logged in after refreshing
+      ----------------------------------------- */
+
+      await setPersistence(
         auth,
-        email,
-        password
+        browserLocalPersistence
       );
 
-    const user = userCredential.user;
+      /* -----------------------------------------
+         Sign in with Firebase
+      ----------------------------------------- */
 
-    console.log(
-      "Firebase Sign In successful:",
-      user.uid
-    );
+      const userCredential =
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
 
-    console.log(
-      "Signed in email:",
-      user.email
-    );
+      const user = userCredential.user;
 
-    /*
-     * Get Firebase ID token
-     *
-     * This token proves to the backend
-     * which Firebase user is signed in.
-     */
-    const token = await user.getIdToken();
-
-    /*
-     * Create/find the user in MongoDB
-     */
-    const response = await fetch(
-  "/api/users",
-  {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-
-    body: JSON.stringify({
-      email: user.email || email,
-      displayName: user.displayName || "",
-      photoURL: user.photoURL || "",
-    }),
-  }
-);
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        result.message ||
-          "Failed to connect with the backend."
+      console.log(
+        "Firebase Sign In successful:",
+        user.uid
       );
+
+      console.log(
+        "Signed in email:",
+        user.email
+      );
+
+      /* -----------------------------------------
+         Get Firebase ID token
+
+         forceRefresh = true makes sure we send
+         a fresh token to the backend.
+      ----------------------------------------- */
+
+      const token = await user.getIdToken(true);
+
+      if (!token) {
+        throw new Error(
+          "Firebase authentication token could not be created."
+        );
+      }
+
+      console.log(
+        "Firebase ID token obtained successfully."
+      );
+
+      /* -----------------------------------------
+         Create / find user in MongoDB
+      ----------------------------------------- */
+
+      const response = await fetch(
+        "/api/users",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            email: user.email || email,
+            displayName: user.displayName || "",
+            photoURL: user.photoURL || "",
+          }),
+        }
+      );
+
+      console.log(
+        "POST /api/users response:",
+        {
+          status: response.status,
+          statusText: response.statusText,
+        }
+      );
+
+      /* -----------------------------------------
+         Safely parse backend response
+
+         IMPORTANT:
+         Never call response.json() directly
+         because a 403 can have an empty body.
+      ----------------------------------------- */
+
+      const result =
+        await readBackendResponse(response);
+
+      /* -----------------------------------------
+         Handle backend failure
+      ----------------------------------------- */
+
+      if (!response.ok) {
+        console.error(
+          "Backend user request failed:",
+          {
+            status: response.status,
+            statusText: response.statusText,
+            result,
+          }
+        );
+
+        if (response.status === 401) {
+          throw new Error(
+            result?.message ||
+              "Authentication failed. Please sign in again."
+          );
+        }
+
+        if (response.status === 403) {
+          throw new Error(
+            result?.message ||
+              "Access denied by the backend. Please check your account permissions."
+          );
+        }
+
+        throw new Error(
+          result?.message ||
+            result?.error ||
+            `Backend rejected the request (${response.status}).`
+        );
+      }
+
+      /* -----------------------------------------
+         Verify successful backend response
+      ----------------------------------------- */
+
+      console.log(
+        "MongoDB user:",
+        result?.user
+      );
+
+      /* -----------------------------------------
+         Navigate
+
+         If user originally tried to access
+         a protected page, return them there.
+
+         Otherwise go to onboarding.
+      ----------------------------------------- */
+
+      const destination =
+        location.state?.from?.pathname ||
+        "/onboarding/create-portfolio";
+
+      navigate(destination, {
+        replace: true,
+      });
+    } catch (firebaseError) {
+      console.error(
+        "Sign In Error:",
+        firebaseError
+      );
+
+      console.error(
+        "Error Code:",
+        firebaseError?.code
+      );
+
+      console.error(
+        "Error Message:",
+        firebaseError?.message
+      );
+
+      /* -----------------------------------------
+         Firebase errors
+      ----------------------------------------- */
+
+      if (
+        firebaseError?.code &&
+        firebaseError.code.startsWith("auth/")
+      ) {
+        setError(
+          getFirebaseErrorMessage(
+            firebaseError.code
+          )
+        );
+      } else {
+        /* -----------------------------------------
+           Backend / network errors
+        ----------------------------------------- */
+
+        setError(
+          firebaseError?.message ||
+            "Sign in failed. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-    console.log(
-      "MongoDB user:",
-      result.user
-    );
-
-    /*
-     * If the user originally tried to access
-     * a protected page, return them there.
-     *
-     * Otherwise go to onboarding.
-     */
-    const destination =
-      location.state?.from?.pathname ||
-      "/onboarding/create-portfolio";
-
-    navigate(destination, {
-      replace: true,
-    });
-  } catch (firebaseError) {
-    console.error(
-      "Sign In Error:",
-      firebaseError
-    );
-
-    console.error(
-      "Error Code:",
-      firebaseError.code
-    );
-
-    console.error(
-      "Error Message:",
-      firebaseError.message
-    );
-
-    /*
-     * Backend errors don't have Firebase
-     * auth error codes, so show their message.
-     */
-    if (
-      firebaseError.message &&
-      !firebaseError.code?.startsWith("auth/")
-    ) {
-      setError(firebaseError.message);
-    } else {
-      setError(
-        getFirebaseErrorMessage(
-          firebaseError.code
-        )
-      );
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  /* -----------------------------------------
+     Render
+  ----------------------------------------- */
 
   return (
     <main

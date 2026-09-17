@@ -599,6 +599,21 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
+  const allowedProfileTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (
+    type === "profile" &&
+    !allowedProfileTypes.includes(file.type)
+  ) {
+    setError("Profile photo must be a JPG, PNG, or WebP image.");
+    event.target.value = "";
+    return;
+  }
+
   if (
     type === "resume" &&
     !allowedResumeTypes.includes(file.type)
@@ -613,7 +628,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     !allowedDocumentTypes.includes(file.type)
   ) {
     setError(
-      "Document must be a PDF, DOC, DOCX, JPG, or PNG file."
+      "Document must be a PDF, DOC, DOCX, JPG, PNG, or WebP file."
     );
     event.target.value = "";
     return;
@@ -623,9 +638,11 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     setError("");
 
     const uploadKey =
-      type === "resume"
-        ? "resume"
-        : `document-${index}`;
+      type === "profile"
+        ? "profile"
+        : type === "resume"
+          ? "resume"
+          : `document-${index}`;
 
     setUploadingFile(uploadKey);
     setUploadProgress(0);
@@ -667,7 +684,15 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       );
     }
 
-    if (type === "resume") {
+    if (type === "profile") {
+      setData((current) => ({
+        ...current,
+        profile: {
+          ...current.profile,
+          imageUrl: uploadedFile.url,
+        },
+      }));
+    } else if (type === "resume") {
       setData((current) => ({
         ...current,
         resume: {
@@ -1193,6 +1218,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 <ProfileSection
                   data={data}
                   update={update}
+                  handleFile={handleFile}
                 />
               )}
 
@@ -1426,7 +1452,7 @@ function TextArea({
    PROFILE
    ========================================================= */
 
-function ProfileSection({ data, update }) {
+function ProfileSection({ data, update, handleFile }) {
   const profile = data.profile;
 
   function handleSlugChange(value) {
@@ -1464,15 +1490,26 @@ function ProfileSection({ data, update }) {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="builder-outline"
-            disabled
-            title="Photo uploads will be connected to Firebase Storage later"
+          <label
+            className="builder-outline builder-upload-button"
+            title={
+              profile.imageUrl
+                ? "Change your profile photo"
+                : "Upload your profile photo"
+            }
           >
             <ImagePlus size={16} />
-            Add photo
-          </button>
+            {profile.imageUrl ? "Change photo" : "Add photo"}
+
+            <input
+              type="file"
+              hidden
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) =>
+                handleFile("profile", null, event)
+              }
+            />
+          </label>
         </div>
 
         <Field

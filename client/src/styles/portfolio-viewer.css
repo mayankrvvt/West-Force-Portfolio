@@ -1,68 +1,67 @@
 /* =========================================================
-   WESTFORCE PORTFOLIO DASHBOARD VIEWER
-========================================================= */
+   WESTFORCE — PORTFOLIO VIEWER
+   ========================================================= */
 
 
 /* =========================================================
-   MAIN TWO-COLUMN LAYOUT
-========================================================= */
+   DASHBOARD PORTFOLIO AREA
+   ========================================================= */
 
 .portfolio-dashboard-layout {
   position: relative;
 
-  display: grid;
-
-  grid-template-columns:
-    minmax(0, 1fr)
-    280px;
-
-  gap: 24px;
-
-  align-items: start;
-
   width: 100%;
 
   min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
 }
 
 
-/* =========================================================
-   COLLAPSED GRID
-========================================================= */
-
-.portfolio-dashboard-layout.toolbar-collapsed {
-  grid-template-columns:
-    minmax(0, 1fr)
-    64px;
-
-  gap: 18px;
+/*
+ * IMPORTANT:
+ * The right toolbar is an OVERLAY.
+ *
+ * It does NOT get its own grid column.
+ *
+ * Therefore opening the toolbar will never squeeze
+ * the portfolio.
+ */
+.portfolio-dashboard-layout {
+  display: block;
 }
 
 
 /* =========================================================
    PORTFOLIO VIEWER WRAPPER
-========================================================= */
+   ========================================================= */
 
 .portfolio-viewer-wrapper {
   position: relative;
-
-  min-width: 0;
 
   width: 100%;
 
   height: calc(100vh - 155px);
 
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
   overflow: hidden;
 
   background: #eef2f7;
 
-  border-radius: 0;
+  box-sizing: border-box;
 }
 
 
 /* =========================================================
-   PORTFOLIO VIEWER
-========================================================= */
+   PORTFOLIO SCROLL AREA
+   ========================================================= */
 
 .portfolio-viewer {
   position: relative;
@@ -73,108 +72,175 @@
 
   min-width: 0;
 
-  overflow-y: auto;
+  margin: 0;
+  padding: 0;
 
-  /*
-   * IMPORTANT:
-   * No horizontal scrolling.
-   *
-   * The portfolio now adapts to the
-   * actual dashboard viewer width.
-   */
   overflow-x: hidden;
+
+  overflow-y: auto;
 
   background: #ffffff;
 
   container-type: inline-size;
+
+  box-sizing: border-box;
 }
 
 
 /* =========================================================
-   CANADIAN PORTFOLIO
-========================================================= */
+   PORTFOLIO ROOT
+   ========================================================= */
 
 .portfolio-viewer .public-portfolio {
   position: relative;
 
-  width: 100%;
+  display: grid;
 
   /*
-   * Removed the old 950px minimum.
-   *
-   * This was causing the portfolio to
-   * become wider than the dashboard.
+   * Sidebar gets its own column.
+   * Main content gets everything else.
    */
+  grid-template-columns:
+    292px minmax(0, 1fr);
+
+  align-items: start;
+
+  width: 100%;
+
   min-width: 0;
 
   min-height: 100%;
 
-  overflow: hidden;
+  margin: 0;
+  padding: 0;
+
+  overflow: visible;
 
   box-sizing: border-box;
 }
 
 
 /* =========================================================
-   PORTFOLIO SIDEBAR
-========================================================= */
+   MAVEN SIDEBAR
+   ========================================================= */
+
+/*
+ * This is the important part.
+ *
+ * The sidebar is STICKY inside .portfolio-viewer.
+ *
+ * Because .portfolio-viewer begins BELOW the
+ * "My Portfolio" page header, the sidebar also
+ * begins below that header.
+ *
+ * When the portfolio scrolls, Maven stays visible.
+ */
 
 .portfolio-viewer .portfolio-sidebar {
-  position: absolute;
+  position: sticky !important;
 
-  left: 0;
-  top: 0;
+  top: 0 !important;
 
-  width: 292px;
+  left: auto !important;
 
-  min-height: 100%;
+  grid-column: 1;
 
-  z-index: 20;
+  grid-row: 1;
+
+  width: 292px !important;
+
+  min-width: 292px !important;
+
+  max-width: 292px !important;
+
+  height: calc(100vh - 155px) !important;
+
+  min-height: calc(100vh - 155px) !important;
+
+  max-height: calc(100vh - 155px) !important;
+
+  margin: 0 !important;
 
   box-sizing: border-box;
+
+  z-index: 100;
+
+  overflow-y: auto;
+
+  overflow-x: hidden;
 }
 
 
 /* =========================================================
-   PORTFOLIO MAIN
-========================================================= */
+   MAIN PORTFOLIO CONTENT
+   ========================================================= */
 
 .portfolio-viewer .portfolio-main {
-  margin-left: 292px;
+  grid-column: 2;
 
-  width:
-    calc(100% - 292px);
+  grid-row: 1;
+
+  width: 100% !important;
+
+  min-width: 0;
 
   min-height: 100%;
 
+  margin: 0 !important;
+
+  padding: 0;
+
   box-sizing: border-box;
 
-  overflow: hidden;
+  overflow: visible;
+}
+
+
+/*
+ * Prevent the global portfolio.css rule:
+ *
+ * .portfolio-main {
+ *     margin-left: 292px;
+ * }
+ *
+ * from creating a second 292px gap.
+ */
+.portfolio-viewer .portfolio-main {
+  margin-left: 0 !important;
 }
 
 
 /* =========================================================
    HERO
-========================================================= */
+   ========================================================= */
 
 .portfolio-viewer .portfolio-hero {
+  position: relative;
+
+  width: 100%;
+
+  min-width: 0;
+
   min-height: 680px;
 
   box-sizing: border-box;
+
+  overflow: hidden;
 }
 
 
 .portfolio-viewer .portfolio-hero-content {
   max-width: 690px;
 
+  min-width: 0;
+
   box-sizing: border-box;
 }
 
 
-/*
- * Prevent the hero artwork from pushing
- * outside the portfolio.
- */
+/* =========================================================
+   HERO IMAGE / ARTWORK
+   ========================================================= */
 
 .portfolio-viewer .hero-visual {
   max-width: 390px;
@@ -186,10 +252,14 @@
 
 
 /* =========================================================
-   SECTIONS
-========================================================= */
+   PORTFOLIO SECTIONS
+   ========================================================= */
 
 .portfolio-viewer .portfolio-section {
+  width: 100%;
+
+  min-width: 0;
+
   padding-left:
     clamp(40px, 6vw, 100px);
 
@@ -201,6 +271,10 @@
 
 
 .portfolio-viewer .portfolio-footer {
+  width: 100%;
+
+  min-width: 0;
+
   padding-left:
     clamp(40px, 6vw, 100px);
 
@@ -212,54 +286,108 @@
 
 
 /* =========================================================
-   RIGHT TOOLBAR
-========================================================= */
+   RIGHT TOOLBAR — OVERLAY
+   ========================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * The toolbar is no longer a second grid column.
+ *
+ * It floats over the portfolio.
+ */
 
 .dashboard-toolbar {
-  position: sticky;
+  position: absolute !important;
 
-  top: 0;
+  top: 0 !important;
 
-  width: 280px;
+  right: 0 !important;
 
-  min-width: 280px;
+  width: 280px !important;
 
-  height: fit-content;
+  min-width: 280px !important;
+
+  max-width: 280px !important;
+
+  height: calc(100vh - 155px) !important;
+
+  min-height: calc(100vh - 155px) !important;
+
+  margin: 0 !important;
 
   padding:
-    4px 0 30px;
+    4px 18px 30px !important;
 
   box-sizing: border-box;
 
+  background: transparent;
+
+  z-index: 500;
+
+  overflow-y: auto;
+
+  overflow-x: visible;
+
   transition:
     width 0.28s ease,
-    min-width 0.28s ease;
+    min-width 0.28s ease,
+    max-width 0.28s ease;
+}
+
+
+/*
+ * When expanded, it floats over the portfolio.
+ */
+.portfolio-dashboard-layout
+.dashboard-toolbar:not(.collapsed) {
+  width: 280px !important;
+
+  min-width: 280px !important;
+
+  max-width: 280px !important;
 }
 
 
 /* =========================================================
    COLLAPSED TOOLBAR
-========================================================= */
+   ========================================================= */
 
 .dashboard-toolbar.collapsed {
-  width: 64px;
+  position: absolute !important;
 
-  min-width: 64px;
+  top: 0 !important;
+
+  right: 0 !important;
+
+  width: 64px !important;
+
+  min-width: 64px !important;
+
+  max-width: 64px !important;
+
+  height: auto !important;
+
+  min-height: 0 !important;
 
   padding:
-    54px 0 20px;
+    54px 8px 20px !important;
 
   display: flex;
 
   flex-direction: column;
 
   align-items: center;
+
+  overflow: visible;
+
+  background: transparent;
 }
 
 
 /* =========================================================
-   TOOLBAR COLLAPSE BUTTON
-========================================================= */
+   COLLAPSE BUTTON
+   ========================================================= */
 
 .toolbar-collapse-button {
   position: absolute;
@@ -297,16 +425,11 @@
 
   box-shadow:
     -5px 0 18px
-    rgba(
-      17,
-      30,
-      57,
-      0.06
-    );
+    rgba(17, 30, 57, 0.06);
 
   cursor: pointer;
 
-  z-index: 100;
+  z-index: 600;
 
   transition:
     background 0.2s ease,
@@ -324,12 +447,7 @@
 
   box-shadow:
     -7px 0 24px
-    rgba(
-      17,
-      30,
-      57,
-      0.1
-    );
+    rgba(17, 30, 57, 0.1);
 }
 
 
@@ -347,7 +465,7 @@
 
 /* =========================================================
    TOOLBAR CARD
-========================================================= */
+   ========================================================= */
 
 .toolbar-card {
   margin-bottom: 18px;
@@ -369,11 +487,9 @@
 
   font-weight: 700;
 
-  letter-spacing:
-    0.08em;
+  letter-spacing: 0.08em;
 
-  text-transform:
-    uppercase;
+  text-transform: uppercase;
 }
 
 
@@ -418,8 +534,8 @@
 
 
 /* =========================================================
-   TOOLBAR BUTTON
-========================================================= */
+   TOOLBAR BUTTONS
+   ========================================================= */
 
 .toolbar-button {
   position: relative;
@@ -613,8 +729,8 @@
 
 
 /* =========================================================
-   PUBLISH BUTTON
-========================================================= */
+   PUBLISH
+   ========================================================= */
 
 .toolbar-highlight {
   border-color:
@@ -633,7 +749,7 @@
 
 /* =========================================================
    DIVIDER
-========================================================= */
+   ========================================================= */
 
 .toolbar-divider {
   width:
@@ -651,8 +767,8 @@
 
 
 /* =========================================================
-   AI / JOB CARDS
-========================================================= */
+   AI / JOB
+   ========================================================= */
 
 .toolbar-coming-soon {
   display:
@@ -769,8 +885,8 @@
 
 
 /* =========================================================
-   COLLAPSED ICON TOOLBAR
-========================================================= */
+   COLLAPSED ICONS
+   ========================================================= */
 
 .toolbar-collapsed-icons {
   width:
@@ -914,8 +1030,8 @@
 
 
 /* =========================================================
-   VIEWER SCROLLBAR
-========================================================= */
+   PORTFOLIO SCROLLBAR
+   ========================================================= */
 
 .portfolio-viewer::-webkit-scrollbar {
   width:
@@ -948,34 +1064,35 @@
 
 
 /* =========================================================
-   CONTAINER RESPONSIVE PORTFOLIO
-========================================================= */
-
-/*
- * These rules respond to the ACTUAL width of
- * the portfolio viewer rather than the browser width.
- *
- * This is important because the portfolio is
- * inside the dashboard.
- */
-
-
-/* Medium viewer */
+   MEDIUM VIEWER
+   ========================================================= */
 
 @container (max-width: 1150px) {
 
+  .portfolio-viewer .public-portfolio {
+    grid-template-columns:
+      255px minmax(0, 1fr);
+  }
+
+
   .portfolio-viewer .portfolio-sidebar {
     width:
-      255px;
+      255px !important;
+
+    min-width:
+      255px !important;
+
+    max-width:
+      255px !important;
   }
 
 
   .portfolio-viewer .portfolio-main {
     margin-left:
-      255px;
+      0 !important;
 
     width:
-      calc(100% - 255px);
+      100% !important;
   }
 
 
@@ -1033,22 +1150,36 @@
 }
 
 
-/* Smaller viewer */
+/* =========================================================
+   SMALLER VIEWER
+   ========================================================= */
 
 @container (max-width: 1000px) {
 
+  .portfolio-viewer .public-portfolio {
+    grid-template-columns:
+      230px minmax(0, 1fr);
+  }
+
+
   .portfolio-viewer .portfolio-sidebar {
     width:
-      230px;
+      230px !important;
+
+    min-width:
+      230px !important;
+
+    max-width:
+      230px !important;
   }
 
 
   .portfolio-viewer .portfolio-main {
     margin-left:
-      230px;
+      0 !important;
 
     width:
-      calc(100% - 230px);
+      100% !important;
   }
 
 
@@ -1119,22 +1250,36 @@
 }
 
 
-/* Very small viewer */
+/* =========================================================
+   VERY SMALL VIEWER
+   ========================================================= */
 
 @container (max-width: 850px) {
 
+  .portfolio-viewer .public-portfolio {
+    grid-template-columns:
+      210px minmax(0, 1fr);
+  }
+
+
   .portfolio-viewer .portfolio-sidebar {
     width:
-      210px;
+      210px !important;
+
+    min-width:
+      210px !important;
+
+    max-width:
+      210px !important;
   }
 
 
   .portfolio-viewer .portfolio-main {
     margin-left:
-      210px;
+      0 !important;
 
     width:
-      calc(100% - 210px);
+      100% !important;
   }
 
 
@@ -1175,75 +1320,131 @@
 
 /* =========================================================
    DASHBOARD RESPONSIVE
-========================================================= */
-
-@media (max-width: 1100px) {
-
-  .portfolio-dashboard-layout {
-    grid-template-columns:
-      minmax(0, 1fr)
-      250px;
-  }
-
-
-  .dashboard-toolbar {
-    width:
-      250px;
-
-    min-width:
-      250px;
-  }
-
-
-  .portfolio-dashboard-layout.toolbar-collapsed {
-    grid-template-columns:
-      minmax(0, 1fr)
-      64px;
-  }
-
-
-  .dashboard-toolbar.collapsed {
-    width:
-      64px;
-
-    min-width:
-      64px;
-  }
-
-}
-
-
-/* =========================================================
-   TABLET
-========================================================= */
+   ========================================================= */
 
 @media (max-width: 900px) {
 
+  /*
+   * On tablet/mobile the portfolio becomes a normal
+   * single-column layout so the sidebar doesn't become
+   * unusably narrow.
+   */
+
   .portfolio-dashboard-layout {
-    grid-template-columns:
-      1fr;
+    display:
+      block;
   }
 
 
-  .portfolio-dashboard-layout.toolbar-collapsed {
-    grid-template-columns:
-      1fr;
+  .portfolio-viewer-wrapper {
+    width:
+      100%;
+
+    height:
+      auto;
+
+    min-height:
+      0;
+
+    overflow:
+      visible;
   }
 
 
-  .dashboard-toolbar,
-  .dashboard-toolbar.collapsed {
-    position:
-      relative;
+  .portfolio-viewer {
+    width:
+      100%;
+
+    height:
+      auto;
+
+    overflow:
+      visible;
+  }
+
+
+  .portfolio-viewer .public-portfolio {
+    display:
+      block;
 
     width:
       100%;
 
     min-width:
       0;
+  }
+
+
+  .portfolio-viewer .portfolio-sidebar {
+    position:
+      relative !important;
+
+    top:
+      auto !important;
+
+    width:
+      100% !important;
+
+    min-width:
+      0 !important;
+
+    max-width:
+      none !important;
+
+    height:
+      auto !important;
+
+    min-height:
+      auto !important;
+
+    max-height:
+      none !important;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    width:
+      100% !important;
+
+    margin:
+      0 !important;
+  }
+
+
+  /*
+   * Toolbar becomes normal content on small screens.
+   */
+  .dashboard-toolbar,
+  .dashboard-toolbar.collapsed {
+    position:
+      relative !important;
+
+    top:
+      auto !important;
+
+    right:
+      auto !important;
+
+    width:
+      100% !important;
+
+    min-width:
+      0 !important;
+
+    max-width:
+      none !important;
+
+    height:
+      auto !important;
+
+    min-height:
+      0 !important;
 
     padding:
-      20px 0 30px;
+      20px 0 30px !important;
+
+    overflow:
+      visible;
   }
 
 
@@ -1282,7 +1483,7 @@
 
 /* =========================================================
    MOBILE
-========================================================= */
+   ========================================================= */
 
 @media (max-width: 700px) {
 
@@ -1294,22 +1495,25 @@
 
   .portfolio-viewer .portfolio-sidebar {
     position:
-      relative;
+      relative !important;
 
     width:
-      100%;
+      100% !important;
+
+    min-width:
+      0 !important;
 
     min-height:
-      auto;
+      auto !important;
   }
 
 
   .portfolio-viewer .portfolio-main {
     margin-left:
-      0;
+      0 !important;
 
     width:
-      100%;
+      100% !important;
   }
 
 
@@ -1323,7 +1527,7 @@
 
 /* =========================================================
    PRINT
-========================================================= */
+   ========================================================= */
 
 @media print {
 
@@ -1358,6 +1562,9 @@
 
 
   .portfolio-viewer .public-portfolio {
+    display:
+      block !important;
+
     width:
       100% !important;
 
@@ -1365,4 +1572,294 @@
       0 !important;
   }
 
+
+  .portfolio-viewer .portfolio-sidebar {
+    position:
+      relative !important;
+
+    width:
+      292px !important;
+
+    height:
+      auto !important;
+  }
+
+
+  .portfolio-viewer .portfolio-main {
+    margin-left:
+      292px !important;
+
+    width:
+      calc(100% - 292px) !important;
+  }
+
 }
+
+/* =========================================================
+   MAVEN SIDEBAR — SLIDE UNDER HEADER
+   ========================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * The sidebar starts naturally underneath the header.
+ *
+ * When the page scrolls, it moves upward.
+ *
+ * The header has a higher z-index, so the sidebar slides
+ * UNDER the header instead of covering it.
+ */
+
+
+/* =========================================================
+   PORTFOLIO SIDEBAR
+   ========================================================= */
+
+.portfolio-viewer
+.public-portfolio
+> .portfolio-sidebar {
+
+  position: sticky !important;
+
+  /*
+   * DO NOT use 82px / 130px here.
+   *
+   * top: 0 allows the sidebar to slide underneath
+   * the header when scrolling.
+   */
+  top: 0 !important;
+
+  bottom: auto !important;
+
+  left: auto !important;
+
+  right: auto !important;
+
+  inset-block-start: 0 !important;
+
+  width: 292px !important;
+
+  min-width: 292px !important;
+
+  max-width: 292px !important;
+
+  height: 100vh !important;
+
+  min-height: 100vh !important;
+
+  max-height: 100vh !important;
+
+  margin: 0 !important;
+
+  box-sizing: border-box !important;
+
+  /*
+   * Header will be above this.
+   */
+  z-index: 10 !important;
+
+  overflow-x: hidden !important;
+
+  overflow-y: auto !important;
+}
+
+
+/* =========================================================
+   HEADER ABOVE SIDEBAR
+   ========================================================= */
+
+/*
+ * Your dashboard header must sit above the portfolio.
+ *
+ * If your header has a specific class, this rule will
+ * also be overridden by that selector below.
+ */
+
+.dashboard-header,
+.dashboard-navbar,
+.dashboard-topbar,
+.dashboard-header-bar,
+.top-header,
+.topbar,
+.navbar {
+
+  position: relative !important;
+
+  z-index: 1000 !important;
+}
+
+
+/* =========================================================
+   PORTFOLIO CONTENT
+   ========================================================= */
+
+.portfolio-viewer
+.public-portfolio
+> .portfolio-main {
+
+  grid-column: 2 !important;
+
+  grid-row: 1 !important;
+
+  width: 100% !important;
+
+  min-width: 0 !important;
+
+  margin: 0 !important;
+
+  padding: 0 !important;
+
+  box-sizing: border-box !important;
+
+  overflow: visible !important;
+}
+
+
+/*
+ * Remove the old 292px offset from portfolio.css.
+ */
+
+.portfolio-viewer .portfolio-main {
+
+  margin-left: 0 !important;
+
+  margin-right: 0 !important;
+
+  width: 100% !important;
+}
+
+
+/* =========================================================
+   PORTFOLIO GRID
+   ========================================================= */
+
+.portfolio-viewer .public-portfolio {
+
+  display: grid !important;
+
+  grid-template-columns:
+    292px minmax(0, 1fr) !important;
+
+  align-items: start !important;
+
+  width: 100% !important;
+
+  min-width: 0 !important;
+
+  margin: 0 !important;
+
+  padding: 0 !important;
+
+  overflow: visible !important;
+
+  box-sizing: border-box !important;
+}
+
+
+/* =========================================================
+   OVERRIDE GLOBAL RESPONSIVE SIDEBAR
+   ========================================================= */
+
+/*
+ * Your old portfolio.css has a breakpoint that changes
+ * the sidebar to width: 100%.
+ *
+ * That is what caused the giant Maven panel in your
+ * screenshot.
+ */
+
+@media (max-width: 920px) {
+
+  .portfolio-viewer
+  .public-portfolio
+  > .portfolio-sidebar {
+
+    position: sticky !important;
+
+    top: 0 !important;
+
+    width: 292px !important;
+
+    min-width: 292px !important;
+
+    max-width: 292px !important;
+
+    height: 100vh !important;
+
+    min-height: 100vh !important;
+
+    max-height: 100vh !important;
+
+    z-index: 10 !important;
+  }
+
+
+  .portfolio-viewer
+  .public-portfolio {
+
+    grid-template-columns:
+      292px minmax(0, 1fr) !important;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  /*
+   * Only on genuinely small mobile screens should
+   * the sidebar become normal flow content.
+   */
+
+  .portfolio-viewer
+  .public-portfolio {
+
+    display: block !important;
+  }
+
+
+  .portfolio-viewer
+  .public-portfolio
+  > .portfolio-sidebar {
+
+    position: relative !important;
+
+    top: auto !important;
+
+    width: 100% !important;
+
+    min-width: 0 !important;
+
+    max-width: none !important;
+
+    height: auto !important;
+
+    min-height: auto !important;
+
+    max-height: none !important;
+
+    overflow: visible !important;
+  }
+
+
+  .portfolio-viewer
+  .public-portfolio
+  > .portfolio-main {
+
+    width: 100% !important;
+
+    margin: 0 !important;
+  }
+}
+
+
+/* =========================================================
+   END SIDEBAR HEADER OVERLAY FIX
+   ========================================================= */
+
+/* =========================================================
+   END
+   ========================================================= */

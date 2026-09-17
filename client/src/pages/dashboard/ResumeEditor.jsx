@@ -1,5 +1,3 @@
-import "../../styles/resume-editor.css"
-
 import {
   ArrowLeft,
   Download,
@@ -304,6 +302,33 @@ export default function ResumeEditor() {
       })
     );
   };
+
+/* =========================================================
+   ADD CERTIFICATION
+========================================================= */
+
+const addCertification = () => {
+  setResume(
+    (current) => ({
+      ...current,
+
+      content: {
+        ...current.content,
+
+        certifications: [
+          ...(current.content.certifications || []),
+
+          {
+            id: `cert-${Date.now()}`,
+            name: "",
+            issuer: "",
+            year: "",
+          },
+        ],
+      },
+    })
+  );
+};
 
 
   /* =========================================================
@@ -715,6 +740,11 @@ export default function ResumeEditor() {
                 </div>
               )
             )}
+            <AddButton
+                onClick={addCertification}
+              >
+                Add Certification
+              </AddButton>
 
           </EditorSection>
 
@@ -1340,15 +1370,41 @@ function ResumeDocument({
                 }
               >
 
-                <h5>
-                  {item.name}
-                </h5>
+                <span
+                style={{
+                  display: "block",
+                  margin: 0,
+                  padding: 0,
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                  lineHeight: "1.3",
+                  fontWeight: 700,
+                  color: "#29445c",
+                  letterSpacing: "0",
+                  transform: "scale(0.85)",
+                  transformOrigin: "left center",
+                }}
+              >
+                {item.name}
+              </span>
 
                 {item.technologies && (
-                  <strong>
-                    {item.technologies}
-                  </strong>
-                )}
+              <span
+                style={{
+                  display: "block",
+                  margin: "3px 0 4px",
+                  padding: 0,
+                  fontFamily: "inherit",
+                  fontSize: "11px",
+                  lineHeight: "1.35",
+                  fontWeight: 600,
+                  color: "#5f7385",
+                  letterSpacing: "0",
+                }}
+              >
+                {item.technologies}
+              </span>
+            )}
 
                 <p>
                   {item.description}
@@ -1369,29 +1425,72 @@ function ResumeDocument({
         >
 
           {content.certifications.map(
-            (item) => (
-              <div
-                className="resume-document-entry"
-                key={
-                  item.id
-                }
-              >
+  (item) => (
+    <div
+      className="resume-document-entry"
+      key={item.id}
+    >
 
-                <strong>
-                  {item.name}
-                </strong>
+      {/* Certification Name */}
+      <span
+        style={{
+          display: "block",
+          margin: 0,
+          padding: 0,
+          fontFamily: "inherit",
+          fontSize: "13px",
+          lineHeight: "1.3",
+          fontWeight: 700,
+          color: "#29445c",
+          letterSpacing: "0",
+          transform: "scale(0.85)",
+          transformOrigin: "left center",
+        }}
+      >
+        {item.name}
+      </span>
 
-                <span>
-                  {" · "}
-                  {item.issuer}
-                  {item.year
-                    ? ` · ${item.year}`
-                    : ""}
-                </span>
+      {/* Issuer */}
+      {item.issuer && (
+        <span
+          style={{
+            display: "block",
+            margin: "3px 0 0",
+            padding: 0,
+            fontFamily: "inherit",
+            fontSize: "11px",
+            lineHeight: "1.35",
+            fontWeight: 600,
+            color: "#5f7385",
+            letterSpacing: "0",
+          }}
+        >
+          {item.issuer}
+        </span>
+      )}
 
-              </div>
-            )
-          )}
+      {/* Year */}
+      {item.year && (
+        <span
+          style={{
+            display: "block",
+            margin: "2px 0 0",
+            padding: 0,
+            fontFamily: "inherit",
+            fontSize: "10px",
+            lineHeight: "1.3",
+            fontWeight: 400,
+            color: "#718395",
+            letterSpacing: "0",
+          }}
+        >
+          {item.year}
+        </span>
+      )}
+
+    </div>
+  )
+)}
 
         </ResumeDocumentSection>
       )}

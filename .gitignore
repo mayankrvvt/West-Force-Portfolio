@@ -10,8 +10,6 @@ build/
 .env.local
 .env.*.local
 
-# Secrets
-server/serviceAccountKey.json
 
 # OS / editor
 .DS_Store

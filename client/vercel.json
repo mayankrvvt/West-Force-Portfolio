@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://west-force-portfolio.onrender.com/api/:path*"
+    }
+  ]
+}

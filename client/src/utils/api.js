@@ -1,6 +1,26 @@
 import { auth } from "../firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5050";
+
+function buildApiUrl(endpoint) {
+  if (
+    endpoint.startsWith("http://") ||
+    endpoint.startsWith("https://")
+  ) {
+    return endpoint;
+  }
+
+  const normalizedBase = API_BASE_URL.replace(/\/$/, "");
+
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+
+  return `${normalizedBase}${normalizedEndpoint}`;
+}
+
 /**
  * Wait until Firebase has finished restoring the authentication state.
  */
@@ -24,8 +44,6 @@ export function waitForAuthUser() {
  * Get the currently authenticated Firebase user.
  */
 async function getAuthenticatedUser() {
-  // Firebase Auth has a built-in method to wait for
-  // the initial auth state to finish loading.
   if (typeof auth.authStateReady === "function") {
     await auth.authStateReady();
   } else {
@@ -60,7 +78,7 @@ async function getAuthHeaders() {
 export async function apiRequest(endpoint, options = {}) {
   const tokenHeaders = await getAuthHeaders();
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(buildApiUrl(endpoint), {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -130,7 +148,7 @@ export async function uploadFile(endpoint, file) {
 
   formData.append("file", file);
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(buildApiUrl(endpoint), {
     method: "POST",
     headers: tokenHeaders,
     body: formData,

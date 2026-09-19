@@ -1,125 +1,52 @@
 const mongoose = require("mongoose");
 
-const experienceSchema = new mongoose.Schema(
-  {
-    company: {
-      type: String,
-      default: "",
-    },
-    role: {
-      type: String,
-      default: "",
-    },
-    location: {
-      type: String,
-      default: "",
-    },
-    startDate: {
-      type: String,
-      default: "",
-    },
-    endDate: {
-      type: String,
-      default: "",
-    },
-    current: {
-      type: Boolean,
-      default: false,
-    },
-    description: {
-      type: String,
-      default: "",
-    },
-  },
-  { _id: true }
-);
-
-const educationSchema = new mongoose.Schema(
-  {
-    institution: {
-      type: String,
-      default: "",
-    },
-    degree: {
-      type: String,
-      default: "",
-    },
-    field: {
-      type: String,
-      default: "",
-    },
-    location: {
-      type: String,
-      default: "",
-    },
-    startDate: {
-      type: String,
-      default: "",
-    },
-    endDate: {
-      type: String,
-      default: "",
-    },
-    description: {
-      type: String,
-      default: "",
-    },
-  },
-  { _id: true }
-);
-
-const skillSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      default: "",
-    },
-    level: {
-      type: String,
-      default: "",
-    },
-  },
-  { _id: true }
-);
-
 const documentSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       default: "",
+      trim: true,
     },
+
     type: {
       type: String,
       default: "",
+      trim: true,
     },
+
     fileUrl: {
       type: String,
       default: "",
     },
-  },
-  { _id: true }
-);
 
-const socialLinksSchema = new mongoose.Schema(
-  {
-    linkedin: {
+    publicId: {
       type: String,
       default: "",
     },
-    github: {
+
+    resourceType: {
       type: String,
       default: "",
     },
-    twitter: {
+
+    format: {
       type: String,
       default: "",
     },
-    website: {
-      type: String,
-      default: "",
+
+    size: {
+      type: Number,
+      default: 0,
+    },
+
+    protected: {
+      type: Boolean,
+      default: true,
     },
   },
-  { _id: false }
+  {
+    _id: true,
+  }
 );
 
 const portfolioSchema = new mongoose.Schema(
@@ -156,41 +83,49 @@ const portfolioSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+
       title: {
         type: String,
         default: "",
       },
+
       location: {
         type: String,
         default: "",
       },
+
       email: {
         type: String,
         default: "",
       },
+
       phone: {
         type: String,
         default: "",
       },
+
       imageUrl: {
         type: String,
         default: "",
       },
+
       availableForWork: {
         type: Boolean,
-        default: false,
+        default: true,
       },
     },
 
     hero: {
       greeting: {
         type: String,
-        default: "",
+        default: "Hello, I'm",
       },
+
       headline: {
         type: String,
         default: "",
       },
+
       description: {
         type: String,
         default: "",
@@ -200,12 +135,14 @@ const portfolioSchema = new mongoose.Schema(
     about: {
       title: {
         type: String,
-        default: "",
+        default: "About Me",
       },
+
       description: {
         type: String,
         default: "",
       },
+
       videoUrl: {
         type: String,
         default: "",
@@ -213,17 +150,17 @@ const portfolioSchema = new mongoose.Schema(
     },
 
     experience: {
-      type: [experienceSchema],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
 
     education: {
-      type: [educationSchema],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
 
     skills: {
-      type: [skillSchema],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
 
@@ -237,6 +174,7 @@ const portfolioSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+
       fileUrl: {
         type: String,
         default: "",
@@ -244,8 +182,38 @@ const portfolioSchema = new mongoose.Schema(
     },
 
     socialLinks: {
-      type: socialLinksSchema,
-      default: () => ({}),
+      linkedin: {
+        type: String,
+        default: "",
+      },
+
+      github: {
+        type: String,
+        default: "",
+      },
+
+      website: {
+        type: String,
+        default: "",
+      },
+
+      instagram: {
+        type: String,
+        default: "",
+      },
+    },
+
+    documentProtection: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+
+      pinHash: {
+        type: String,
+        default: "",
+        select: false,
+      },
     },
 
     publishedAt: {
@@ -258,4 +226,7 @@ const portfolioSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Portfolio", portfolioSchema);
+module.exports = mongoose.model(
+  "Portfolio",
+  portfolioSchema
+);

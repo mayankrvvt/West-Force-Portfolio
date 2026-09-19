@@ -169,39 +169,47 @@ function mapPortfolioData(portfolio) {
       : [],
 
     documents: Array.isArray(portfolio.documents)
-      ? portfolio.documents.map((document) => ({
-          name:
-            document.name ||
-            "Document",
+  ? portfolio.documents.map((document) => ({
+      _id: document._id || "",
 
-          type:
-            document.type ||
-            document.format ||
-            "Document",
+      name:
+        document.name ||
+        "Document",
 
-          size:
-            document.size
-              ? formatFileSize(document.size)
-              : "",
+      type:
+        document.type ||
+        document.format ||
+        "Document",
 
-          url:
-            document.url ||
-            document.fileUrl ||
-            "",
+      size:
+        document.size
+          ? formatFileSize(
+              document.size
+            )
+          : "",
 
-          publicId:
-            document.publicId ||
-            "",
+      /*
+       * DO NOT use these for the
+       * public document View.
+       *
+       * The backend protects access.
+       */
+      url: "",
 
-          resourceType:
-            document.resourceType ||
-            "",
+      publicId: "",
 
-          format:
-            document.format ||
-            "",
-        }))
-      : [],
+      resourceType:
+        document.resourceType ||
+        "",
+
+      format:
+        document.format ||
+        "",
+
+      protected:
+        document.protected !== false,
+    }))
+  : [],
 
     resume: {
       name:

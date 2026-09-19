@@ -2662,3 +2662,675 @@ img {
       .01ms !important;
   }
 }
+
+/* =========================================================
+   DOCUMENT PIN PROTECTION
+========================================================= */
+
+.documents-pin-card {
+  margin-top: 28px;
+  padding: 24px 26px;
+  background: #ffffff;
+  border: 1px solid #dce5ec;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(20, 52, 77, 0.05);
+}
+
+.documents-pin-card-enabled {
+  border-color: #b7dfd2;
+  background: #fbfefd;
+}
+
+.documents-pin-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.documents-pin-icon {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #edf7fb;
+  color: #1688bd;
+}
+
+.documents-pin-card-enabled
+  .documents-pin-icon {
+  background: #eaf8f2;
+  color: #16815e;
+}
+
+.documents-pin-title {
+  flex: 1;
+}
+
+.documents-pin-title h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #19344c;
+}
+
+.documents-pin-title p {
+  margin: 0;
+  color: #71859a;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.documents-pin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eaf8f2;
+  color: #15805c;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* FORM */
+
+.documents-pin-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #e7edf2;
+}
+
+.documents-pin-field {
+  min-width: 0;
+}
+
+.documents-pin-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #203b53;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.documents-pin-field > span {
+  display: block;
+  margin-top: 7px;
+  color: #8a9bad;
+  font-size: 12px;
+}
+
+.documents-pin-input {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #cfdce6;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.documents-pin-input:focus-within {
+  border-color: #269bc9;
+  box-shadow: 0 0 0 3px rgba(38, 155, 201, 0.1);
+}
+
+.documents-pin-input input {
+  width: 100%;
+  height: 100%;
+  padding: 0 14px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #17334b;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 5px;
+}
+
+.documents-pin-input input::placeholder {
+  color: #b5c1cc;
+  letter-spacing: 5px;
+}
+
+.documents-pin-input button {
+  width: 45px;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #71859a;
+  cursor: pointer;
+}
+
+.documents-pin-input button:hover {
+  color: #1688bd;
+}
+
+/* ENABLE BUTTON */
+
+.documents-pin-enable {
+  height: 48px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: #1688bd;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.documents-pin-enable:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+/* ERROR */
+
+.documents-pin-error {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: #fff4f3;
+  border: 1px solid #f0cfcb;
+  color: #c54d45;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ENABLED */
+
+.documents-pin-enabled {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #e7edf2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.documents-pin-enabled-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.documents-pin-success-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eaf8f2;
+  color: #15805c;
+}
+
+.documents-pin-enabled-info strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #1c5948;
+  font-size: 14px;
+}
+
+.documents-pin-enabled-info p {
+  margin: 0;
+  color: #71859a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.documents-pin-change {
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid #c9d9e4;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #28617f;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.documents-pin-change:hover {
+  border-color: #1688bd;
+  color: #1688bd;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+  .documents-pin-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .documents-pin-enable {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .documents-pin-card {
+    padding: 20px;
+  }
+
+  .documents-pin-header {
+    align-items: flex-start;
+  }
+
+  .documents-pin-status {
+    display: none;
+  }
+
+  .documents-pin-form {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-pin-enable {
+    grid-column: auto;
+  }
+
+  .documents-pin-enabled {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .documents-pin-change {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   DOCUMENT PROTECTION
+========================================================= */
+
+.document-button-locked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  cursor: not-allowed;
+
+  opacity: 0.7;
+}
+
+.document-pin-card {
+  margin-top: 28px;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+
+  padding: 24px;
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(248, 249, 251, 0.98)
+    );
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.06);
+}
+
+.document-pin-icon {
+  width: 48px;
+  height: 48px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: #111;
+
+  color: white;
+}
+
+.document-pin-content {
+  flex: 1;
+}
+
+.document-pin-eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.document-pin-content h3 {
+  margin: 0 0 7px;
+
+  font-size: 18px;
+}
+
+.document-pin-content p {
+  margin: 0;
+
+  max-width: 650px;
+
+  line-height: 1.6;
+
+  opacity: 0.72;
+}
+
+.document-pin-form {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+.document-pin-form input {
+  width: 130px;
+
+  height: 44px;
+
+  padding: 0 14px;
+
+  border: 1px solid rgba(0, 0, 0, 0.14);
+
+  border-radius: 10px;
+
+  background: white;
+
+  font-size: 18px;
+
+  letter-spacing: 0.25em;
+
+  text-align: center;
+
+  outline: none;
+}
+
+.document-pin-form input:focus {
+  border-color: #111;
+
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.document-pin-form button {
+  height: 44px;
+
+  padding: 0 18px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background: #111;
+
+  color: white;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.document-pin-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.document-pin-form button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+.document-pin-message {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 12px;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.document-pin-error {
+  color: #b42318;
+}
+
+.document-pin-success {
+  color: #087443;
+}
+
+.document-unlocked-banner {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin-top: 18px;
+
+  padding: 13px 16px;
+
+  border-radius: 10px;
+
+  background: rgba(8, 116, 67, 0.08);
+
+  color: #087443;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.documents-empty {
+  padding: 42px 24px;
+
+  text-align: center;
+
+  border: 1px dashed rgba(0, 0, 0, 0.14);
+
+  border-radius: 18px;
+}
+
+.documents-empty h3 {
+  margin: 12px 0 5px;
+}
+
+.documents-empty p {
+  margin: 0;
+
+  opacity: 0.65;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  .document-pin-card {
+    flex-direction: column;
+
+    padding: 20px;
+  }
+
+  .document-pin-form {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .document-pin-form input {
+    width: 100%;
+  }
+
+  .document-pin-form button {
+    width: 100%;
+  }
+}
+
+.builder-document-protection-card {
+  display: flex;
+  gap: 18px;
+
+  margin-top: 24px;
+  padding: 22px;
+
+  border: 1px solid rgba(0, 0, 0, 0.1);
+
+  border-radius: 16px;
+
+  background: #fafafa;
+}
+
+.builder-document-protection-icon {
+  width: 46px;
+  height: 46px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: #111;
+  color: white;
+
+  font-size: 20px;
+}
+
+.builder-document-protection-content {
+  flex: 1;
+}
+
+.builder-document-protection-content > span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.builder-document-protection-content h3 {
+  margin: 0 0 6px;
+
+  font-size: 17px;
+}
+
+.builder-document-protection-content p {
+  margin: 0;
+
+  max-width: 700px;
+
+  line-height: 1.6;
+
+  opacity: 0.68;
+}
+
+.builder-document-protection-content
+  .builder-toggle {
+  margin-top: 18px;
+}
+
+.builder-pin-field {
+  max-width: 280px;
+
+  margin-top: 18px;
+}
+
+.builder-pin-field label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.builder-pin-field label > span {
+  font-weight: 700;
+}
+
+.builder-pin-field label > span b {
+  margin-left: 3px;
+
+  color: #c00;
+}
+
+.builder-pin-field input {
+  height: 44px;
+
+  padding: 0 13px;
+
+  border: 1px solid rgba(0, 0, 0, 0.15);
+
+  border-radius: 9px;
+
+  font-size: 18px;
+
+  letter-spacing: 0.3em;
+
+  text-align: center;
+}
+
+.builder-pin-field small {
+  opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .builder-document-protection-card {
+    flex-direction: column;
+  }
+}

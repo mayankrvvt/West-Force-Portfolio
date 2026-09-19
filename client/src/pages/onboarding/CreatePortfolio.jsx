@@ -57,6 +57,11 @@ const emptyPortfolio = {
 
   documents: [],
 
+  documentProtection: {
+    enabled: false,
+    pin: "",
+  },
+
   resume: {
     name: "",
     fileUrl: "",
@@ -238,6 +243,11 @@ function readDraft() {
       education: parsed.education || [],
       skills: parsed.skills || [],
       documents: parsed.documents || [],
+
+      documentProtection: {
+        ...emptyPortfolio.documentProtection,
+        ...(parsed.documentProtection || {}),
+      },
     };
   } catch {
     return emptyPortfolio;
@@ -321,17 +331,21 @@ function sectionComplete(data, id) {
   );
 
     case "documents":
-  return (
-    data.documents.length > 0 &&
-    data.documents.every(
-      (item) =>
-        isNonEmpty(item.name) &&
-        ["certificate", "award", "license", "other"].includes(
-          item.type
+      return (
+        data.documents.length > 0 &&
+        data.documents.every(
+          (item) =>
+            isNonEmpty(item.name) &&
+            ["certificate", "award", "license", "other"].includes(
+              item.type
+            ) &&
+            Boolean(item.publicId || item.fileUrl)
         ) &&
-        isNonEmpty(item.fileUrl)
-    )
-  );
+        (!data.documentProtection?.enabled ||
+          /^\d{4}$/.test(
+            String(data.documentProtection?.pin || "")
+          ))
+      );
 
     case "resume":
       return (
@@ -446,6 +460,11 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
             result.portfolio.skills || [],
           documents:
             result.portfolio.documents || [],
+          documentProtection: {
+            ...current.documentProtection,
+            ...(result.portfolio.documentProtection || {}),
+            pin: "",
+          },
         }));
 
         setPortfolioExists(true);
@@ -599,21 +618,6 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
-  const allowedProfileTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ];
-
-  if (
-    type === "profile" &&
-    !allowedProfileTypes.includes(file.type)
-  ) {
-    setError("Profile photo must be a JPG, PNG, or WebP image.");
-    event.target.value = "";
-    return;
-  }
-
   if (
     type === "resume" &&
     !allowedResumeTypes.includes(file.type)
@@ -628,7 +632,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     !allowedDocumentTypes.includes(file.type)
   ) {
     setError(
-      "Document must be a PDF, DOC, DOCX, JPG, PNG, or WebP file."
+      "Document must be a PDF, DOC, DOCX, JPG, or PNG file."
     );
     event.target.value = "";
     return;
@@ -638,11 +642,9 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     setError("");
 
     const uploadKey =
-      type === "profile"
-        ? "profile"
-        : type === "resume"
-          ? "resume"
-          : `document-${index}`;
+      type === "resume"
+        ? "resume"
+        : `document-${index}`;
 
     setUploadingFile(uploadKey);
     setUploadProgress(0);
@@ -651,6 +653,10 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append(
+      "protected",
+      type === "documents" ? "true" : "false"
+    );
 
     const response = await fetch("/api/uploads", {
       method: "POST",
@@ -678,21 +684,22 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
     const uploadedFile = result.file;
 
-    if (!uploadedFile?.url) {
+    if (!uploadedFile?.publicId) {
+      throw new Error(
+        "Upload succeeded, but no file identifier was returned."
+      );
+    }
+
+    if (
+      type !== "documents" &&
+      !uploadedFile?.url
+    ) {
       throw new Error(
         "Upload succeeded, but no file URL was returned."
       );
     }
 
-    if (type === "profile") {
-      setData((current) => ({
-        ...current,
-        profile: {
-          ...current.profile,
-          imageUrl: uploadedFile.url,
-        },
-      }));
-    } else if (type === "resume") {
+    if (type === "resume") {
       setData((current) => ({
         ...current,
         resume: {
@@ -710,7 +717,12 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               ? {
                   ...item,
                   name: file.name,
-                  fileUrl: uploadedFile.url,
+                  fileUrl: "",
+                  publicId: uploadedFile.publicId,
+                  resourceType: uploadedFile.resourceType,
+                  format: uploadedFile.format,
+                  size: uploadedFile.size,
+                  protected: true,
                 }
               : item
         ),
@@ -897,45 +909,29 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
   if (step.id === "documents") {
     for (const item of data.documents) {
-      if (
-        !isNonEmpty(item.name) ||
-        !isNonEmpty(item.fileUrl)
-      ) {
-        return "Complete each document entry or remove the empty entry.";
+      if (!isNonEmpty(item.name)) {
+        return "Complete each document name or remove the empty document.";
       }
 
       if (
-        ![
-          "certificate",
-          "award",
-          "license",
-          "other",
-        ].includes(item.type)
+        !["certificate", "award", "license", "other"].includes(
+          item.type
+        )
       ) {
-        return "Please select a valid document type.";
+        return "Choose a valid document type.";
+      }
+
+      if (!item.publicId && !item.fileUrl) {
+        return "Upload a file for each document or remove the empty document.";
+      }
+    }
+
+    if (data.documentProtection?.enabled) {
+      if (!/^\d{4}$/.test(String(data.documentProtection.pin || ""))) {
+        return "Enter a 4-digit PIN to protect your documents.";
       }
     }
   }
-
-  if (step.id === "documents") {
-  for (const item of data.documents) {
-    if (!isNonEmpty(item.name)) {
-      return "Complete each document name or remove the empty document.";
-    }
-
-    if (
-      !["certificate", "award", "license", "other"].includes(
-        item.type
-      )
-    ) {
-      return "Choose a valid document type.";
-    }
-
-    if (!isNonEmpty(item.fileUrl)) {
-      return "Upload a file for each document or remove the empty document.";
-    }
-  }
-}
 
   return null;
 }
@@ -1013,6 +1009,14 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       const finalData = {
         ...data,
         status: "draft",
+        documentProtection: data.documentProtection?.enabled
+          ? {
+              enabled: true,
+              pin: data.documentProtection.pin,
+            }
+          : {
+              enabled: false,
+            },
       };
 
       const result = portfolioExists
@@ -1218,7 +1222,6 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 <ProfileSection
                   data={data}
                   update={update}
-                  handleFile={handleFile}
                 />
               )}
 
@@ -1269,6 +1272,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               {step.id === "documents" && (
   <DocumentsSection
     data={data}
+    update={update}
     addItem={addItem}
     updateItem={updateItem}
     removeItem={removeItem}
@@ -1452,7 +1456,7 @@ function TextArea({
    PROFILE
    ========================================================= */
 
-function ProfileSection({ data, update, handleFile }) {
+function ProfileSection({ data, update }) {
   const profile = data.profile;
 
   function handleSlugChange(value) {
@@ -1490,26 +1494,15 @@ function ProfileSection({ data, update, handleFile }) {
             </p>
           </div>
 
-          <label
-            className="builder-outline builder-upload-button"
-            title={
-              profile.imageUrl
-                ? "Change your profile photo"
-                : "Upload your profile photo"
-            }
+          <button
+            type="button"
+            className="builder-outline"
+            disabled
+            title="Photo uploads will be connected to Firebase Storage later"
           >
             <ImagePlus size={16} />
-            {profile.imageUrl ? "Change photo" : "Add photo"}
-
-            <input
-              type="file"
-              hidden
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(event) =>
-                handleFile("profile", null, event)
-              }
-            />
-          </label>
+            Add photo
+          </button>
         </div>
 
         <Field
@@ -2317,157 +2310,233 @@ function SkillsSection({
 
 function DocumentsSection({
   data,
+  update,
   addItem,
   updateItem,
   removeItem,
   handleFile,
 }) {
-  return (
-    <RepeatableSection
-      title="Documents & certificates"
-      empty="Add certificates, awards, licenses, or other documents that support your professional profile."
-      button="Add document"
-      onAdd={() => addItem("documents")}
-      count={data.documents.length}
-    >
-      {data.documents.map((item, index) => (
-        <article
-          className="builder-repeat-card"
-          key={index}
-        >
-          <div className="repeat-card-heading">
-            <div>
-              <span>
-                Document {index + 1}
-              </span>
+  const protection = data.documentProtection || {
+    enabled: false,
+    pin: "",
+  };
 
-              <strong>
-                {item.name || "New document"}
-              </strong>
+  return (
+    <div className="builder-section-stack">
+      <RepeatableSection
+        title="Documents & certificates"
+        empty="Add certificates, awards, licenses, or other documents that support your professional profile."
+        button="Add document"
+        onAdd={() => addItem("documents")}
+        count={data.documents.length}
+      >
+        {data.documents.map((item, index) => (
+          <article
+            className="builder-repeat-card"
+            key={index}
+          >
+            <div className="repeat-card-heading">
+              <div>
+                <span>
+                  Document {index + 1}
+                </span>
+
+                <strong>
+                  {item.name || "New document"}
+                </strong>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  removeItem("documents", index)
+                }
+                aria-label={`Remove document ${index + 1}`}
+              >
+                <Trash2 size={17} />
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                removeItem("documents", index)
-              }
-              aria-label={`Remove document ${index + 1}`}
-            >
-              <Trash2 size={17} />
-            </button>
-          </div>
-
-          <div className="builder-fields-grid">
-
-            <Field
-              label="Document name"
-              value={item.name}
-              onChange={(value) =>
-                updateItem(
-                  "documents",
-                  index,
-                  "name",
-                  value
-                )
-              }
-              placeholder="e.g. AWS Certified Developer"
-              required
-              maxLength={200}
-              help={`${item.name?.length || 0}/200 characters`}
-            />
-
-            <label className="builder-field">
-              <span>
-                Document type<b>*</b>
-              </span>
-
-              <select
-                value={item.type}
-                onChange={(event) =>
+            <div className="builder-fields-grid">
+              <Field
+                label="Document name"
+                value={item.name}
+                onChange={(value) =>
                   updateItem(
                     "documents",
                     index,
-                    "type",
-                    event.target.value
+                    "name",
+                    value
                   )
                 }
+                placeholder="e.g. AWS Certified Developer"
                 required
-              >
-                <option value="certificate">
-                  Certificate
-                </option>
+                maxLength={200}
+                help={`${item.name?.length || 0}/200 characters`}
+              />
 
-                <option value="award">
-                  Award
-                </option>
+              <label className="builder-field">
+                <span>
+                  Document type<b>*</b>
+                </span>
 
-                <option value="license">
-                  License
-                </option>
+                <select
+                  value={item.type}
+                  onChange={(event) =>
+                    updateItem(
+                      "documents",
+                      index,
+                      "type",
+                      event.target.value
+                    )
+                  }
+                  required
+                >
+                  <option value="certificate">Certificate</option>
+                  <option value="award">Award</option>
+                  <option value="license">License</option>
+                  <option value="other">Other</option>
+                </select>
 
-                <option value="other">
-                  Other
-                </option>
-              </select>
+                <small>
+                  Choose the category that best describes this document.
+                </small>
+              </label>
 
-              <small>
-                Choose the category that best describes
-                this document.
-              </small>
-            </label>
+              <div className="builder-field-full">
+                <div className="builder-upload-card">
+                  <div className="builder-upload-icon">
+                    <FileText size={22} />
+                  </div>
 
-            <div className="builder-field-full">
-              <div className="builder-upload-card">
-                <div className="builder-upload-icon">
-                  <FileText size={22} />
+                  <div className="builder-upload-content">
+                    <strong>
+                      {item.publicId
+                        ? "Protected document uploaded"
+                        : item.fileUrl
+                          ? "Document selected"
+                          : "Upload document"}
+                    </strong>
+
+                    <p>
+                      {item.publicId
+                        ? `${item.name || "Document"} is stored as a protected document.`
+                        : item.fileUrl
+                          ? "Document uploaded"
+                          : "PDF, JPG, PNG, DOC or DOCX · Maximum 10 MB."}
+                    </p>
+                  </div>
+
+                  <label className="builder-outline builder-upload-button">
+                    <Plus size={16} />
+
+                    {item.publicId || item.fileUrl
+                      ? "Replace file"
+                      : "Choose file"}
+
+                    <input
+                      type="file"
+                      hidden
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                      onChange={(event) =>
+                        handleFile(
+                          "documents",
+                          index,
+                          event
+                        )
+                      }
+                    />
+                  </label>
                 </div>
-
-                <div className="builder-upload-content">
-                  <strong>
-                    {item.fileUrl
-                      ? "Document selected"
-                      : "Upload document"}
-                  </strong>
-
-                  <p>
-                    {item.fileUrl
-                      ? item.fileUrl.startsWith("pending:")
-                        ? item.fileUrl.replace(
-                            "pending:",
-                            ""
-                          )
-                        : "Document uploaded"
-                      : "PDF, JPG, PNG or other supported document. Maximum 10 MB."}
-                  </p>
-                </div>
-
-                <label className="builder-outline builder-upload-button">
-                  <Plus size={16} />
-
-                  {item.fileUrl
-                    ? "Replace file"
-                    : "Choose file"}
-
-                  <input
-                    type="file"
-                    hidden
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                    onChange={(event) =>
-                      handleFile(
-                        "documents",
-                        index,
-                        event
-                      )
-                    }
-                  />
-                </label>
               </div>
             </div>
+          </article>
+        ))}
+      </RepeatableSection>
 
-          </div>
-        </article>
-      ))}
-    </RepeatableSection>
+      <div className="builder-document-protection-card">
+        <div className="builder-document-protection-icon">
+          🔐
+        </div>
+
+        <div className="builder-document-protection-content">
+          <span>DOCUMENT ACCESS</span>
+
+          <h3>Protect your public documents</h3>
+
+          <p>
+            Visitors will be able to see your document names and details,
+            but they will need your 4-digit PIN before they can open the
+            actual files. Your resume remains public.
+          </p>
+
+          <label className="builder-toggle">
+            <input
+              type="checkbox"
+              checked={Boolean(protection.enabled)}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+
+                update(
+                  "documentProtection.enabled",
+                  enabled
+                );
+
+                if (!enabled) {
+                  update(
+                    "documentProtection.pin",
+                    ""
+                  );
+                }
+              }}
+            />
+
+            <span className="builder-toggle-track">
+              <span className="builder-toggle-thumb" />
+            </span>
+
+            <strong>
+              {protection.enabled
+                ? "Protected"
+                : "Public access"}
+            </strong>
+          </label>
+
+          {protection.enabled && (
+            <div className="builder-pin-field">
+              <label>
+                <span>
+                  4-digit document PIN<b>*</b>
+                </span>
+
+                <input
+                  type="password"
+                  value={protection.pin || ""}
+                  onChange={(event) => {
+                    const value = event.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 4);
+
+                    update(
+                      "documentProtection.pin",
+                      value
+                    );
+                  }}
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="••••"
+                  autoComplete="new-password"
+                />
+
+                <small>
+                  Visitors need this PIN to open the actual document files.
+                </small>
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

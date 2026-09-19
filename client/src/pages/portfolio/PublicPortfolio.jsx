@@ -15,29 +15,24 @@ export default function PublicPortfolio() {
     error,
   } = usePortfolio(slug);
 
-  // -----------------------------
-  // LOADING
-  // -----------------------------
-
   if (loading) {
     return (
       <main className="public-portfolio">
         <div className="portfolio-loading">
           <div className="loading-spinner" />
 
-          <h2>Loading portfolio...</h2>
+          <h2>
+            Loading portfolio...
+          </h2>
 
           <p>
-            Please wait while we load the portfolio.
+            Please wait while we load
+            the portfolio.
           </p>
         </div>
       </main>
     );
   }
-
-  // -----------------------------
-  // ERROR / NOT FOUND
-  // -----------------------------
 
   if (error || !portfolio) {
     return (
@@ -66,10 +61,6 @@ export default function PublicPortfolio() {
       </main>
     );
   }
-
-  // -----------------------------
-  // DYNAMIC CANADIAN PORTFOLIO
-  // -----------------------------
 
   return (
     <DynamicPortfolioTemplate

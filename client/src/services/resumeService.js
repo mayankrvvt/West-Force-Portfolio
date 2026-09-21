@@ -1,23 +1,12 @@
 import {
   apiRequest,
-  waitForAuthUser,
+  uploadFile,
 } from "../utils/api";
 
 /**
  * ======================================================
- * BUILD RESUME
+ * BUILD AI RESUME
  * ======================================================
- *
- * Sends the user's WestForce portfolio to the backend.
- *
- * Frontend
- *   ↓
- * /api/resumes/build
- *   ↓
- * Gemini
- *   ↓
- * Canadian resume JSON
- *
  */
 
 export async function buildResume({
@@ -25,6 +14,7 @@ export async function buildResume({
   targetRole,
   country,
   experienceLevel,
+  options,
 }) {
   if (!portfolio) {
     throw new Error(
@@ -51,6 +41,9 @@ export async function buildResume({
         experienceLevel:
           experienceLevel ||
           "Entry Level",
+
+        options:
+          options || [],
       }),
     }
   );
@@ -58,6 +51,7 @@ export async function buildResume({
   if (!response?.resume) {
     throw new Error(
       response?.message ||
+        response?.error ||
         "Gemini did not return a resume."
     );
   }
@@ -67,25 +61,33 @@ export async function buildResume({
 
 /**
  * ======================================================
- * ENHANCE RESUME
+ * ENHANCE EXISTING RESUME
  * ======================================================
  *
- * Sends the actual PDF/DOC/DOCX file to the backend.
+ * Supported:
+ * - PDF
+ * - DOC
+ * - DOCX
  *
- * Frontend
+ * Flow:
+ *
+ * React
+ *   ↓
+ * uploadFile()
  *   ↓
  * FormData
  *   ↓
  * /api/resumes/enhance
  *   ↓
+ * Backend
+ *   ↓
  * Multer
  *   ↓
- * Text extraction
+ * Resume text extraction
  *   ↓
  * Gemini
  *   ↓
- * Enhanced resume JSON
- *
+ * Enhanced resume
  */
 
 export async function enhanceResume({
@@ -95,220 +97,191 @@ export async function enhanceResume({
   targetRole,
   country,
 }) {
-  // ----------------------------------------------------
-  // Make sure a file was provided
-  // ----------------------------------------------------
-
   if (!file) {
     throw new Error(
       "Resume file is required."
     );
   }
 
-  // ----------------------------------------------------
-  // Wait for Firebase authentication
-  // ----------------------------------------------------
+  /**
+   * ----------------------------------------------------
+   * Validate file size
+   * ----------------------------------------------------
+   */
 
-  const user = await waitForAuthUser();
+  const MAX_FILE_SIZE =
+    10 * 1024 * 1024;
 
-  if (!user) {
+  if (file.size > MAX_FILE_SIZE) {
     throw new Error(
-      "You must be signed in."
+      "Resume file must be smaller than 10 MB."
     );
   }
 
+  /**
+   * ----------------------------------------------------
+   * Validate file type
+   * ----------------------------------------------------
+   */
+
+  const allowedMimeTypes = [
+    "application/pdf",
+
+    "application/msword",
+
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  const allowedExtensions = [
+    ".pdf",
+    ".doc",
+    ".docx",
+  ];
+
+  const fileName =
+    file.name?.toLowerCase() || "";
+
+  const validMimeType =
+    allowedMimeTypes.includes(
+      file.type
+    );
+
+  const validExtension =
+    allowedExtensions.some(
+      (extension) =>
+        fileName.endsWith(extension)
+    );
+
+  if (
+    !validMimeType &&
+    !validExtension
+  ) {
+    throw new Error(
+      "Unsupported resume format. Please upload a PDF, DOC, or DOCX file."
+    );
+  }
+
+  /**
+   * ----------------------------------------------------
+   * Log request
+   * ----------------------------------------------------
+   */
+
   console.log(
-    "Firebase user authenticated for resume enhancement:",
-    user.uid
+    "[Resume Enhancer] Starting enhancement..."
   );
 
-  // ----------------------------------------------------
-  // Get Firebase ID token
-  // ----------------------------------------------------
-
-  const token =
-    await user.getIdToken();
-
-  // ----------------------------------------------------
-  // Create multipart form data
-  // ----------------------------------------------------
-
-  const formData =
-    new FormData();
-
-  // IMPORTANT:
-  // Send the actual File object.
-  //
-  // Do NOT upload the resume to Cloudinary first.
-  //
-  // The backend /api/resumes/enhance endpoint
-  // uses Multer memoryStorage to receive this file.
-
-  formData.append(
-    "file",
-    file
+  console.log(
+    "[Resume Enhancer] File:",
+    file.name
   );
 
-  // ----------------------------------------------------
-  // Portfolio information
-  // ----------------------------------------------------
-
-  formData.append(
-    "portfolio",
-    JSON.stringify(
-      portfolio || {}
-    )
+  console.log(
+    "[Resume Enhancer] Type:",
+    file.type
   );
 
-  // ----------------------------------------------------
-  // Selected AI improvements
-  // ----------------------------------------------------
-
-  formData.append(
-    "options",
-    JSON.stringify(
-      options || []
-    )
+  console.log(
+    "[Resume Enhancer] Size:",
+    file.size
   );
 
-  // ----------------------------------------------------
-  // Target role
-  // ----------------------------------------------------
-
-  formData.append(
-    "targetRole",
+  console.log(
+    "[Resume Enhancer] Target role:",
     targetRole ||
       "Software Engineer"
   );
 
-  // ----------------------------------------------------
-  // Target country
-  // ----------------------------------------------------
-
-  formData.append(
-    "country",
+  console.log(
+    "[Resume Enhancer] Country:",
     country ||
       "Canada"
   );
 
   /**
-   * ====================================================
-   * SEND REQUEST
-   * ====================================================
+   * ----------------------------------------------------
+   * Upload resume
+   * ----------------------------------------------------
    *
-   * Do NOT manually set Content-Type.
+   * IMPORTANT:
    *
-   * The browser automatically creates:
+   * Do NOT use fetch() directly here.
    *
-   * multipart/form-data;
-   * boundary=...
+   * uploadFile() handles:
+   *
+   * - Firebase authentication
+   * - FormData
+   * - Authorization
+   * - API URL
+   * - JSON response
    *
    */
 
   const response =
-    await fetch(
+    await uploadFile(
       "/api/resumes/enhance",
+      file,
       {
-        method: "POST",
+        fieldName: "file",
 
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
+        fields: {
+          portfolio:
+            JSON.stringify(
+              portfolio || {}
+            ),
+
+          options:
+            JSON.stringify(
+              options || []
+            ),
+
+          targetRole:
+            targetRole ||
+            "Software Engineer",
+
+          country:
+            country ||
+            "Canada",
         },
-
-        body: formData,
       }
     );
 
-  // ----------------------------------------------------
-  // Read response safely
-  // ----------------------------------------------------
+  /**
+   * ----------------------------------------------------
+   * Validate response
+   * ----------------------------------------------------
+   */
 
-  const contentType =
-    response.headers.get(
-      "content-type"
-    ) || "";
+  console.log(
+    "[Resume Enhancer] Server response:",
+    response
+  );
 
-  let result;
-
-  if (
-    contentType.includes(
-      "application/json"
-    )
-  ) {
-    try {
-      result =
-        await response.json();
-    } catch (error) {
-      console.error(
-        "Failed to parse resume enhancement response:",
-        error
-      );
-
-      throw new Error(
-        `The server returned invalid JSON (${response.status}).`
-      );
-    }
-  } else {
-    const rawText =
-      await response.text();
-
-    console.error(
-      "Resume enhancement returned a non-JSON response:",
-      {
-        status:
-          response.status,
-
-        statusText:
-          response.statusText,
-
-        contentType,
-
-        body:
-          rawText.slice(
-            0,
-            1000
-          ),
-      }
-    );
-
+  if (!response) {
     throw new Error(
-      `The server returned a non-JSON response (${response.status}).`
+      "No response received from the resume enhancement server."
     );
   }
 
-  // ----------------------------------------------------
-  // Handle backend errors
-  // ----------------------------------------------------
-
-  if (!response.ok) {
+  if (!response.resume) {
     throw new Error(
-      result?.message ||
-        result?.error ||
-        `Resume enhancement failed (${response.status}).`
+      response.message ||
+        response.error ||
+        "Gemini did not return an enhanced resume."
     );
   }
 
-  // ----------------------------------------------------
-  // Make sure Gemini returned a resume
-  // ----------------------------------------------------
+  console.log(
+    "[Resume Enhancer] Enhancement completed successfully."
+  );
 
-  if (!result?.resume) {
-    throw new Error(
-      "Gemini did not return an enhanced resume."
-    );
-  }
-
-  return result;
+  return response;
 }
 
 /**
  * ======================================================
- * GET SAVED RESUMES
+ * GET ALL SAVED RESUMES
  * ======================================================
- *
- * Gets all resumes belonging to the authenticated user.
- *
  */
 
 export async function getResumes() {
@@ -325,14 +298,31 @@ export async function getResumes() {
 
 /**
  * ======================================================
+ * GET SINGLE RESUME
+ * ======================================================
+ */
+
+export async function getResume(
+  resumeId
+) {
+  if (!resumeId) {
+    throw new Error(
+      "Resume ID is required."
+    );
+  }
+
+  const response =
+    await apiRequest(
+      `/api/resumes/${resumeId}`
+    );
+
+  return response?.resume;
+}
+
+/**
+ * ======================================================
  * SAVE RESUME
  * ======================================================
- *
- * Sends the resume to the backend.
- *
- * The backend can create/update the resume
- * depending on the data it receives.
- *
  */
 
 export async function saveResume(
@@ -355,13 +345,6 @@ export async function saveResume(
         }),
       }
     );
-
-  if (!response?.resume) {
-    throw new Error(
-      response?.message ||
-        "Failed to save resume."
-    );
-  }
 
   return response;
 }

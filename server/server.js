@@ -7,10 +7,12 @@ const connectDB = require("./config/db");
 
 require("./config/firebaseAdmin");
 
+const multer = require("multer");
 const userRoutes = require("./routes/userRoutes");
 const portfolioRoutes = require("./routes/portfolioRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");
 
 const app = express();
 
@@ -59,77 +61,64 @@ const configuredOrigins = CLIENT_URL
 const VERCEL_PREVIEW_PATTERN =
   /^https:\/\/west-force-portfolio-[a-z0-9-]+\.vercel\.app$/i;
 
+  const upload = multer({
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(
+        new Error(
+          "Only PDF, DOC and DOCX resumes are allowed."
+        )
+      );
+    }
+
+    cb(null, true);
+  },
+});
+
 /*
 |--------------------------------------------------------------------------
 | CORS
 |--------------------------------------------------------------------------
 */
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      /*
-      |--------------------------------------------------------------------------
-      | Requests without Origin
-      |--------------------------------------------------------------------------
-      |
-      | Examples:
-      | - curl
-      | - server-to-server requests
-      | - health checks
-      |
-      */
-
+    origin: function (origin, callback) {
+      // Allow requests without an Origin
+      // such as curl/server-to-server.
       if (!origin) {
         return callback(null, true);
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Exact configured origins
-      |--------------------------------------------------------------------------
-      */
-
-      if (configuredOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin)
+      ) {
         return callback(null, true);
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Vercel preview deployments
-      |--------------------------------------------------------------------------
-      */
-
-      if (VERCEL_PREVIEW_PATTERN.test(origin)) {
-        return callback(null, true);
-      }
-
-      /*
-      |--------------------------------------------------------------------------
-      | Reject unknown origins
-      |--------------------------------------------------------------------------
-      */
-
-      console.warn(
-        `CORS blocked origin: ${origin}`
+      return callback(
+        new Error(
+          "Not allowed by CORS"
+        )
       );
-
-      return callback(null, false);
     },
-
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
 
     credentials: true,
   })
@@ -211,6 +200,11 @@ app.use(
 app.use(
   "/api/chat",
   chatRoutes
+);
+
+app.use(
+  "/api/resumes",
+  resumeRoutes
 );
 
 /*

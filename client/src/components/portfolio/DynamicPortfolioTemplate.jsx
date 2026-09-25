@@ -33,6 +33,17 @@ function mapPortfolioData(portfolio) {
   const about = portfolio?.about || {};
 
   return {
+    // --------------------------------------------------
+    // DOCUMENT PROTECTION
+    // --------------------------------------------------
+    documentProtection: {
+      enabled:
+        portfolio?.documentProtection?.enabled === true,
+    },
+
+    // --------------------------------------------------
+    // PROFILE
+    // --------------------------------------------------
     profile: {
       name: profile.name || "",
       title: profile.title || "",
@@ -40,14 +51,19 @@ function mapPortfolioData(portfolio) {
       location: profile.location || "",
       email: profile.email || "",
       phone: profile.phone || "",
+
       image:
         profile.imageUrl ||
         profile.image ||
         "",
+
       available:
         profile.availableForWork !== false,
     },
 
+    // --------------------------------------------------
+    // HERO
+    // --------------------------------------------------
     hero: {
       greeting:
         hero.greeting ||
@@ -67,6 +83,9 @@ function mapPortfolioData(portfolio) {
         "",
     },
 
+    // --------------------------------------------------
+    // ABOUT
+    // --------------------------------------------------
     about: {
       title:
         about.title ||
@@ -115,46 +134,63 @@ function mapPortfolioData(portfolio) {
       ].filter(Boolean),
     },
 
+    // --------------------------------------------------
+    // EXPERIENCE
+    // --------------------------------------------------
     experience: Array.isArray(portfolio.experience)
       ? portfolio.experience.map((item) => ({
           company: item.company || "",
+
           position:
             item.position ||
             item.title ||
             "",
+
           duration:
             item.duration ||
             item.year ||
             "",
+
           location:
             item.location ||
             "",
+
           description:
             item.description ||
             "",
         }))
       : [],
 
+    // --------------------------------------------------
+    // EDUCATION
+    // --------------------------------------------------
     education: Array.isArray(portfolio.education)
       ? portfolio.education.map((item) => ({
           institution:
             item.institution ||
             "",
+
           degree:
             item.degree ||
             "",
+
           fieldOfStudy:
             item.fieldOfStudy ||
             "",
+
           year:
             item.year ||
             "",
+
           description:
             item.description ||
             "",
         }))
       : [],
 
+    // --------------------------------------------------
+    // SKILLS
+    // --------------------------------------------------
     skills: Array.isArray(portfolio.skills)
       ? portfolio.skills.map((skill) => {
           if (typeof skill === "string") {
@@ -168,49 +204,54 @@ function mapPortfolioData(portfolio) {
         })
       : [],
 
+    // --------------------------------------------------
+    // DOCUMENTS
+    // --------------------------------------------------
     documents: Array.isArray(portfolio.documents)
-  ? portfolio.documents.map((document) => ({
-      _id: document._id || "",
+      ? portfolio.documents.map((document) => ({
+          _id: document._id || "",
 
-      name:
-        document.name ||
-        "Document",
+          name:
+            document.name ||
+            "Document",
 
-      type:
-        document.type ||
-        document.format ||
-        "Document",
+          type:
+            document.type ||
+            document.format ||
+            "Document",
 
-      size:
-        document.size
-          ? formatFileSize(
-              document.size
-            )
-          : "",
+          size:
+            document.size
+              ? formatFileSize(
+                  document.size
+                )
+              : "",
 
-      /*
-       * DO NOT use these for the
-       * public document View.
-       *
-       * The backend protects access.
-       */
-      url: "",
+          /*
+           * DO NOT use these for the
+           * public document View.
+           *
+           * The backend protects access.
+           */
+          url: "",
+          publicId: "",
 
-      publicId: "",
+          resourceType:
+            document.resourceType ||
+            "",
 
-      resourceType:
-        document.resourceType ||
-        "",
+          format:
+            document.format ||
+            "",
 
-      format:
-        document.format ||
-        "",
+          protected:
+            document.protected !== false,
+        }))
+      : [],
 
-      protected:
-        document.protected !== false,
-    }))
-  : [],
-
+    // --------------------------------------------------
+    // RESUME
+    // --------------------------------------------------
     resume: {
       name:
         portfolio.resume?.name ||
@@ -237,61 +278,55 @@ export default function DynamicPortfolioTemplate({
     <div className="public-portfolio">
 
       {/* SIDEBAR */}
-
       <PortfolioSidebar
         profile={data.profile}
       />
 
       {/* MAIN CONTENT */}
-
       <main className="portfolio-main">
 
         {/* HERO */}
-
         <PortfolioHero
           data={data.hero}
           profile={data.profile}
         />
 
         {/* ABOUT */}
-
         <AboutSection
           data={data.about}
         />
 
         {/* EXPERIENCE */}
-
         <ExperienceSection
           data={data.experience}
         />
 
         {/* EDUCATION */}
-
         <EducationSection
           data={data.education}
         />
 
         {/* SKILLS */}
-
         <SkillsSection
           data={data.skills}
         />
 
         {/* DOCUMENTS */}
-
         <DocumentsSection
           data={data.documents}
+          protectionEnabled={
+            data.documentProtection.enabled
+          }
         />
 
         {/* RESUME */}
-
         <ResumeSection
           data={data.resume}
         />
 
         {/* FOOTER */}
-
         <footer className="portfolio-footer">
+
           <p>
             © {new Date().getFullYear()}{" "}
             {data.profile.name ||
@@ -301,6 +336,7 @@ export default function DynamicPortfolioTemplate({
           <span>
             Powered by WestForce
           </span>
+
         </footer>
 
       </main>

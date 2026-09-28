@@ -1917,3 +1917,327 @@ p {
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+/* =========================================================
+   WESTFORCE SCROLL TUTORIAL
+   ========================================================= */
+
+body.tutorial-modal-open {
+  overflow: hidden;
+}
+
+/* Full-screen dark overlay */
+.scroll-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 28px;
+
+  background: rgba(7, 22, 35, 0.78);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  animation: scrollTutorialFadeIn 0.25s ease both;
+}
+
+/* Main popup */
+.scroll-tutorial-card {
+  position: relative;
+
+  width: min(980px, 100%);
+
+  max-height: calc(100vh - 56px);
+
+  overflow: auto;
+
+  padding: 28px;
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  border-radius: 24px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.35);
+
+  animation: scrollTutorialCardIn 0.3s ease both;
+}
+
+/* Close button */
+.scroll-tutorial-close {
+  position: absolute;
+
+  top: 18px;
+  right: 18px;
+
+  z-index: 2;
+
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #dbe5ec;
+
+  border-radius: 50%;
+
+  color: #17364f;
+
+  background: rgba(255, 255, 255, 0.94);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.scroll-tutorial-close:hover {
+  transform: rotate(4deg) scale(1.04);
+
+  background: #f3f8fb;
+
+  box-shadow:
+    0 8px 20px rgba(23, 54, 79, 0.12);
+}
+
+/* Heading */
+.scroll-tutorial-heading {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 15px;
+
+  padding-right: 54px;
+
+  margin-bottom: 22px;
+}
+
+/* Play icon */
+.scroll-tutorial-icon {
+  width: 48px;
+  height: 48px;
+
+  flex: 0 0 48px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 14px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #17364f,
+      #28769d
+    );
+
+  box-shadow:
+    0 10px 25px rgba(40, 118, 157, 0.2);
+}
+
+/* Small label */
+.scroll-tutorial-heading span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #28769d;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.16em;
+}
+
+/* Main title */
+.scroll-tutorial-heading h2 {
+  margin: 0;
+
+  color: #17364f;
+
+  font-size: clamp(23px, 3vw, 32px);
+
+  line-height: 1.15;
+}
+
+/* Description */
+.scroll-tutorial-heading p {
+  max-width: 690px;
+
+  margin: 8px 0 0;
+
+  color: #71869d;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+/* Video container */
+.scroll-tutorial-video-wrap {
+  position: relative;
+
+  overflow: hidden;
+
+  aspect-ratio: 16 / 9;
+
+  border-radius: 17px;
+
+  background: #081722;
+
+  box-shadow:
+    0 18px 45px rgba(15, 43, 62, 0.18);
+}
+
+/* Video */
+.scroll-tutorial-video {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  border: 0;
+
+  object-fit: contain;
+
+  background: #081722;
+}
+
+/* Footer */
+.scroll-tutorial-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-top: 17px;
+}
+
+/* Footer text */
+.scroll-tutorial-footer span {
+  color: #91a2b1;
+
+  font-size: 12px;
+}
+
+/* Continue button */
+.scroll-tutorial-footer button {
+  border: 0;
+
+  border-radius: 10px;
+
+  padding: 10px 16px;
+
+  color: #ffffff;
+
+  background: #17364f;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.scroll-tutorial-footer button:hover {
+  transform: translateY(-1px);
+
+  background: #28769d;
+}
+
+/* Overlay animation */
+@keyframes scrollTutorialFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Popup animation */
+@keyframes scrollTutorialCardIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(18px)
+      scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+  .scroll-tutorial-overlay {
+    padding: 12px;
+  }
+
+  .scroll-tutorial-card {
+    max-height: calc(100vh - 24px);
+
+    padding: 20px;
+
+    border-radius: 19px;
+  }
+
+  .scroll-tutorial-heading {
+    gap: 11px;
+
+    margin-bottom: 16px;
+  }
+
+  .scroll-tutorial-icon {
+    width: 42px;
+    height: 42px;
+
+    flex-basis: 42px;
+  }
+
+  .scroll-tutorial-heading p {
+    font-size: 12px;
+  }
+
+  .scroll-tutorial-footer {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .scroll-tutorial-footer button {
+    width: 100%;
+  }
+}

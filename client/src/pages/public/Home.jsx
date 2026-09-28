@@ -11,6 +11,8 @@ import HowItWorks from "../../components/landing/HowItWorks";
 import Pricing from "../../components/landing/Pricing";
 import CTA from "../../components/landing/CTA";
 
+import ScrollTutorial from "../../components/landing/ScrollTutorial";
+
 import useGsapReveal from "../../hooks/useGsapReveal";
 
 export default function Home() {
@@ -22,7 +24,10 @@ export default function Home() {
     <>
       <Navbar />
 
-      <main ref={pageRef} className="home-page">
+      <main
+        ref={pageRef}
+        className="home-page"
+      >
         {/* Hero */}
         <Hero />
 
@@ -58,6 +63,12 @@ export default function Home() {
       </main>
 
       <Footer />
+
+      {/*
+        Tutorial automatically opens when
+        the visitor scrolls down the homepage.
+      */}
+      <ScrollTutorial />
     </>
   );
 }

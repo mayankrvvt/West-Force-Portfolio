@@ -7,10 +7,12 @@ const connectDB = require("./config/db");
 
 require("./config/firebaseAdmin");
 
+const multer = require("multer");
 const userRoutes = require("./routes/userRoutes");
 const portfolioRoutes = require("./routes/portfolioRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");
 
 const app = express();
 
@@ -58,6 +60,32 @@ const configuredOrigins = CLIENT_URL
 
 const VERCEL_PREVIEW_PATTERN =
   /^https:\/\/west-force-portfolio-[a-z0-9-]+\.vercel\.app$/i;
+
+  const upload = multer({
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(
+        new Error(
+          "Only PDF, DOC and DOCX resumes are allowed."
+        )
+      );
+    }
+
+    cb(null, true);
+  },
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -211,6 +239,11 @@ app.use(
 app.use(
   "/api/chat",
   chatRoutes
+);
+
+app.use(
+  "/api/resumes",
+  resumeRoutes
 );
 
 /*

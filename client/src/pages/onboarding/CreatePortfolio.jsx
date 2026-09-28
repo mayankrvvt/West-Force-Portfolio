@@ -1471,6 +1471,40 @@ function ProfileSection({ data, update }) {
     update("slug", slug);
   }
 
+  function handleProfilePhoto(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload a JPG, PNG, or WebP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > maxSize) {
+      alert("Profile photo must be smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
+    update("profile.imageUrl", previewUrl);
+
+    event.target.value = "";
+  }
+
   return (
     <div className="builder-section-stack">
       <div className="builder-fields-grid">
@@ -1494,14 +1528,23 @@ function ProfileSection({ data, update }) {
             </p>
           </div>
 
+          <input
+            id="profile-photo-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleProfilePhoto}
+            style={{ display: "none" }}
+          />
+
           <button
             type="button"
             className="builder-outline"
-            disabled
-            title="Photo uploads will be connected to Firebase Storage later"
+            onClick={() =>
+              document.getElementById("profile-photo-input")?.click()
+            }
           >
             <ImagePlus size={16} />
-            Add photo
+            {profile.imageUrl ? "Change photo" : "Add photo"}
           </button>
         </div>
 

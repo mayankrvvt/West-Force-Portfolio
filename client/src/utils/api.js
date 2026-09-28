@@ -1,43 +1,51 @@
 import { auth } from "../firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
-/*
-|--------------------------------------------------------------------------
-| API configuration
-|--------------------------------------------------------------------------
-|
-| With the Vercel reverse proxy, keep API calls relative:
-|
-|   /api/users
-|   /api/portfolios
-|   /api/uploads
-|   /api/chat
-|
-| Vercel forwards /api/* to Render.
-|
-| For local development, Vite proxies /api to localhost:5050.
-|
-*/
+/**
+ * ======================================================
+ * API CONFIGURATION
+ * ======================================================
+ *
+ * Production:
+ *
+ * Vercel
+ *   ↓
+ * /api/*
+ *   ↓
+ * Vercel rewrite
+ *   ↓
+ * Render
+ *
+ * Local:
+ *
+ * Vite
+ *   ↓
+ * /api/*
+ *   ↓
+ * localhost:5050
+ *
+ * We intentionally keep API_BASE_URL empty by default.
+ */
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "";
 
-/*
-|--------------------------------------------------------------------------
-| Build API URL
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * BUILD API URL
+ * ======================================================
+ */
 
 function buildApiUrl(endpoint) {
   if (!endpoint) {
-    throw new Error("API endpoint is required.");
+    throw new Error(
+      "API endpoint is required."
+    );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Already an absolute URL
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * Absolute URL
+   */
 
   if (
     endpoint.startsWith("http://") ||
@@ -46,59 +54,64 @@ function buildApiUrl(endpoint) {
     return endpoint;
   }
 
-  const normalizedBase = API_BASE_URL.replace(/\/+$/, "");
+  const normalizedBase =
+    API_BASE_URL.replace(
+      /\/+$/,
+      ""
+    );
 
-  const normalizedEndpoint = endpoint.startsWith("/")
-    ? endpoint
-    : `/${endpoint}`;
+  const normalizedEndpoint =
+    endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
 
   return `${normalizedBase}${normalizedEndpoint}`;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Wait for Firebase authentication state
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * WAIT FOR FIREBASE AUTH
+ * ======================================================
+ */
 
 export function waitForAuthUser() {
-  return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        unsubscribe();
-        resolve(user);
-      },
-      (error) => {
-        unsubscribe();
-        reject(error);
-      }
-    );
-  });
+  return new Promise(
+    (resolve, reject) => {
+      const unsubscribe =
+        onAuthStateChanged(
+          auth,
+          (user) => {
+            unsubscribe();
+            resolve(user);
+          },
+
+          (error) => {
+            unsubscribe();
+            reject(error);
+          }
+        );
+    }
+  );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get authenticated Firebase user
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * GET AUTHENTICATED USER
+ * ======================================================
+ */
 
 async function getAuthenticatedUser() {
-  /*
-  |--------------------------------------------------------------------------
-  | Firebase authStateReady
-  |--------------------------------------------------------------------------
-  */
-
   if (
-    typeof auth.authStateReady === "function"
+    typeof auth.authStateReady ===
+    "function"
   ) {
     await auth.authStateReady();
   } else {
     await waitForAuthUser();
   }
 
-  const user = auth.currentUser;
+  const user =
+    auth.currentUser;
 
   if (!user) {
     throw new Error(
@@ -109,11 +122,11 @@ async function getAuthenticatedUser() {
   return user;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get Firebase ID token
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * GET FIREBASE ID TOKEN
+ * ======================================================
+ */
 
 export async function getFirebaseIdToken(
   forceRefresh = false
@@ -121,14 +134,10 @@ export async function getFirebaseIdToken(
   const user =
     await getAuthenticatedUser();
 
-  /*
-  |--------------------------------------------------------------------------
-  | Get a fresh Firebase ID token
-  |--------------------------------------------------------------------------
-  */
-
   const token =
-    await user.getIdToken(forceRefresh);
+    await user.getIdToken(
+      forceRefresh
+    );
 
   if (!token) {
     throw new Error(
@@ -139,105 +148,94 @@ export async function getFirebaseIdToken(
   return token;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get authentication headers
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * AUTH HEADERS
+ * ======================================================
+ */
 
 export async function getAuthHeaders() {
   const token =
     await getFirebaseIdToken(false);
 
   return {
-    Authorization: `Bearer ${token}`,
+    Authorization:
+      `Bearer ${token}`,
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Standard API request
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * STANDARD API REQUEST
+ * ======================================================
+ */
 
 export async function apiRequest(
   endpoint,
   options = {}
 ) {
-  const url = buildApiUrl(endpoint);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Get Firebase token
-  |--------------------------------------------------------------------------
-  */
+  const url =
+    buildApiUrl(endpoint);
 
   const tokenHeaders =
     await getAuthHeaders();
-
-  /*
-  |--------------------------------------------------------------------------
-  | Build headers
-  |--------------------------------------------------------------------------
-  */
 
   const requestHeaders = {
     ...(options.headers || {}),
     ...tokenHeaders,
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Automatically add JSON content type
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * Add JSON content type automatically.
+   *
+   * Do NOT add it for FormData.
+   */
 
   if (
     options.body &&
     !(options.body instanceof FormData)
   ) {
-    requestHeaders["Content-Type"] =
-      requestHeaders["Content-Type"] ||
+    requestHeaders[
+      "Content-Type"
+    ] =
+      requestHeaders[
+        "Content-Type"
+      ] ||
       "application/json";
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Request
-  |--------------------------------------------------------------------------
-  */
-
   console.log(
-    `[API] ${options.method || "GET"} ${url}`
+    `[API] ${
+      options.method || "GET"
+    } ${url}`
   );
 
   console.log(
-    "[API] Firebase Authorization header:",
-    Boolean(requestHeaders.Authorization)
+    "[API] Firebase Authorization:",
+    Boolean(
+      requestHeaders.Authorization
+    )
   );
 
-  const response = await fetch(url, {
-    ...options,
+  const response =
+    await fetch(url, {
+      ...options,
 
-    method:
-      options.method || "GET",
+      method:
+        options.method || "GET",
 
-    headers: requestHeaders,
+      headers:
+        requestHeaders,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Required for credentialed cross-origin requests
-    |--------------------------------------------------------------------------
-    */
+      credentials:
+        "include",
+    });
 
-    credentials: "include",
-  });
-
-  /*
-  |--------------------------------------------------------------------------
-  | Parse response
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ====================================================
+   * PARSE RESPONSE
+   * ====================================================
+   */
 
   const contentType =
     response.headers.get(
@@ -252,10 +250,11 @@ export async function apiRequest(
     )
   ) {
     try {
-      result = await response.json();
+      result =
+        await response.json();
     } catch (error) {
       console.error(
-        "Failed to parse JSON response:",
+        "Failed to parse JSON:",
         error
       );
 
@@ -268,16 +267,21 @@ export async function apiRequest(
       await response.text();
 
     console.error(
-      "Server returned a non-JSON response:",
+      "Non-JSON server response:",
       {
-        status: response.status,
+        status:
+          response.status,
+
         statusText:
           response.statusText,
+
         contentType,
-        body: rawText.slice(
-          0,
-          1000
-        ),
+
+        body:
+          rawText.slice(
+            0,
+            1000
+          ),
       }
     );
 
@@ -286,23 +290,25 @@ export async function apiRequest(
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Handle HTTP errors
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ====================================================
+   * HTTP ERROR
+   * ====================================================
+   */
 
   if (!response.ok) {
-    const error = new Error(
-      result?.message ||
-        result?.error ||
-        `API request failed (${response.status}).`
-    );
+    const error =
+      new Error(
+        result?.message ||
+          result?.error ||
+          `API request failed (${response.status}).`
+      );
 
     error.status =
       response.status;
 
-    error.data = result;
+    error.data =
+      result;
 
     throw error;
   }
@@ -310,11 +316,11 @@ export async function apiRequest(
   return result;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Upload file
-|--------------------------------------------------------------------------
-*/
+/**
+ * ======================================================
+ * UPLOAD FILE
+ * ======================================================
+ */
 
 export async function uploadFile(
   endpoint,
@@ -327,34 +333,36 @@ export async function uploadFile(
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Firebase authentication
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ----------------------------------------------------
+   * Firebase authentication
+   * ----------------------------------------------------
+   */
 
   const tokenHeaders =
     await getAuthHeaders();
 
-  /*
-  |--------------------------------------------------------------------------
-  | FormData
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ----------------------------------------------------
+   * FormData
+   * ----------------------------------------------------
+   */
 
   const formData =
     new FormData();
 
   formData.append(
-    options.fieldName || "file",
+    options.fieldName ||
+      "file",
+
     file
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Additional form fields
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ----------------------------------------------------
+   * Additional fields
+   * ----------------------------------------------------
+   */
 
   if (options.fields) {
     Object.entries(
@@ -374,43 +382,55 @@ export async function uploadFile(
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Upload
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ----------------------------------------------------
+   * Request
+   * ----------------------------------------------------
+   */
 
-  const response = await fetch(
-    buildApiUrl(endpoint),
-    {
+  const url =
+    buildApiUrl(endpoint);
+
+  console.log(
+    `[UPLOAD] ${
+      options.method || "POST"
+    } ${url}`
+  );
+
+  const response =
+    await fetch(url, {
       method:
         options.method || "POST",
 
       headers: {
         ...tokenHeaders,
+
         ...(options.headers || {}),
       },
 
-      /*
-      |--------------------------------------------------------------------------
-      | DO NOT manually set Content-Type.
-      |
-      | Browser automatically creates:
-      | multipart/form-data; boundary=...
-      |--------------------------------------------------------------------------
-      */
+      /**
+       * IMPORTANT:
+       *
+       * Never manually set:
+       *
+       * Content-Type:
+       * multipart/form-data
+       *
+       * The browser must generate
+       * the boundary automatically.
+       */
 
       body: formData,
 
-      credentials: "include",
-    }
-  );
+      credentials:
+        "include",
+    });
 
-  /*
-  |--------------------------------------------------------------------------
-  | Parse response
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ====================================================
+   * PARSE RESPONSE
+   * ====================================================
+   */
 
   const contentType =
     response.headers.get(
@@ -427,9 +447,14 @@ export async function uploadFile(
     try {
       result =
         await response.json();
-    } catch {
+    } catch (error) {
+      console.error(
+        "Failed to parse upload response:",
+        error
+      );
+
       throw new Error(
-        `Upload server returned invalid JSON (${response.status}).`
+        `Server returned invalid JSON (${response.status}).`
       );
     }
   } else {
@@ -437,35 +462,48 @@ export async function uploadFile(
       await response.text();
 
     console.error(
-      "Upload server returned non-JSON response:",
-      rawText.slice(
-        0,
-        1000
-      )
+      "Upload returned non-JSON:",
+      {
+        status:
+          response.status,
+
+        statusText:
+          response.statusText,
+
+        contentType,
+
+        body:
+          rawText.slice(
+            0,
+            1000
+          ),
+      }
     );
 
     throw new Error(
-      `Upload server returned a non-JSON response (${response.status}).`
+      `Server returned a non-JSON response (${response.status}).`
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Handle errors
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ====================================================
+   * HANDLE ERROR
+   * ====================================================
+   */
 
   if (!response.ok) {
-    const error = new Error(
-      result?.message ||
-        result?.error ||
-        `File upload failed (${response.status}).`
-    );
+    const error =
+      new Error(
+        result?.message ||
+          result?.error ||
+          `File upload failed (${response.status}).`
+      );
 
     error.status =
       response.status;
 
-    error.data = result;
+    error.data =
+      result;
 
     throw error;
   }
@@ -473,27 +511,26 @@ export async function uploadFile(
   return result;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Public API request
-|--------------------------------------------------------------------------
-|
-| Useful for public endpoints that do NOT require Firebase authentication.
-|
-*/
+/**
+ * ======================================================
+ * PUBLIC API REQUEST
+ * ======================================================
+ */
 
 export async function publicApiRequest(
   endpoint,
   options = {}
 ) {
-  const response = await fetch(
-    buildApiUrl(endpoint),
-    {
-      ...options,
+  const response =
+    await fetch(
+      buildApiUrl(endpoint),
+      {
+        ...options,
 
-      credentials: "include",
-    }
-  );
+        credentials:
+          "include",
+      }
+    );
 
   const contentType =
     response.headers.get(
@@ -508,9 +545,8 @@ export async function publicApiRequest(
     )
   ) {
     result =
-      await response.json().catch(
-        () => ({})
-      );
+      await response.json()
+        .catch(() => ({}));
   } else {
     const text =
       await response.text();
@@ -521,22 +557,30 @@ export async function publicApiRequest(
   }
 
   if (!response.ok) {
-    const error = new Error(
-      result?.message ||
-        result?.error ||
-        `API request failed (${response.status}).`
-    );
+    const error =
+      new Error(
+        result?.message ||
+          result?.error ||
+          `API request failed (${response.status}).`
+      );
 
     error.status =
       response.status;
 
-    error.data = result;
+    error.data =
+      result;
 
     throw error;
   }
 
   return result;
 }
+
+/**
+ * ======================================================
+ * EXPORTS
+ * ======================================================
+ */
 
 export {
   API_BASE_URL,

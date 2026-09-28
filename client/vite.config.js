@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -11,10 +10,9 @@ export default defineConfig({
 
     proxy: {
       "/api": {
-        target: "https://west-force-portfolio.onrender.com",
+        target: "http://localhost:5050",
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path,
+        secure: false,
       },
     },
   },

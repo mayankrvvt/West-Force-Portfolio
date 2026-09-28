@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   Lock,
   FileText,
@@ -10,29 +11,47 @@ import SectionTitle from "./SectionTitle";
 
 export default function DocumentsSection({
   data = [],
+  protectionEnabled = false,
 }) {
   const [pin, setPin] = useState("");
 
-  const [unlocked, setUnlocked] =
-    useState(false);
+  const [unlocked, setUnlocked] = useState(
+    !protectionEnabled
+  );
 
   const [unlocking, setUnlocking] =
     useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
 
-  const [success, setSuccess] =
-    useState("");
+  const [success, setSuccess] = useState("");
 
   const hasDocuments =
     Array.isArray(data) &&
     data.length > 0;
 
-  async function unlockDocuments(
-    event
-  ) {
+  /*
+   * If protection is disabled,
+   * documents are immediately accessible.
+   */
+  React.useEffect(() => {
+    if (!protectionEnabled) {
+      setUnlocked(true);
+      setPin("");
+      setError("");
+      setSuccess("");
+    } else {
+      setUnlocked(false);
+    }
+  }, [protectionEnabled]);
+
+  async function unlockDocuments(event) {
     event.preventDefault();
+
+    if (!protectionEnabled) {
+      setUnlocked(true);
+      return;
+    }
 
     if (!/^\d{4}$/.test(pin)) {
       setError(
@@ -52,40 +71,50 @@ export default function DocumentsSection({
           .filter(Boolean)
           .at(-1);
 
-      const response =
-        await fetch(
-          `/api/portfolios/${encodeURIComponent(
-            slug
-          )}/unlock-documents`,
-          {
-            method: "POST",
+      const response = await fetch(
+        `/api/portfolios/${encodeURIComponent(
+          slug
+        )}/unlock-documents`,
+        {
+          method: "POST",
 
-            credentials: "include",
+          credentials: "include",
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-            body: JSON.stringify({
-              pin,
-            }),
-          }
-        );
+          body: JSON.stringify({
+            pin,
+          }),
+        }
+      );
 
       let result = {};
 
       try {
-        result =
-          await response.json();
+        result = await response.json();
       } catch {
         result = {};
       }
 
+      /*
+       * IMPORTANT:
+       *
+       * Never consider a PIN correct unless
+       * the backend explicitly returns success.
+       */
       if (!response.ok) {
         throw new Error(
           result.message ||
-            "Unable to unlock documents."
+            "Incorrect PIN."
+        );
+      }
+
+      if (result.unlocked !== true) {
+        throw new Error(
+          "Unable to unlock documents."
         );
       }
 
@@ -97,6 +126,8 @@ export default function DocumentsSection({
 
       setPin("");
     } catch (unlockError) {
+      setUnlocked(false);
+
       setError(
         unlockError.message ||
           "Incorrect PIN."
@@ -202,110 +233,109 @@ export default function DocumentsSection({
             )}
           </div>
 
-          {!unlocked && (
-            <div className="document-pin-card">
-              <div className="document-pin-icon">
-                <Lock size={22} />
-              </div>
+          {protectionEnabled &&
+            !unlocked && (
+              <div className="document-pin-card">
+                <div className="document-pin-icon">
+                  <Lock size={22} />
+                </div>
 
-              <div className="document-pin-content">
-                <span className="document-pin-eyebrow">
-                  PRIVATE DOCUMENTS
-                </span>
+                <div className="document-pin-content">
+                  <span className="document-pin-eyebrow">
+                    PRIVATE DOCUMENTS
+                  </span>
 
-                <h3>
-                  Enter the PIN to access
-                  documents
-                </h3>
+                  <h3>
+                    Enter the PIN to access
+                    documents
+                  </h3>
 
-                <p>
-                  You can see the document
-                  information above, but the
-                  files themselves are protected.
-                </p>
+                  <p>
+                    You can see the document
+                    information above, but the
+                    files themselves are protected.
+                  </p>
 
-                <form
-                  className="document-pin-form"
-                  onSubmit={
-                    unlockDocuments
-                  }
-                >
-                  <input
-                    type="password"
-                    value={pin}
-                    onChange={(event) => {
-                      const value =
-                        event.target.value
-                          .replace(
-                            /\D/g,
-                            ""
-                          )
-                          .slice(0, 4);
-
-                      setPin(value);
-                      setError("");
-                    }}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={4}
-                    placeholder="••••"
-                    aria-label="4-digit document PIN"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={
-                      unlocking ||
-                      pin.length !== 4
+                  <form
+                    className="document-pin-form"
+                    onSubmit={
+                      unlockDocuments
                     }
                   >
-                    {unlocking
-                      ? "Checking..."
-                      : "Unlock documents"}
-                  </button>
-                </form>
+                    <input
+                      type="password"
+                      value={pin}
+                      onChange={(event) => {
+                        const value =
+                          event.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 4);
 
-                {error && (
-                  <div
-                    className="document-pin-message document-pin-error"
-                    role="alert"
-                  >
-                    <AlertCircle
-                      size={16}
+                        setPin(value);
+                        setError("");
+                      }}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={4}
+                      placeholder="••••"
+                      aria-label="4-digit document PIN"
                     />
 
-                    <span>
-                      {error}
-                    </span>
-                  </div>
-                )}
+                    <button
+                      type="submit"
+                      disabled={
+                        unlocking ||
+                        pin.length !== 4
+                      }
+                    >
+                      {unlocking
+                        ? "Checking..."
+                        : "Unlock documents"}
+                    </button>
+                  </form>
 
-                {success && (
-                  <div className="document-pin-message document-pin-success">
-                    <CheckCircle2
-                      size={16}
-                    />
+                  {error && (
+                    <div
+                      className="document-pin-message document-pin-error"
+                      role="alert"
+                    >
+                      <AlertCircle
+                        size={16}
+                      />
 
-                    <span>
-                      {success}
-                    </span>
-                  </div>
-                )}
+                      <span>
+                        {error}
+                      </span>
+                    </div>
+                  )}
+
+                  {success && (
+                    <div className="document-pin-message document-pin-success">
+                      <CheckCircle2
+                        size={16}
+                      />
+
+                      <span>
+                        {success}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {unlocked && (
-            <div className="document-unlocked-banner">
-              <CheckCircle2 size={18} />
+          {protectionEnabled &&
+            unlocked && (
+              <div className="document-unlocked-banner">
+                <CheckCircle2 size={18} />
 
-              <span>
-                Documents unlocked. Access
-                will automatically expire
-                after 15 minutes.
-              </span>
-            </div>
-          )}
+                <span>
+                  Documents unlocked. Access
+                  will automatically expire
+                  after 15 minutes.
+                </span>
+              </div>
+            )}
         </>
       )}
     </section>

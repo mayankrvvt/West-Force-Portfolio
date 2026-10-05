@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as tus from "tus-js-client";
 import { apiRequest } from "../../utils/api";
 import { auth } from "../../firebase/firebase";
 
@@ -753,7 +754,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
   }
 }
 
-  function handleVideoFile(event) {
+  async function handleVideoFile(event) {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -766,7 +767,25 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       "video/mp4",
       "video/webm",
       "video/quicktime",
+      "video/x-m4v",
+      "video/3gpp",
+      "video/3gpp2",
+      "application/octet-stream",
     ];
+
+    const fileExtension = file.name
+      ?.split(".")
+      .pop()
+      ?.toLowerCase();
+
+    const isAllowedVideoExtension = [
+      "mp4",
+      "mov",
+      "m4v",
+      "m4",
+      "webm",
+      "avi",
+    ].includes(fileExtension);
 
     if (file.size > maxSize) {
       setError(
@@ -777,27 +796,237 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       return;
     }
 
-    if (!allowedTypes.includes(file.type)) {
+    if (
+      !allowedTypes.includes(file.type) &&
+      !isAllowedVideoExtension
+    ) {
       setError(
-        "Please upload an MP4, MOV or WebM video."
+        "Please upload an MP4, MOV, M4, M4V or WebM video."
       );
 
       event.target.value = "";
       return;
     }
 
-    setData((current) => ({
-      ...current,
+    const user = auth.currentUser;
 
-      about: {
-        ...current.about,
-        videoUrl: `pending:${file.name}`,
-      },
-    }));
+    if (!user) {
+      setError(
+        "You must be signed in before uploading a video."
+      );
+      event.target.value = "";
+      return;
+    }
 
-    setError("");
+    try {
+      setError("");
+      setUploadingFile("video");
+      setUploadProgress(0);
 
-    event.target.value = "";
+      const token = await user.getIdToken();
+
+      const uploadConfigResponse = await fetch(
+        "/api/uploads/video/config"
+      );
+
+      let uploadConfig = { enabled: false };
+
+      try {
+        uploadConfig = await uploadConfigResponse.json();
+      } catch {
+        uploadConfig = { enabled: false };
+      }
+
+      const startResumableUpload = async () => {
+        if (!uploadConfig.enabled) {
+          throw new Error(
+            "Resumable upload is not configured on the server."
+          );
+        }
+
+        const response = await fetch(
+          "/api/uploads/video/init",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+              size: file.size,
+            }),
+          }
+        );
+
+        let result;
+
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error(
+            "The video upload server returned an invalid response."
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            result.message || "Video upload failed."
+          );
+        }
+
+        if (!result?.tusEndpoint || !result?.path) {
+          throw new Error(
+            "The backend did not return a resumable upload session."
+          );
+        }
+
+        return result;
+      };
+
+      let uploadedFile;
+
+      try {
+        const session = await startResumableUpload();
+
+        await new Promise((resolve, reject) => {
+          const upload = new tus.Upload(file, {
+            endpoint: session.tusEndpoint,
+            metadata: {
+              filename: file.name,
+              filetype: file.type,
+              path: session.path,
+            },
+            chunkSize: 5 * 1024 * 1024,
+            retryDelays: [0, 1000, 3000, 5000],
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "x-upsert": "false",
+            },
+            onProgress: (bytesUploaded, bytesTotal) => {
+              const percent = Math.min(
+                95,
+                Math.round(
+                  (bytesUploaded / bytesTotal) * 100
+                )
+              );
+
+              setUploadProgress(percent);
+            },
+            onError: (error) => {
+              reject(error);
+            },
+            onSuccess: async () => {
+              try {
+                const completeResponse = await fetch(
+                  "/api/uploads/video/complete",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      path: session.path,
+                      filename: file.name,
+                      size: file.size,
+                    }),
+                  }
+                );
+
+                let completeResult;
+
+                try {
+                  completeResult = await completeResponse.json();
+                } catch {
+                  throw new Error(
+                    "The upload completion response was invalid."
+                  );
+                }
+
+                if (!completeResponse.ok) {
+                  throw new Error(
+                    completeResult.message ||
+                      "Video upload could not be finalized."
+                  );
+                }
+
+                uploadedFile = completeResult.file;
+                resolve();
+              } catch (completeError) {
+                reject(completeError);
+              }
+            },
+          });
+
+          upload.start();
+        });
+      } catch (tusError) {
+        const fallbackResponse = await fetch("/api/uploads", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: (() => {
+            const form = new FormData();
+            form.append("file", file);
+            return form;
+          })(),
+        });
+
+        let fallbackResult;
+
+        try {
+          fallbackResult = await fallbackResponse.json();
+        } catch {
+          throw tusError;
+        }
+
+        if (!fallbackResponse.ok) {
+          throw new Error(
+            fallbackResult.message ||
+              "Video upload failed."
+          );
+        }
+
+        uploadedFile = fallbackResult.file;
+      }
+
+      if (!uploadedFile?.url) {
+        throw new Error(
+          "Upload succeeded, but no video URL was returned."
+        );
+      }
+
+      setData((current) => ({
+        ...current,
+        about: {
+          ...current.about,
+          videoUrl: uploadedFile.url,
+        },
+      }));
+
+      setUploadProgress(100);
+      console.log(
+        "Video upload successful:",
+        uploadedFile.url
+      );
+    } catch (error) {
+      console.error(
+        "Video upload error:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Unable to upload your video."
+      );
+    } finally {
+      setUploadingFile("");
+      setUploadProgress(0);
+      event.target.value = "";
+    }
   }
 
   function validateStep() {
@@ -1720,13 +1949,26 @@ function AboutSection({
   handleVideoFile,
 }) {
   const selectedVideo =
-    data.about.videoUrl?.startsWith(
-      "pending:"
-    )
-      ? data.about.videoUrl.replace(
-          "pending:",
-          ""
-        )
+    data.about.videoUrl
+      ? (() => {
+          const value = data.about.videoUrl.trim();
+
+          if (value.startsWith("pending:")) {
+            return value.replace("pending:", "");
+          }
+
+          try {
+            return decodeURIComponent(
+              new URL(value).pathname
+                .split("/")
+                .pop() || "Uploaded video"
+            );
+          } catch {
+            return value
+              .split("/")
+              .pop() || "Uploaded video";
+          }
+        })()
       : "";
 
   return (
@@ -1784,7 +2026,7 @@ function AboutSection({
 
             <input
               type="file"
-              accept="video/mp4,video/webm,video/quicktime"
+              accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.mov,.m4,.m4v,.webm"
               onChange={handleVideoFile}
             />
 

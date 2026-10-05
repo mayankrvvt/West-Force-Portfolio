@@ -97,7 +97,33 @@ function mapPortfolioData(portfolio) {
 
       videoUrl:
         about.videoUrl ||
+        about.video?.url ||
         "",
+
+      video:
+        about.video && typeof about.video === "object"
+          ? {
+              url: about.video.url || "",
+              title:
+                about.video.title ||
+                "Video Introduction",
+              description:
+                about.video.description ||
+                "Get to know me, my experience, and what I bring to the table.",
+              poster:
+                about.video.poster ||
+                "",
+            }
+          : {
+              url:
+                about.videoUrl ||
+                about.video?.url ||
+                "",
+              title: "Video Introduction",
+              description:
+                "Get to know me, my experience, and what I bring to the table.",
+              poster: about.poster || "",
+            },
 
       details: [
         profile.location

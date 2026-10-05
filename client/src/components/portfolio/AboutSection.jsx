@@ -4,10 +4,22 @@ import SectionTitle from "./SectionTitle.jsx";
 export default function AboutSection({ data }) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
-  const video = data?.video;
+  const video =
+    data?.video ||
+    (data?.videoUrl
+      ? {
+          url: data.videoUrl,
+          title: "Video Introduction",
+          description:
+            "Get to know me, my experience, and what I bring to the table.",
+        }
+      : null);
 
-  const hasVideo =
-    Boolean(video?.url && video.url.trim());
+  const hasVideo = Boolean(
+    video?.url &&
+      video.url.trim() &&
+      !video.url.trim().startsWith("pending:")
+  );
 
   const openVideo = () => {
     if (!hasVideo) return;

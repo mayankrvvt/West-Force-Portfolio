@@ -1,0 +1,17 @@
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+serviceAccountKey.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

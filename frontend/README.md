@@ -63,6 +63,12 @@ Place your Firebase Admin service account JSON at
 and must never be committed. If a service account key was previously committed,
 revoke it and create a replacement.
 
+For Render, do not commit the service-account file. Add a secret environment
+variable named `FIREBASE_SERVICE_ACCOUNT_JSON` containing the complete JSON
+contents of a Firebase Admin service account key. Alternatively, set
+`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
+as separate environment variables; preserve the private key's newline escapes.
+
 ## Running
 
 Run commands from the `frontend/` directory:

@@ -4062,6 +4062,24 @@ button {
   line-height: 1.5;
 }
 
+.signin-notice {
+  margin-bottom: 20px;
+
+  padding: 13px 15px;
+
+  color: #17613b;
+
+  background: #edf9f1;
+
+  border: 1px solid #b8e4c6;
+
+  border-radius: 12px;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
 
 /* ---------------------------------------------------------
    Form

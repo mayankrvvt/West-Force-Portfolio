@@ -299,6 +299,8 @@ export default function SignUp() {
     }
 
     setLoading(true);
+    let accountCreated = false;
+    let profileSetupTimeout;
 
     try {
       /* -----------------------------------------
@@ -322,6 +324,7 @@ export default function SignUp() {
         );
 
       const user = userCredential.user;
+      accountCreated = true;
 
       console.log(
         "Firebase user created:",
@@ -340,52 +343,50 @@ export default function SignUp() {
          4. Create Firestore user document
       ----------------------------------------- */
 
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          uid: user.uid,
-          fullName,
-          email,
-
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }
-      );
-
-      console.log(
-        "Firestore user document created."
-      );
-
-      /* -----------------------------------------
-         5. Create empty portfolio document
-      ----------------------------------------- */
-
-      await setDoc(
-        doc(db, "portfolios", user.uid),
-        {
-          userId: user.uid,
-
-          personalInfo: {
+      const profileWrites = Promise.all([
+        setDoc(
+          doc(db, "users", user.uid),
+          {
+            uid: user.uid,
             fullName,
             email,
-          },
 
-          education: [],
-          experience: [],
-          skills: [],
-          projects: [],
-          certifications: [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }
+        ),
+        setDoc(
+          doc(db, "portfolios", user.uid),
+          {
+            userId: user.uid,
 
-          isPublished: false,
+            personalInfo: {
+              fullName,
+              email,
+            },
 
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }
-      );
+            education: [],
+            experience: [],
+            skills: [],
+            projects: [],
+            certifications: [],
 
-      console.log(
-        "Firestore portfolio document created."
-      );
+            isPublished: false,
+
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }
+        ),
+      ]);
+
+      await Promise.race([
+        profileWrites,
+        new Promise((_, reject) => {
+          profileSetupTimeout = window.setTimeout(() => {
+            reject(new Error("Firestore profile setup timed out."));
+          }, 10000);
+        }),
+      ]);
 
       /* -----------------------------------------
          6. Account successfully created
@@ -411,6 +412,10 @@ export default function SignUp() {
 
       navigate("/auth/sign-in", {
         replace: true,
+        state: {
+          signupNotice:
+            "Your account was created successfully. Please sign in.",
+        },
       });
     } catch (signupError) {
       console.error(
@@ -428,12 +433,32 @@ export default function SignUp() {
         signupError.message
       );
 
-      setError(
-        getFirebaseErrorMessage(
-          signupError.code
-        )
-      );
+      if (accountCreated) {
+        try {
+          await signOut(auth);
+        } catch (signOutError) {
+          console.error(
+            "Could not sign out after account creation:",
+            signOutError
+          );
+        }
+
+        navigate("/auth/sign-in", {
+          replace: true,
+          state: {
+            signupNotice:
+              "Your account was created, but profile setup could not be confirmed. Check that the default Firestore database exists in Firebase Console before continuing.",
+          },
+        });
+      } else {
+        setError(
+          getFirebaseErrorMessage(
+            signupError.code
+          )
+        );
+      }
     } finally {
+      window.clearTimeout(profileSetupTimeout);
       setLoading(false);
     }
   };

@@ -610,6 +610,15 @@ export default function SignIn() {
           </p>
         </div>
 
+        {location.state?.signupNotice && (
+          <div
+            className="signin-notice"
+            role="status"
+          >
+            {location.state.signupNotice}
+          </div>
+        )}
+
         {/* Error */}
 
         {error && (

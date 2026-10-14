@@ -6,6 +6,9 @@ const User = require("../models/User");
 const authenticateUser = require("../middleware/authMiddleware");
 const { requirePaidUser } = require("../middleware/requirePaidUser");
 const cloudinary = require("../config/cloudinary");
+const {
+  getDocumentDownloadDetails,
+} = require("../utils/documentDownload");
 
 const router = express.Router();
 
@@ -982,13 +985,21 @@ router.get(
        * Generate a short-lived signed
        * authenticated Cloudinary URL.
        */
+      const downloadDetails =
+        getDocumentDownloadDetails(document);
+
       const signedUrl =
         cloudinary.url(
           document.publicId,
           {
+            format: downloadDetails.format,
+
             resource_type:
               document.resourceType ||
               "raw",
+
+            flags:
+              `attachment:${downloadDetails.filename}`,
 
             type: "authenticated",
 

@@ -723,6 +723,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                   publicId: uploadedFile.publicId,
                   resourceType: uploadedFile.resourceType,
                   format: uploadedFile.format,
+                  mimeType: uploadedFile.mimeType,
                   size: uploadedFile.size,
                   protected: true,
                 }

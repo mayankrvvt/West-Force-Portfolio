@@ -34,6 +34,11 @@ const documentSchema = new mongoose.Schema(
       default: "",
     },
 
+    mimeType: {
+      type: String,
+      default: "",
+    },
+
     size: {
       type: Number,
       default: 0,

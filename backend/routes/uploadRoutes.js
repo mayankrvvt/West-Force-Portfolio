@@ -1248,6 +1248,9 @@ router.post(
           format:
             result.format,
 
+          mimeType:
+            req.file.mimetype,
+
           size:
             result.bytes,
 

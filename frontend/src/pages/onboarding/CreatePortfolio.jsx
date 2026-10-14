@@ -219,6 +219,9 @@ function readDraft() {
       profile: {
         ...emptyPortfolio.profile,
         ...(parsed.profile || {}),
+        imageUrl: parsed.profile?.imageUrl?.startsWith("blob:")
+          ? ""
+          : parsed.profile?.imageUrl || "",
       },
 
       hero: {
@@ -437,6 +440,10 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           profile: {
             ...current.profile,
             ...(result.portfolio.profile || {}),
+            imageUrl: result.portfolio.profile?.imageUrl?.startsWith("blob:")
+              ? ""
+              : result.portfolio.profile?.imageUrl ||
+                current.profile.imageUrl,
           },
           hero: {
             ...current.hero,
@@ -590,10 +597,17 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     return;
   }
 
-  const maxSize = 10 * 1024 * 1024;
+  const maxSize =
+    type === "profile"
+      ? 5 * 1024 * 1024
+      : 10 * 1024 * 1024;
 
   if (file.size > maxSize) {
-    setError("Files must be smaller than 10 MB.");
+    setError(
+      type === "profile"
+        ? "Profile photo must be smaller than 5 MB."
+        : "Files must be smaller than 10 MB."
+    );
     event.target.value = "";
     return;
   }
@@ -612,6 +626,11 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/jpeg",
     "image/png",
+  ];
+  const allowedProfilePhotoTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
   ];
 
   const allowedResumeTypes = [
@@ -640,13 +659,24 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     return;
   }
 
+  if (
+    type === "profile" &&
+    !allowedProfilePhotoTypes.includes(file.type)
+  ) {
+    setError("Please upload a JPG, PNG, or WebP image.");
+    event.target.value = "";
+    return;
+  }
+
   try {
     setError("");
 
     const uploadKey =
       type === "resume"
         ? "resume"
-        : `document-${index}`;
+        : type === "profile"
+          ? "profile-photo"
+          : `document-${index}`;
 
     setUploadingFile(uploadKey);
     setUploadProgress(0);
@@ -712,6 +742,14 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           resourceType: uploadedFile.resourceType,
           format: uploadedFile.format,
           mimeType: uploadedFile.mimeType,
+        },
+      }));
+    } else if (type === "profile") {
+      setData((current) => ({
+        ...current,
+        profile: {
+          ...current.profile,
+          imageUrl: uploadedFile.url,
         },
       }));
     } else {
@@ -1371,7 +1409,9 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
       const finalData = {
         ...data,
-        status: "draft",
+        status: portfolioExists
+          ? data.status
+          : "draft",
         documentProtection: data.documentProtection?.enabled
           ? {
               enabled: true,
@@ -1592,6 +1632,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 <ProfileSection
                   data={data}
                   update={update}
+                  handleFile={handleFile}
+                  uploadingFile={uploadingFile}
                 />
               )}
 
@@ -1828,7 +1870,12 @@ function TextArea({
    PROFILE
    ========================================================= */
 
-function ProfileSection({ data, update }) {
+function ProfileSection({
+  data,
+  update,
+  handleFile,
+  uploadingFile,
+}) {
   const profile = data.profile;
 
   function handleSlugChange(value) {
@@ -1844,37 +1891,7 @@ function ProfileSection({ data, update }) {
   }
 
   function handleProfilePhoto(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    const maxSize = 5 * 1024 * 1024;
-
-    if (!allowedTypes.includes(file.type)) {
-      alert("Please upload a JPG, PNG, or WebP image.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > maxSize) {
-      alert("Profile photo must be smaller than 5 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-
-    update("profile.imageUrl", previewUrl);
-
-    event.target.value = "";
+    handleFile("profile", 0, event);
   }
 
   return (
@@ -1911,12 +1928,17 @@ function ProfileSection({ data, update }) {
           <button
             type="button"
             className="builder-outline"
+            disabled={uploadingFile === "profile-photo"}
             onClick={() =>
               document.getElementById("profile-photo-input")?.click()
             }
           >
             <ImagePlus size={16} />
-            {profile.imageUrl ? "Change photo" : "Add photo"}
+            {uploadingFile === "profile-photo"
+              ? "Uploading photo..."
+              : profile.imageUrl
+                ? "Change photo"
+                : "Add photo"}
           </button>
         </div>
 

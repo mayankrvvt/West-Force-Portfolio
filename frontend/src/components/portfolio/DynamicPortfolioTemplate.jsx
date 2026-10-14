@@ -53,9 +53,12 @@ function mapPortfolioData(portfolio) {
       phone: profile.phone || "",
 
       image:
-        profile.imageUrl ||
-        profile.image ||
-        "",
+        [profile.imageUrl, profile.image].find(
+          (imageUrl) =>
+            typeof imageUrl === "string" &&
+            imageUrl.trim() &&
+            !imageUrl.startsWith("blob:")
+        ) || "",
 
       available:
         profile.availableForWork !== false,

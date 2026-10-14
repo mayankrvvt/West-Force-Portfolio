@@ -999,7 +999,7 @@ router.get(
               "raw",
 
             flags:
-              `attachment:${downloadDetails.filename}`,
+              `attachment:${downloadDetails.cloudinaryAttachmentFilename}`,
 
             type: "authenticated",
 

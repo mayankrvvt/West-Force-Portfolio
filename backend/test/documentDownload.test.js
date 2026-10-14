@@ -14,6 +14,7 @@ test("keeps a safe uploaded PDF filename and its extension", () => {
     }),
     {
       filename: "Jordan_Lee_-_Resume.pdf",
+      cloudinaryAttachmentFilename: "Jordan_Lee_-_Resume%2Epdf",
       format: "pdf",
     }
   );
@@ -27,6 +28,7 @@ test("uses the uploaded file MIME type instead of forcing PDF", () => {
     }),
     {
       filename: "Reference_Letter.docx",
+      cloudinaryAttachmentFilename: "Reference_Letter%2Edocx",
       format: "docx",
     }
   );
@@ -40,6 +42,7 @@ test("repairs a filename extension that conflicts with the uploaded MIME type", 
     }),
     {
       filename: "Portfolio.png",
+      cloudinaryAttachmentFilename: "Portfolio%2Epng",
       format: "png",
     }
   );
@@ -53,6 +56,7 @@ test("falls back to the stored format for older documents without MIME metadata"
     }),
     {
       filename: "certificate.doc",
+      cloudinaryAttachmentFilename: "certificate%2Edoc",
       format: "doc",
     }
   );

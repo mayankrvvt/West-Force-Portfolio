@@ -50,6 +50,7 @@ function getDocumentDownloadDetails(document) {
 
   return {
     filename,
+    cloudinaryAttachmentFilename: filename.replace(/\./g, "%2E"),
     format: extension ? extension.slice(1) : "",
   };
 }

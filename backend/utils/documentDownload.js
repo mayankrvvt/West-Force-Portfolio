@@ -11,6 +11,17 @@ const EXTENSIONS_BY_MIME_TYPE = {
   "image/webp": [".webp"],
 };
 
+const MIME_TYPE_BY_EXTENSION = {
+  ".pdf": "application/pdf",
+  ".doc": "application/msword",
+  ".docx":
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+};
+
 function sanitizeFilename(filename) {
   const baseName = path
     .basename(String(filename || "").replace(/\\/g, "/"))
@@ -50,8 +61,10 @@ function getDocumentDownloadDetails(document) {
 
   return {
     filename,
-    cloudinaryAttachmentFilename: filename.replace(/\./g, "%2E"),
     format: extension ? extension.slice(1) : "",
+    mimeType:
+      MIME_TYPE_BY_EXTENSION[extension] ||
+      "application/octet-stream",
   };
 }
 

@@ -1,5 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
+const { Readable } = require("stream");
+const { pipeline } = require("stream/promises");
 
 const Portfolio = require("../models/Portfolio");
 const User = require("../models/User");
@@ -982,30 +984,23 @@ router.get(
       }
 
       /*
-       * Generate a short-lived signed
-       * authenticated Cloudinary URL.
+       * Download authenticated Cloudinary assets through its signed
+       * private-download endpoint, then stream them with the uploaded
+       * filename instead of exposing Cloudinary's internal public ID.
        */
       const downloadDetails =
         getDocumentDownloadDetails(document);
 
-      const signedUrl =
-        cloudinary.url(
+      const downloadUrl =
+        cloudinary.utils.private_download_url(
           document.publicId,
+          downloadDetails.format,
           {
-            format: downloadDetails.format,
-
             resource_type:
               document.resourceType ||
               "raw",
 
-            flags:
-              `attachment:${downloadDetails.cloudinaryAttachmentFilename}`,
-
             type: "authenticated",
-
-            secure: true,
-
-            sign_url: true,
 
             expires_at:
               Math.floor(
@@ -1013,17 +1008,60 @@ router.get(
                   2 * 60 * 1000) /
                   1000
               ),
+
+            attachment: true,
           }
         );
 
-      return res.redirect(
-        signedUrl
+      const cloudinaryResponse =
+        await fetch(downloadUrl);
+
+      if (
+        !cloudinaryResponse.ok ||
+        !cloudinaryResponse.body
+      ) {
+        console.error(
+          "Cloudinary private document download failed:",
+          {
+            status: cloudinaryResponse.status,
+            documentId,
+          }
+        );
+
+        return res.status(502).json({
+          message:
+            "Unable to download document from storage.",
+        });
+      }
+
+      res.set(
+        "Content-Type",
+        downloadDetails.mimeType
+      );
+      res.set(
+        "X-Content-Type-Options",
+        "nosniff"
+      );
+      res.attachment(
+        downloadDetails.filename
+      );
+
+      await pipeline(
+        Readable.fromWeb(
+          cloudinaryResponse.body
+        ),
+        res
       );
     } catch (error) {
       console.error(
         "Protected document error:",
         error
       );
+
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
 
       return res.status(500).json({
         message:

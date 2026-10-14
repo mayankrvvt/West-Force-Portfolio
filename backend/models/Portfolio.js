@@ -194,6 +194,26 @@ const portfolioSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+
+      publicId: {
+        type: String,
+        default: "",
+      },
+
+      resourceType: {
+        type: String,
+        default: "",
+      },
+
+      format: {
+        type: String,
+        default: "",
+      },
+
+      mimeType: {
+        type: String,
+        default: "",
+      },
     },
 
     socialLinks: {

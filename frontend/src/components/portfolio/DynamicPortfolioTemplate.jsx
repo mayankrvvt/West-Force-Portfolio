@@ -284,9 +284,11 @@ function mapPortfolioData(portfolio) {
         "Resume",
 
       url:
-        portfolio.resume?.fileUrl ||
-        portfolio.resume?.url ||
-        "",
+        portfolio.resume?.fileUrl
+          ? portfolio.status === "published" && portfolio.slug
+            ? `/api/portfolios/${encodeURIComponent(portfolio.slug)}/resume`
+            : portfolio.resume.fileUrl
+          : portfolio.resume?.url || "",
     },
   };
 }

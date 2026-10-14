@@ -708,6 +708,10 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           ...current.resume,
           name: file.name,
           fileUrl: uploadedFile.url,
+          publicId: uploadedFile.publicId,
+          resourceType: uploadedFile.resourceType,
+          format: uploadedFile.format,
+          mimeType: uploadedFile.mimeType,
         },
       }));
     } else {

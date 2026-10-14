@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const path = require("path");
 const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
 
@@ -671,9 +672,13 @@ router.get(
             )
           : [];
 
-      /*
-       * Resume is intentionally NOT modified.
-       */
+      if (result.resume?.fileUrl) {
+        result.resume = {
+          name: result.resume.name,
+          fileUrl: `/api/portfolios/${encodeURIComponent(slug)}/resume`,
+        };
+      }
+
       return res.status(200).json({
         portfolio: result,
       });
@@ -1066,6 +1071,97 @@ router.get(
       return res.status(500).json({
         message:
           "Unable to access document.",
+      });
+    }
+  }
+);
+
+router.get(
+  "/:slug/resume",
+  async (req, res) => {
+    try {
+      const slug = String(req.params.slug || "")
+        .trim()
+        .toLowerCase();
+
+      const portfolio = await Portfolio.findOne({
+        slug,
+        status: "published",
+      });
+
+      if (!portfolio?.resume?.fileUrl) {
+        return res.status(404).json({
+          message: "Published resume not found.",
+        });
+      }
+
+      const resume = portfolio.resume;
+      const sourceUrl = new URL(resume.fileUrl);
+      const urlFormat =
+        path.extname(sourceUrl.pathname).slice(1);
+      const resumeMetadata =
+        typeof resume.toObject === "function"
+          ? resume.toObject()
+          : resume;
+      const downloadDetails =
+        getDocumentDownloadDetails({
+          ...resumeMetadata,
+          format: resume.format || urlFormat,
+        });
+      const cloudName = cloudinary.config().cloud_name;
+      const cloudinaryHosts = new Set([
+        "res.cloudinary.com",
+        "res-1.cloudinary.com",
+        "res-2.cloudinary.com",
+        "res-3.cloudinary.com",
+        "res-4.cloudinary.com",
+        "res-5.cloudinary.com",
+        ...(cloudName ? [`${cloudName}-res.cloudinary.com`] : []),
+      ]);
+
+      if (
+        sourceUrl.protocol !== "https:" ||
+        !cloudinaryHosts.has(sourceUrl.hostname)
+      ) {
+        console.error(
+          "Resume download URL is not hosted by Cloudinary:",
+          { slug, hostname: sourceUrl.hostname }
+        );
+        return res.status(502).json({
+          message: "Resume storage URL is invalid.",
+        });
+      }
+
+      const cloudinaryResponse = await fetch(sourceUrl);
+
+      if (!cloudinaryResponse.ok || !cloudinaryResponse.body) {
+        console.error("Cloudinary resume download failed:", {
+          status: cloudinaryResponse.status,
+          slug,
+        });
+        return res.status(502).json({
+          message: "Unable to download resume from storage.",
+        });
+      }
+
+      res.set("Content-Type", downloadDetails.mimeType);
+      res.set("X-Content-Type-Options", "nosniff");
+      res.attachment(downloadDetails.filename);
+
+      await pipeline(
+        Readable.fromWeb(cloudinaryResponse.body),
+        res
+      );
+    } catch (error) {
+      console.error("Published resume download error:", error);
+
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+
+      return res.status(500).json({
+        message: "Unable to access resume.",
       });
     }
   }

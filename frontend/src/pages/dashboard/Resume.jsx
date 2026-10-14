@@ -63,8 +63,12 @@ export default function Resume() {
   }
 
   const resume = portfolio?.resume;
+  const resumeUrl =
+    portfolio?.status === "published" && portfolio?.slug
+      ? `/api/portfolios/${encodeURIComponent(portfolio.slug)}/resume`
+      : resume?.fileUrl;
 
-  if (!resume?.fileUrl) {
+  if (!resumeUrl) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-page-header">
@@ -123,7 +127,7 @@ export default function Resume() {
           </div>
 
           <a
-            href={resume.fileUrl}
+            href={resumeUrl}
             target="_blank"
             rel="noreferrer"
             className="dashboard-primary-button"
@@ -143,7 +147,7 @@ export default function Resume() {
           }}
         >
           <iframe
-            src={resume.fileUrl}
+            src={resumeUrl}
             title="Resume Preview"
             style={{
               width: "100%",

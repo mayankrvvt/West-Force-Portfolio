@@ -147,6 +147,16 @@ const portfolioSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+
+      videoPublicId: {
+        type: String,
+        default: "",
+      },
+
+      videoStatus: {
+        type: String,
+        default: "",
+      },
     },
 
     experience: {

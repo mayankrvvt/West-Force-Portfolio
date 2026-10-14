@@ -4,6 +4,8 @@ const crypto = require("crypto");
 const path = require("path");
 const cloudinary = require("cloudinary").v2;
 const supabase = require("../config/supabase");
+const User = require("../models/User");
+const Portfolio = require("../models/Portfolio");
 const authenticateUser = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -13,6 +15,7 @@ const router = express.Router();
    ========================================================= */
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_VIDEO_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
 const VIDEO_MIME_TYPES = new Set([
   "video/mp4",
@@ -100,7 +103,7 @@ const upload = multer({
 const directVideoUpload = multer({
   storage,
   limits: {
-    fileSize: 2 * 1024 * 1024 - 1,
+    fileSize: MAX_FILE_SIZE,
   },
   fileFilter: (req, file, cb) => {
     const mimeType = (file.mimetype || "").toLowerCase();
@@ -932,6 +935,117 @@ function uploadToCloudinary(
 }
 
 router.post(
+  "/video-signature",
+  authenticateUser,
+  async (req, res) => {
+    try {
+      const filename = String(req.body?.filename || "").trim();
+      const contentType = String(req.body?.contentType || "").trim();
+      const size = Number(req.body?.size || 0);
+      const portfolioId = req.body?.portfolioId || null;
+
+      if (!filename) {
+        return res.status(400).json({
+          success: false,
+          message: "Video filename is required.",
+        });
+      }
+
+      if (!Number.isFinite(size) || size <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "A valid video size is required.",
+        });
+      }
+
+      if (size > MAX_VIDEO_FILE_SIZE) {
+        return res.status(413).json({
+          success: false,
+          message: `Video must be smaller than ${MAX_VIDEO_FILE_SIZE / (1024 * 1024)} MB.`,
+        });
+      }
+
+      const extension = path.extname(filename).toLowerCase();
+      const isAllowedVideoType = VIDEO_MIME_TYPES.has(contentType) || VIDEO_EXTENSIONS.has(extension);
+
+      if (!isAllowedVideoType) {
+        return res.status(400).json({
+          success: false,
+          message: "Only MP4, MOV, M4, M4V, WebM, and AVI videos are allowed.",
+        });
+      }
+
+      const user = await User.findOne({ firebaseUid: req.user.uid });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Authenticated user not found.",
+        });
+      }
+
+      if (portfolioId) {
+        const portfolio = await Portfolio.findOne({
+          _id: portfolioId,
+          userId: user._id,
+        });
+
+        if (!portfolio) {
+          return res.status(403).json({
+            success: false,
+            message: "You can only upload a video to your own portfolio.",
+          });
+        }
+      }
+
+      const cloudinaryConfig = cloudinary.config();
+      const apiSecret = cloudinaryConfig.api_secret || process.env.CLOUDINARY_API_SECRET;
+      const apiKey = cloudinaryConfig.api_key || process.env.CLOUDINARY_API_KEY;
+      const cloudName = cloudinaryConfig.cloud_name || process.env.CLOUDINARY_CLOUD_NAME;
+
+      if (!apiSecret || !apiKey || !cloudName) {
+        return res.status(500).json({
+          success: false,
+          message: "Cloudinary is not configured on the server.",
+        });
+      }
+
+      const timestamp = Math.floor(Date.now() / 1000);
+      const paramsToSign = {
+        timestamp,
+        folder: "westforce/portfolios",
+        type: "upload",
+        overwrite: false,
+      };
+
+      const signature = cloudinary.utils.api_sign_request(
+        paramsToSign,
+        apiSecret
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Cloudinary upload signature ready.",
+        apiKey,
+        cloudName,
+        signature,
+        timestamp,
+        uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        params: paramsToSign,
+        resourceType: "video",
+        maxFileSize: MAX_VIDEO_FILE_SIZE,
+      });
+    } catch (error) {
+      console.error("[cloudinary] Signature generation failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: error?.message || "Could not generate a secure Cloudinary upload signature.",
+      });
+    }
+  }
+);
+
+router.post(
   "/video",
   authenticateUser,
   (req, res, next) => {
@@ -940,7 +1054,7 @@ router.post(
         return res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
           success: false,
           message: error.code === "LIMIT_FILE_SIZE"
-            ? "Compressed video must be smaller than 2 MB."
+            ? `Video must be smaller than ${MAX_VIDEO_FILE_SIZE / (1024 * 1024)} MB.`
             : error.message || "Could not upload the video.",
         });
       }
@@ -1077,7 +1191,7 @@ router.post(
       if (isVideo) {
         return res.status(400).json({
           success: false,
-          message: "Upload compressed videos to /api/uploads/video.",
+          message: "Upload videos to /api/uploads/video.",
         });
       }
 

@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import * as tus from "tus-js-client";
 import { apiRequest } from "../../utils/api";
-import { compressVideoUnder2MB } from "../../utils/compressVideo";
 import { auth } from "../../firebase/firebase";
 
 import {
@@ -49,6 +47,8 @@ const emptyPortfolio = {
     title: "About Me",
     description: "",
     videoUrl: "",
+    videoPublicId: "",
+    videoStatus: "",
   },
 
   experience: [],
@@ -762,8 +762,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       return;
     }
 
-    const maxSize = 50 * 1024 * 1024;
-
+    const maxSize = 100 * 1024 * 1024;
     const allowedTypes = [
       "video/mp4",
       "video/webm",
@@ -771,14 +770,13 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       "video/x-m4v",
       "video/3gpp",
       "video/3gpp2",
+      "video/x-msvideo",
       "application/octet-stream",
     ];
-
     const fileExtension = file.name
       ?.split(".")
       .pop()
       ?.toLowerCase();
-
     const isAllowedVideoExtension = [
       "mp4",
       "mov",
@@ -788,11 +786,16 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       "avi",
     ].includes(fileExtension);
 
+    if (file.size <= 0) {
+      setError("The selected video file is empty.");
+      event.target.value = "";
+      return;
+    }
+
     if (file.size > maxSize) {
       setError(
-        "Video must be smaller than 50 MB."
+        `Video must be smaller than ${maxSize / (1024 * 1024)} MB.`
       );
-
       event.target.value = "";
       return;
     }
@@ -802,9 +805,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       !isAllowedVideoExtension
     ) {
       setError(
-        "Please upload an MP4, MOV, M4, M4V or WebM video."
+        "Please upload an MP4, MOV, M4, M4V, WebM, or AVI video."
       );
-
       event.target.value = "";
       return;
     }
@@ -819,216 +821,298 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       return;
     }
 
+    let uploadSucceeded = false;
+
     try {
       setError("");
-      setUploadingFile("video-compressing");
+      setUploadingFile("video-uploading");
       setUploadProgress(0);
 
-      const compressedFile = await compressVideoUnder2MB(file);
-      if (compressedFile.size >= 2 * 1024 * 1024) {
-        throw new Error("The compressed video must be smaller than 2 MB.");
-      }
-
-      setUploadingFile("video-uploading");
       const token = await user.getIdToken();
 
-      let uploadedFile;
-      let cloudinaryError;
-
-      try {
-        const formData = new FormData();
-        formData.append("file", compressedFile);
-        const directResponse = await fetch("/api/uploads/video", {
+      const signatureResponse = await fetch(
+        "/api/uploads/video-signature",
+        {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
-        });
-        let directResult;
-        try {
-          directResult = await directResponse.json();
-        } catch {
-          throw new Error("The Cloudinary upload returned an invalid response.");
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+          }),
         }
-        if (!directResponse.ok) {
-          throw new Error(
-            directResult.message || "Cloudinary video upload failed."
-          );
-        }
-        uploadedFile = directResult.file;
-      } catch (error) {
-        cloudinaryError = error;
-      }
-
-      const uploadConfigResponse = await fetch(
-        "/api/uploads/video/config"
       );
 
-      let uploadConfig = { enabled: false };
+      let signatureData;
 
       try {
-        uploadConfig = await uploadConfigResponse.json();
+        signatureData = await signatureResponse.json();
       } catch {
-        uploadConfig = { enabled: false };
+        throw new Error(
+          "The Cloudinary upload signature response was invalid."
+        );
       }
 
-      const startResumableUpload = async () => {
-        if (!uploadConfig.enabled) {
-          throw new Error(
-            "Resumable upload is not configured on the server."
-          );
-        }
+      if (!signatureResponse.ok) {
+        throw new Error(
+          signatureData.message || "Could not prepare the video upload."
+        );
+      }
 
-        const response = await fetch(
-          "/api/uploads/video/init",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              filename: compressedFile.name,
-              contentType: compressedFile.type,
-              size: compressedFile.size,
-            }),
+      if (!signatureData?.uploadUrl || !signatureData?.signature || !signatureData?.apiKey) {
+        throw new Error(
+          "The server did not return the required Cloudinary upload details."
+        );
+      }
+
+      const chunkSize = 5 * 1024 * 1024;
+      const uploadId = `westforce-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const totalChunks = Math.ceil(file.size / chunkSize);
+
+      let uploadedFile = null;
+      let start = 0;
+
+      for (let index = 0; index < totalChunks; index += 1) {
+        const end = Math.min(start + chunkSize - 1, file.size - 1);
+        const chunk = file.slice(start, end + 1);
+        const contentRange = `bytes ${start}-${end}/${file.size}`;
+
+        const formData = new FormData();
+
+        Object.entries(signatureData.params || {}).forEach(
+          ([key, value]) => {
+            formData.append(key, String(value));
           }
         );
 
-        let result;
+        formData.append("file", chunk, file.name);
+        formData.append("api_key", String(signatureData.apiKey));
+        formData.append("signature", String(signatureData.signature));
 
-        try {
-          result = await response.json();
-        } catch {
-          throw new Error(
-            "The video upload server returned an invalid response."
-          );
-        }
+        console.info("[cloudinary] sending chunk", {
+          index: index + 1,
+          totalChunks,
+          start,
+          end,
+          contentRange,
+          chunkSize: chunk.size,
+        });
 
-        if (!response.ok) {
-          throw new Error(
-            result.message || "Video upload failed."
-          );
-        }
+        uploadedFile = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          const requestStartedAt = performance.now();
+          let lastProgress = { loaded: 0, total: null };
 
-        if (!result?.tusEndpoint || !result?.path) {
-          throw new Error(
-            "The backend did not return a resumable upload session."
-          );
-        }
+          xhr.open("POST", signatureData.uploadUrl, true);
+          xhr.timeout = 300000;
+          xhr.withCredentials = false;
+          xhr.setRequestHeader("X-Unique-Upload-Id", uploadId);
+          xhr.setRequestHeader("Content-Range", contentRange);
 
-        return result;
-      };
+          xhr.upload.onloadstart = () => {
+            console.info("[cloudinary] chunk transfer started", {
+              chunkIndex: index + 1,
+              contentRange,
+              chunkSize: chunk.size,
+            });
+          };
 
-      if (!uploadedFile) try {
-        const session = await startResumableUpload();
+          xhr.upload.onprogress = (progressEvent) => {
+            lastProgress = {
+              loaded: progressEvent.loaded,
+              total: progressEvent.lengthComputable
+                ? progressEvent.total
+                : null,
+            };
 
-        await new Promise((resolve, reject) => {
-          const upload = new tus.Upload(compressedFile, {
-            endpoint: session.tusEndpoint,
-            metadata: {
-              filename: compressedFile.name,
-              filetype: compressedFile.type,
-              path: session.path,
-            },
-            chunkSize: 5 * 1024 * 1024,
-            retryDelays: [0, 1000, 3000, 5000],
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "x-upsert": "false",
-            },
-            onProgress: (bytesUploaded, bytesTotal) => {
-              const percent = Math.min(
-                95,
-                Math.round(
-                  (bytesUploaded / bytesTotal) * 100
-                )
-              );
+            if (!progressEvent.lengthComputable) {
+              console.info("[cloudinary] chunk bytes transferred", {
+                chunkIndex: index + 1,
+                bytesLoaded: progressEvent.loaded,
+                totalComputable: false,
+              });
+              return;
+            }
 
-              setUploadProgress(percent);
-            },
-            onError: (error) => {
-              reject(error);
-            },
-            onSuccess: async () => {
-              try {
-                const completeResponse = await fetch(
-                  "/api/uploads/video/complete",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                      path: session.path,
-                      filename: compressedFile.name,
-                      size: compressedFile.size,
-                    }),
+            const requestProgress = progressEvent.loaded / progressEvent.total;
+            const fileBytesLoaded = Math.min(
+              file.size,
+              start + requestProgress * chunk.size
+            );
+            const totalProgress = Math.min(
+              95,
+              Math.round((fileBytesLoaded / file.size) * 100)
+            );
+
+            console.info("[cloudinary] upload progress", {
+              chunkIndex: index + 1,
+              totalChunks,
+              bytesLoaded: progressEvent.loaded,
+              bytesTotal: progressEvent.total,
+              percent: Math.round(requestProgress * 100),
+              fileBytesLoaded: Math.round(fileBytesLoaded),
+              totalProgress,
+            });
+
+            setUploadProgress(totalProgress);
+          };
+
+          xhr.upload.onloadend = () => {
+            console.info("[cloudinary] chunk transfer ended", {
+              chunkIndex: index + 1,
+              bytesLoaded: lastProgress.loaded,
+              bytesTotal: lastProgress.total,
+              elapsedMs: Math.round(performance.now() - requestStartedAt),
+            });
+          };
+
+          xhr.onload = () => {
+            let responseBody = (xhr.responseText || "").slice(0, 2000);
+
+            try {
+              const payload = JSON.parse(xhr.responseText);
+
+              if (payload && typeof payload === "object") {
+                const sanitizedPayload = { ...payload };
+
+                ["api_key", "signature", "secure_url", "url"].forEach(
+                  (key) => {
+                    if (key in sanitizedPayload) {
+                      sanitizedPayload[key] = "[redacted]";
+                    }
                   }
                 );
 
-                let completeResult;
-
-                try {
-                  completeResult = await completeResponse.json();
-                } catch {
-                  throw new Error(
-                    "The upload completion response was invalid."
-                  );
-                }
-
-                if (!completeResponse.ok) {
-                  throw new Error(
-                    completeResult.message ||
-                      "Video upload could not be finalized."
-                  );
-                }
-
-                uploadedFile = completeResult.file;
-                resolve();
-              } catch (completeError) {
-                reject(completeError);
+                responseBody = JSON.stringify(sanitizedPayload).slice(0, 2000);
               }
-            },
-          });
+            } catch {
+              responseBody = responseBody.replace(
+                /(api_key|signature)=([^&\s]+)/gi,
+                "$1=[redacted]"
+              );
+            }
 
-          upload.start();
+            console.info("[cloudinary] upload response", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              responseBody,
+              bytesLoaded: lastProgress.loaded,
+              bytesTotal: lastProgress.total,
+              elapsedMs: Math.round(performance.now() - requestStartedAt),
+            });
+
+            if (xhr.status < 200 || xhr.status >= 300) {
+              console.error("[cloudinary] HTTP error response body", {
+                status: xhr.status,
+                body: (xhr.responseText || "").slice(0, 2000),
+              });
+              let message = "Cloudinary video upload failed.";
+
+              try {
+                const payload = JSON.parse(xhr.responseText);
+                message = payload?.error?.message || payload?.message || message;
+              } catch {
+                message = (xhr.responseText || "").slice(0, 500) || message;
+              }
+
+              reject(new Error(`${message} (HTTP ${xhr.status})`));
+              return;
+            }
+
+            try {
+              const payload = JSON.parse(xhr.responseText);
+
+              if (payload?.error) {
+                throw new Error(payload.error.message || "Cloudinary rejected the chunk upload.");
+              }
+
+              if (payload?.done === false) {
+                resolve(payload);
+                return;
+              }
+
+              if (!payload?.secure_url && !payload?.public_id && !payload?.done) {
+                throw new Error("Cloudinary did not return a final upload result.");
+              }
+
+              console.info("[cloudinary] upload success", {
+                public_id: payload.public_id,
+                resource_type: payload.resource_type,
+                secure_url: payload.secure_url,
+                done: payload.done,
+              });
+
+              resolve(payload);
+            } catch (error) {
+              reject(
+                new Error(
+                  error.message ||
+                    "The Cloudinary upload response was invalid."
+                )
+              );
+            }
+          };
+
+          xhr.onerror = () => {
+            console.error("[cloudinary] upload network error", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              readyState: xhr.readyState,
+              online: navigator.onLine,
+              responsePreview: (xhr.responseText || "").slice(0, 500),
+              bytesLoaded: lastProgress.loaded,
+              bytesTotal: lastProgress.total,
+              elapsedMs: Math.round(performance.now() - requestStartedAt),
+            });
+            reject(new Error("Network error while uploading the video."));
+          };
+
+          xhr.ontimeout = () => {
+            console.error("[cloudinary] upload timeout", {
+              timeout: xhr.timeout,
+              readyState: xhr.readyState,
+              online: navigator.onLine,
+              responsePreview: (xhr.responseText || "").slice(0, 500),
+              bytesLoaded: lastProgress.loaded,
+              bytesTotal: lastProgress.total,
+              elapsedMs: Math.round(performance.now() - requestStartedAt),
+            });
+            reject(new Error("Video upload timed out. Please try again."));
+          };
+
+          xhr.onabort = () => {
+            console.warn("[cloudinary] upload aborted", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              readyState: xhr.readyState,
+              bytesLoaded: lastProgress.loaded,
+              bytesTotal: lastProgress.total,
+              elapsedMs: Math.round(performance.now() - requestStartedAt),
+            });
+            reject(new Error("Video upload was cancelled."));
+          };
+
+          xhr.send(formData);
         });
-      } catch (tusError) {
-        const fallbackResponse = await fetch("/api/uploads/video", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: (() => {
-            const form = new FormData();
-            form.append("file", compressedFile);
-            return form;
-          })(),
-        });
 
-        let fallbackResult;
-
-        try {
-          fallbackResult = await fallbackResponse.json();
-        } catch {
-          throw tusError;
+        if (uploadedFile?.done === true || uploadedFile?.secure_url) {
+          break;
         }
 
-        if (!fallbackResponse.ok) {
-          throw new Error(
-            fallbackResult.message ||
-              cloudinaryError?.message ||
-              "Video upload failed."
-          );
-        }
-
-        uploadedFile = fallbackResult.file;
+        start = end + 1;
       }
 
-      if (!uploadedFile?.url) {
+      if (!uploadedFile || (!uploadedFile.secure_url && uploadedFile.done !== true)) {
+        throw new Error("Cloudinary did not finish the video upload successfully.");
+      }
+
+      const secureUrl = uploadedFile.secure_url || uploadedFile.url;
+      const publicId = uploadedFile.public_id || "";
+
+      if (!secureUrl) {
         throw new Error(
           "Upload succeeded, but no video URL was returned."
         );
@@ -1038,28 +1122,38 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
         ...current,
         about: {
           ...current.about,
-          videoUrl: uploadedFile.url,
+          videoUrl: secureUrl,
+          videoPublicId: publicId,
+          videoStatus: "uploaded",
         },
       }));
 
       setUploadProgress(100);
-      console.log(
-        "Video upload successful:",
-        uploadedFile.url
+      uploadSucceeded = true;
+      console.log("Video upload successful:", secureUrl);
+
+      const persistedUpload = {
+        ...data,
+        about: {
+          ...(data.about || {}),
+          videoUrl: secureUrl,
+          videoPublicId: publicId,
+          videoStatus: "uploaded",
+        },
+      };
+
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(persistedUpload)
       );
     } catch (error) {
-      console.error(
-        "Video upload error:",
-        error
-      );
-
-      setError(
-        error.message ||
-          "Unable to upload your video."
-      );
+      console.error("Video upload error:", error);
+      setError(error.message || "Unable to upload your video.");
     } finally {
       setUploadingFile("");
-      setUploadProgress(0);
+      if (!uploadSucceeded) {
+        setUploadProgress(0);
+      }
       event.target.value = "";
     }
   }
@@ -1321,9 +1415,16 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
         error
       );
 
+      const hasCloudinaryVideoUpload = Boolean(
+        data.about?.videoUrl &&
+          data.about.videoUrl.includes("res.cloudinary.com")
+      );
+
       setError(
-        error.message ||
-          "Unable to save your portfolio. Please try again."
+        hasCloudinaryVideoUpload
+          ? "Your video uploaded successfully, but the portfolio draft could not be saved. Please try again."
+          : error.message ||
+              "Unable to save your portfolio. Please try again."
       );
     } finally {
       setSavingPortfolio(false);
@@ -1504,6 +1605,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                     handleVideoFile
                   }
                   uploadingFile={uploadingFile}
+                  uploadProgress={uploadProgress}
                 />
               )}
 
@@ -1984,6 +2086,7 @@ function AboutSection({
   update,
   handleVideoFile,
   uploadingFile,
+  uploadProgress,
 }) {
   const selectedVideo =
     data.about.videoUrl
@@ -2037,10 +2140,8 @@ function AboutSection({
           <div className="video-upload-content">
 
             <strong>
-              {uploadingFile === "video-compressing"
-                ? "Compressing video..."
-                : uploadingFile === "video-uploading"
-                ? "Uploading compressed video..."
+              {uploadingFile === "video-uploading"
+                ? "Uploading video..."
                 : selectedVideo || "Upload your introduction video"}
             </strong>
 
@@ -2050,8 +2151,21 @@ function AboutSection({
               or your professional goals.
             </p>
 
+            {uploadingFile === "video-uploading" && (
+              <div className="builder-progress-card" style={{ marginTop: 10, padding: 12, width: "100%" }}>
+                <div className="builder-progress-heading" style={{ marginBottom: 8 }}>
+                  <span>Uploading</span>
+                  <strong>{Math.max(0, Math.min(100, uploadProgress || 0))}%</strong>
+                </div>
+
+                <div className="builder-progress-track">
+                  <div style={{ width: `${Math.max(0, Math.min(100, uploadProgress || 0))}%` }} />
+                </div>
+              </div>
+            )}
+
             <small>
-              MP4, MOV or WebM · Source up to 50 MB, compressed below 2 MB before upload
+              MP4, MOV or WebM · Up to 100 MB
             </small>
 
           </div>

@@ -12,6 +12,7 @@ import SectionTitle from "./SectionTitle";
 export default function DocumentsSection({
   data = [],
   protectionEnabled = false,
+  portfolioSlug = "",
 }) {
   const [pin, setPin] = useState("");
 
@@ -53,6 +54,11 @@ export default function DocumentsSection({
       return;
     }
 
+    if (!portfolioSlug) {
+      setError("Portfolio link is unavailable.");
+      return;
+    }
+
     if (!/^\d{4}$/.test(pin)) {
       setError(
         "Please enter your 4-digit PIN."
@@ -65,15 +71,9 @@ export default function DocumentsSection({
     setSuccess("");
 
     try {
-      const slug =
-        window.location.pathname
-          .split("/")
-          .filter(Boolean)
-          .at(-1);
-
       const response = await fetch(
         `/api/portfolios/${encodeURIComponent(
-          slug
+          portfolioSlug
         )}/unlock-documents`,
         {
           method: "POST",
@@ -138,18 +138,12 @@ export default function DocumentsSection({
   }
 
   function getDocumentUrl(document) {
-    if (!document?._id) {
+    if (!portfolioSlug || !document?._id) {
       return "#";
     }
 
-    const slug =
-      window.location.pathname
-        .split("/")
-        .filter(Boolean)
-        .at(-1);
-
     return `/api/portfolios/${encodeURIComponent(
-      slug
+      portfolioSlug
     )}/documents/${encodeURIComponent(
       document._id
     )}`;

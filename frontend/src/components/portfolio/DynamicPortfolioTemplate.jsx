@@ -340,6 +340,7 @@ export default function DynamicPortfolioTemplate({
         {/* DOCUMENTS */}
         <DocumentsSection
           data={data.documents}
+          portfolioSlug={portfolio.slug}
           protectionEnabled={
             data.documentProtection.enabled
           }

@@ -140,6 +140,31 @@ export default function VideoResumeGuide() {
         </div>
       </section>
 
+      {/* Video example */}
+      <section className="vrg-demo" aria-labelledby="vrg-demo-title">
+        <div className="vrg-container vrg-narrow">
+          <div className="vrg-demo-copy">
+            <p className="vrg-demo-eyebrow">See an example</p>
+            <h2 id="vrg-demo-title">What a video resume can look like</h2>
+            <p>
+              Watch this short example for an idea of how to introduce your
+              experience and speak naturally on camera.
+            </p>
+          </div>
+          <video
+            className="vrg-demo-video"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label="Example video resume"
+          >
+            <source src="/demo.mp4" type="video/mp4" />
+            Your browser doesn’t support embedded video. You can still follow
+            the written guide below.
+          </video>
+        </div>
+      </section>
+
       {/* Steps */}
       <div className="vrg-container vrg-narrow vrg-steps">
         {/* Step 1 */}

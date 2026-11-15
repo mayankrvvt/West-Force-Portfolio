@@ -1,0 +1,493 @@
+/*
+ * Styles for VideoResumeGuide.jsx. Everything is scoped under .vrg.
+ * Colours reuse your site's CSS variables when they exist and fall back
+ * to the same values (navy #0d2b45, Canada red #d52b1e, step blue #008fe8).
+ */
+
+.vrg {
+  --vrg-navy: var(--color-primary, #0d2b45);
+  --vrg-navy-dark: var(--color-primary-dark, #081d30);
+  --vrg-red: var(--canada-red, #d52b1e);
+  --vrg-red-soft: var(--canada-red-soft, #fff5f4);
+  --vrg-blue: #008fe8;
+  --vrg-blue-soft: #eaf6fd;
+  --vrg-text: var(--color-text, #1d2939);
+  --vrg-muted: #657b96;
+  --vrg-border: #dce5ef;
+  --vrg-bg-soft: var(--color-background-soft, #f7f9fc);
+  --vrg-container: var(--container-width, 1180px);
+
+  color: var(--vrg-text);
+  font-family: inherit;
+  line-height: 1.7;
+}
+
+.vrg *,
+.vrg *::before,
+.vrg *::after {
+  box-sizing: border-box;
+}
+
+.vrg h1,
+.vrg h2,
+.vrg h3,
+.vrg p {
+  margin-top: 0;
+}
+
+.vrg-container {
+  width: min(calc(100% - 48px), var(--vrg-container));
+  margin-inline: auto;
+}
+
+.vrg-narrow {
+  max-width: 820px;
+}
+
+/* Hero */
+
+.vrg-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 88px 0 72px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 78% 32%, rgba(213, 43, 30, 0.22), transparent 28%),
+    radial-gradient(circle at 82% 78%, rgba(22, 79, 115, 0.55), transparent 34%),
+    linear-gradient(135deg, #071c2e, #0b304b 52%, #123e5c);
+}
+
+.vrg-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 78px,
+    rgba(255, 255, 255, 0.018) 78px 79px
+  );
+  pointer-events: none;
+}
+
+.vrg-hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.vrg-hero-eyebrow {
+  margin-bottom: 18px;
+  color: #ffb2aa;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vrg-hero h1 {
+  max-width: 780px;
+  margin-bottom: 18px;
+  color: #fff;
+  font-size: clamp(36px, 6vw, 62px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.vrg-hero-subtitle {
+  max-width: 620px;
+  margin-bottom: 40px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(17px, 2.2vw, 20px);
+  line-height: 1.55;
+}
+
+/* Step shortcuts in the hero */
+
+.vrg-jump ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vrg-jump a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px 8px 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.vrg-jump a span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--vrg-navy);
+  font-size: 13px;
+  font-weight: 800;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.vrg-jump a:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 178, 170, 0.6);
+}
+
+/* Intro */
+
+.vrg-intro {
+  padding: 64px 0 8px;
+}
+
+.vrg-lead {
+  margin-bottom: 0;
+  color: var(--vrg-navy);
+  font-size: clamp(18px, 2.3vw, 21px);
+  line-height: 1.65;
+}
+
+.vrg-length {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 12px;
+  color: var(--vrg-red);
+  font-weight: 700;
+  background: var(--vrg-red-soft);
+  border-radius: 999px;
+}
+
+/* Steps */
+
+.vrg-steps {
+  display: grid;
+  gap: 24px;
+  padding: 40px 0 88px;
+}
+
+.vrg-step {
+  position: relative;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid var(--vrg-border);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.05);
+  scroll-margin-top: calc(var(--navbar-height, 76px) + 24px);
+}
+
+.vrg-step::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, var(--vrg-red), rgba(213, 43, 30, 0.12));
+  opacity: 0.65;
+}
+
+.vrg-step:focus {
+  outline: none;
+}
+
+.vrg-step:focus-visible {
+  outline: 3px solid var(--vrg-blue);
+  outline-offset: 4px;
+}
+
+.vrg-step > p {
+  color: var(--vrg-muted);
+  font-size: 16px;
+}
+
+.vrg-step > p:last-child {
+  margin-bottom: 0;
+}
+
+.vrg-step-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.vrg-step-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  color: var(--vrg-blue);
+  font-size: 18px;
+  font-weight: 800;
+  background: #fff;
+  border: 2px solid #d9ebf8;
+  border-radius: 50%;
+  box-shadow: 0 8px 25px rgba(18, 48, 76, 0.08);
+}
+
+.vrg-step-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--vrg-blue);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vrg-step h2 {
+  margin-bottom: 0;
+  color: #0b2944;
+  font-size: clamp(21px, 3vw, 25px);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.vrg-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+}
+
+.vrg-list li {
+  position: relative;
+  padding-left: 28px;
+  color: var(--vrg-muted);
+}
+
+.vrg-list li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--vrg-red);
+  border-radius: 50%;
+}
+
+.vrg-list strong {
+  color: var(--vrg-navy);
+}
+
+/* Script card */
+
+.vrg-script {
+  margin: 0 0 24px;
+  padding: 24px;
+  background: var(--vrg-bg-soft);
+  border: 1px solid var(--vrg-border);
+  border-left: 4px solid var(--vrg-navy);
+  border-radius: 14px;
+}
+
+.vrg-script-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.vrg-script h3 {
+  margin: 0;
+  color: var(--vrg-navy);
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.vrg-copy-button {
+  min-height: 40px;
+  padding: 0 16px;
+  color: var(--vrg-navy);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.vrg-copy-button:hover {
+  color: var(--vrg-red);
+  background: #fffafa;
+  border-color: rgba(213, 43, 30, 0.42);
+}
+
+.vrg-copy-button:focus-visible,
+.vrg-jump a:focus-visible {
+  outline: 3px solid var(--vrg-blue);
+  outline-offset: 2px;
+}
+
+.vrg-script blockquote {
+  margin: 0;
+}
+
+.vrg-script blockquote p {
+  margin: 0;
+  color: var(--vrg-text);
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+.vrg-placeholder {
+  padding: 1px 6px;
+  color: var(--vrg-navy);
+  font-weight: 600;
+  background: var(--vrg-blue-soft);
+  border-radius: 6px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.vrg-copy-status {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  color: var(--vrg-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vrg-copy-status:empty {
+  margin-top: 0;
+  min-height: 0;
+}
+
+.vrg-tip {
+  padding-left: 16px;
+  border-left: 3px solid var(--vrg-red);
+}
+
+/* Privacy callout */
+
+.vrg-privacy {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 28px 32px;
+  background: var(--vrg-red-soft);
+  border: 1px solid rgba(213, 43, 30, 0.28);
+  border-radius: 18px;
+}
+
+.vrg-privacy-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--vrg-red);
+}
+
+.vrg-privacy h2 {
+  margin-bottom: 8px;
+  color: var(--vrg-navy);
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.vrg-privacy p {
+  margin: 0;
+  color: #5b4a4a;
+}
+
+/* Closing line */
+
+.vrg-closing {
+  padding: 64px 0;
+  text-align: center;
+  background: var(--vrg-navy-dark);
+  border-top: 4px solid var(--vrg-red);
+}
+
+.vrg-closing p {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #fff;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+/* Small screens */
+
+@media (max-width: 640px) {
+  .vrg-container {
+    width: calc(100% - 32px);
+  }
+
+  .vrg-hero {
+    padding: 64px 0 52px;
+  }
+
+  .vrg-jump ol {
+    flex-direction: column;
+  }
+
+  .vrg-jump a {
+    width: 100%;
+  }
+
+  .vrg-intro {
+    padding-top: 44px;
+  }
+
+  .vrg-steps {
+    padding-bottom: 64px;
+  }
+
+  .vrg-step,
+  .vrg-privacy {
+    padding: 24px 20px;
+  }
+
+  .vrg-step-header {
+    gap: 14px;
+  }
+
+  .vrg-step-number {
+    width: 46px;
+    height: 46px;
+    font-size: 16px;
+  }
+
+  .vrg-script {
+    padding: 18px;
+  }
+
+  .vrg-privacy {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .vrg-closing {
+    padding: 48px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vrg *,
+  .vrg *::before,
+  .vrg *::after {
+    transition: none !important;
+  }
+}

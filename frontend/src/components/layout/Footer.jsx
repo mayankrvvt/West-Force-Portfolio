@@ -44,6 +44,10 @@ export default function Footer() {
             How it works
           </Link>
 
+          <Link to="/video-resume-guide">
+            Video resume guide
+          </Link>
+
           <Link to="/pricing">
             Pricing
           </Link>

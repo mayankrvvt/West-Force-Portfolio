@@ -15,6 +15,11 @@ export const publicNavigation = [
   },
 
   {
+    label: "Video resume guide",
+    href: "/video-resume-guide",
+  },
+
+  {
     label: "Pricing",
     href: "/pricing",
   },

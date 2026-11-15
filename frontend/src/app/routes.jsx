@@ -8,6 +8,9 @@ import { lazy } from "react";
 const Home = lazy(() => import("../pages/public/Home"));
 const Pricing = lazy(() => import("../pages/public/Pricing"));
 const HowItWorks = lazy(() => import("../pages/public/HowItWorks"));
+const VideoResumeGuide = lazy(
+  () => import("../pages/public/VideoResumeGuide")
+);
 const SignIn = lazy(() => import("../pages/auth/SignIn"));
 const SignUp = lazy(() => import("../pages/auth/SignUp"));
 const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
@@ -71,6 +74,11 @@ function AppRoutes() {
       <Route
         path="/how-it-works"
         element={<HowItWorks />}
+      />
+
+      <Route
+        path="/video-resume-guide"
+        element={<VideoResumeGuide />}
       />
 
       {/* =====================================================

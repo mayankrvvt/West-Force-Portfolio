@@ -179,6 +179,179 @@
   font-size: 12px;
 }
 
+.video-qa-layout {
+  display: grid;
+  grid-template-columns: minmax(270px, .75fr) minmax(0, 1.25fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.video-qa-layout > .product-card {
+  min-width: 0;
+}
+
+.video-qa-question-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.video-qa-question {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #526b82;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.video-qa-question.selected {
+  border-color: #b9ddec;
+  background: #f0f8fc;
+  color: #17344e;
+}
+
+.video-qa-question-number {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  flex: 0 0 25px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e8f1f6;
+  color: #547086;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.video-qa-question.answered .video-qa-question-number {
+  background: #e5f5ec;
+  color: #16834f;
+}
+
+.video-qa-question:disabled {
+  cursor: default;
+}
+
+.video-qa-preview {
+  min-height: 0;
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 13px;
+  background: #102b45;
+  aspect-ratio: 16 / 9;
+}
+
+.video-qa-preview video {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-qa-audio-playback {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  color: #526b82;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.video-qa-audio-playback audio {
+  width: 100%;
+}
+
+.video-qa-camera-placeholder {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 25px;
+  color: #fff;
+  text-align: center;
+}
+
+.video-qa-camera-placeholder svg {
+  color: #8bd6ff;
+}
+
+.video-qa-camera-placeholder strong {
+  font-size: 13px;
+}
+
+.video-qa-camera-placeholder span {
+  color: rgba(255,255,255,.65);
+  font-size: 11px;
+}
+
+.video-qa-recording-indicator {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 20px;
+  background: rgba(16, 43, 69, .8);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.video-qa-recording-indicator::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f45b63;
+  content: "";
+}
+
+.video-qa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.video-qa-actions .product-button {
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+@media(max-width:900px) {
+  .video-qa-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .video-qa-question-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media(max-width:520px) {
+  .video-qa-question-list {
+    grid-template-columns: 1fr;
+  }
+
+  .video-qa-preview {
+    min-height: 0;
+  }
+}
+
 
 /* =========================================================
    RESUME MODE SELECTION

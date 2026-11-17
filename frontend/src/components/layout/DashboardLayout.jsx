@@ -9,6 +9,7 @@ import {
   FileCheck2,
   Award,
   ClipboardList,
+  Video,
   Search,
   User,
   Settings,
@@ -55,6 +56,7 @@ const navigation = [
     items: [
       { name: "Find Jobs", path: "/dashboard/jobs", icon: Search },
       { name: "Applications", path: "/dashboard/applications", icon: ClipboardList },
+      { name: "Video Q&A", path: "/dashboard/video-qa", icon: Video },
       { name: "Documents", path: "/dashboard/documents", icon: Files },
       { name: "Certificates", path: "/dashboard/certificates", icon: Award },
     ],
@@ -78,6 +80,7 @@ const pageTitles = {
   "/dashboard/documents": "Documents",
   "/dashboard/certificates": "Certificates",
   "/dashboard/applications": "Applications",
+  "/dashboard/video-qa": "Video Q&A",
   "/dashboard/jobs": "Find Jobs",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",

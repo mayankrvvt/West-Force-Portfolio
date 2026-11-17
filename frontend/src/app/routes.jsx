@@ -34,6 +34,7 @@ const ATSChecker = lazy(() => import("../pages/dashboard/ATSChecker"));
 const Resumes = lazy(() => import("../pages/dashboard/Resumes"));
 const DashboardCertificates = lazy(() => import("../pages/dashboard/Certificates"));
 const Applications = lazy(() => import("../pages/dashboard/Applications"));
+const VideoQA = lazy(() => import("../pages/dashboard/VideoQA"));
 const Jobs = lazy(() => import("../pages/dashboard/Jobs"));
 const Profile = lazy(() => import("../pages/dashboard/Profile"));
 const Settings = lazy(() => import("../pages/dashboard/Settings"));
@@ -229,6 +230,11 @@ function AppRoutes() {
             <Route
               path="/dashboard/applications"
               element={<Applications />}
+            />
+
+            <Route
+              path="/dashboard/video-qa"
+              element={<VideoQA />}
             />
 
             <Route

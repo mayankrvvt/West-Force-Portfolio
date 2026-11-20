@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, MapPin, Save } from "lucide-react";
-import { apiRequest } from "../../utils/api";
+import { apiRequest, TIMEOUT_CODE } from "../../utils/api";
 
 const EMPTY = { name: "", title: "", location: "", email: "", phone: "" };
 const FIELD_COUNT = Object.keys(EMPTY).length;
@@ -51,8 +51,17 @@ export default function Profile() {
         setForm(next);
         setSavedForm(next);
       })
-      // Saving a blank form after a failed load would wipe the real profile, so the form stays hidden.
-      .catch(() => { if (active) setLoadError("We could not load your profile. Check your connection and try again."); })
+      .catch((error) => {
+        if (!active) return;
+        // A new user has no portfolio yet: that is a loaded, empty profile, and the first save makes one.
+        if (error?.status === 404 && error?.data?.message === "Portfolio not found.") {
+          setForm(EMPTY);
+          setSavedForm(EMPTY);
+          return;
+        }
+        // Saving a blank form after a failed load would wipe the real profile, so the form stays hidden.
+        setLoadError(error?.code === TIMEOUT_CODE ? error.message : "We could not load your profile. Check your connection and try again.");
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; clearTimeout(timer.current); };
   }, [attempt]);

@@ -86,7 +86,12 @@ describe("admins in the database", () => {
     expect(await me(OWNER)).toEqual({ success: true, isAdmin: true, isOwner: true });
     expect(await me(OWNER_2)).toEqual({ success: true, isAdmin: true, isOwner: true });
     expect(await me(HELPER)).toEqual({ success: true, isAdmin: true, isOwner: false });
-    expect(await me(HELPER_UNVERIFIED)).toEqual({ success: true, isAdmin: false, isOwner: false });
+    expect(await me(HELPER_UNVERIFIED)).toEqual({
+      success: true,
+      isAdmin: false,
+      isOwner: false,
+      needsVerification: true,
+    });
     expect(await me(USER)).toEqual({ success: true, isAdmin: false, isOwner: false });
   });
 

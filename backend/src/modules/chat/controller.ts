@@ -1,9 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { config, isProduction } from "../../lib/config";
+import { sendError } from "../../lib/errors";
 import { parse } from "../../lib/validate";
-import { authenticateUser } from "../../middleware/auth";
-import { requirePaidUser } from "../../middleware/requirePaid";
-import { type AnonSlot, chatLimits } from "./limits";
+import { authenticateUser, currentUser } from "../../middleware/auth";
+import { findUserEntitlement } from "../payments/service";
+import { chatLimits } from "./limits";
 import { chatBody } from "./schema";
 import { buildContents, generateReply, geminiErrorMessage } from "./service";
 
@@ -12,10 +13,20 @@ const UNAVAILABLE = "The AI assistant is temporarily unavailable. Please try aga
 /** Debug details go to the client only outside production. */
 const debug = (value: unknown) => (isProduction ? undefined : value);
 
+const LIMIT_FREE = {
+  code: "CHAT_LIMIT_FREE",
+  message: "You've used today's free messages. Please buy a plan to keep chatting.",
+};
+const LIMIT_PAID = {
+  code: "CHAT_LIMIT_PAID",
+  message: "You've reached today's limit. It resets tomorrow.",
+};
+
 /**
  * Guests may chat (with daily caps). A request that sends a token must have a
- * valid one and a paid plan. Both middlewares answer 401/402 themselves and
- * only call the callback on success, so a bad token never gets through.
+ * valid one: authenticateUser answers 401 itself and only calls the callback
+ * on success, so a bad token never gets through. Signed-in users with a plan
+ * get req.entitlement (the paid tier); others chat on the free tier.
  */
 export function resolveAccess(req: Request, res: Response, next: NextFunction): void {
   if (!req.headers.authorization) {
@@ -24,7 +35,12 @@ export function resolveAccess(req: Request, res: Response, next: NextFunction): 
   }
 
   authenticateUser(req, res, () => {
-    requirePaidUser(req, res, next).catch(next);
+    findUserEntitlement(currentUser(req))
+      .then((entitlement) => {
+        if (entitlement) req.entitlement = entitlement;
+        next();
+      })
+      .catch(next);
   }).catch(next);
 }
 
@@ -55,25 +71,41 @@ export async function postChat(req: Request, res: Response): Promise<void> {
   const { message, history } = parse(chatBody, req.body);
   const contents = buildContents(message, history);
 
-  let anonSlot: AnonSlot | null = null;
-  if (!req.user) {
-    const taken = await chatLimits.takeAnonSlot(ip);
+  // Take one daily slot; `refund` gives it back if Gemini does not answer.
+  let refund: () => Promise<void>;
+  if (req.user) {
+    const tier = req.entitlement ? "paid" : "free";
+    const taken = await chatLimits.takeUserSlot(req.user.uid, tier);
 
     if (taken.blocked) {
+      const limit = tier === "paid" ? LIMIT_PAID : LIMIT_FREE;
+      sendError(req, res, 429, limit.message, limit.code);
+      return;
+    }
+
+    const slot = taken.slot;
+    refund = () => chatLimits.refundUserSlot(slot);
+  } else {
+    const taken = await chatLimits.takeAnonSlot(ip);
+
+    if (taken.blocked === "global") {
       res.status(429).json({
         success: false,
         message:
-          taken.blocked === "global"
-            ? "The AI assistant has reached its daily limit for guests. Please sign in or try again tomorrow."
-            : "You have reached today's guest limit for the AI assistant. Please sign in or try again tomorrow.",
+          "The AI assistant has reached its daily limit for guests. Please sign in or try again tomorrow.",
       });
       return;
     }
 
-    anonSlot = taken.slot;
+    if (taken.blocked) {
+      sendError(req, res, 429, LIMIT_FREE.message, LIMIT_FREE.code);
+      return;
+    }
+
+    const slot = taken.slot;
+    refund = () => chatLimits.refundAnonSlot(slot);
   }
 
-  // The guest slot is refunded unless Gemini answers.
   let succeeded = false;
 
   try {
@@ -117,9 +149,9 @@ export async function postChat(req: Request, res: Response): Promise<void> {
       debug: debug(error instanceof Error ? error.message : undefined),
     });
   } finally {
-    if (anonSlot && !succeeded) {
-      await chatLimits.refundAnonSlot(anonSlot).catch((error: unknown) => {
-        log.warn({ err: error }, "Could not give back a guest chat slot");
+    if (!succeeded) {
+      await refund().catch((error: unknown) => {
+        log.warn({ err: error }, "Could not give back a chat slot");
       });
     }
   }

@@ -140,7 +140,45 @@ describe("admin access", () => {
     expect(admin.body).toEqual({ success: true, isAdmin: true, isOwner: true });
     expect(user.status).toBe(200);
     expect(user.body).toEqual({ success: true, isAdmin: false, isOwner: false });
-    expect(unverified.body).toEqual({ success: true, isAdmin: false, isOwner: false });
+    expect(unverified.body).toEqual({
+      success: true,
+      isAdmin: false,
+      isOwner: false,
+      needsVerification: true,
+    });
+  });
+
+  test("GET /me hints needsVerification only for listed emails that are not verified", async () => {
+    const { AdminUser } = await import("../src/modules/admin/admins.model.js");
+    const { clearAdminCache } = await import("../src/modules/admin/admins.service.js");
+    testUsers.set("token-unverified-portal", {
+      uid: "uid-unverified-portal",
+      email: "Portal@example.com",
+      email_verified: false,
+    });
+    testUsers.set("token-unverified-stranger", {
+      uid: "uid-unverified-stranger",
+      email: "stranger@example.com",
+      email_verified: false,
+    });
+    await AdminUser.create({ email: "portal@example.com", addedBy: "owner@example.com" });
+    clearAdminCache();
+
+    try {
+      const portal = await as("token-unverified-portal", request(app).get("/api/admin/me"));
+      const stranger = await as("token-unverified-stranger", request(app).get("/api/admin/me"));
+
+      expect(portal.body).toEqual({
+        success: true,
+        isAdmin: false,
+        isOwner: false,
+        needsVerification: true,
+      });
+      expect(stranger.body).toEqual({ success: true, isAdmin: false, isOwner: false });
+    } finally {
+      await AdminUser.deleteMany({});
+      clearAdminCache();
+    }
   });
 });
 

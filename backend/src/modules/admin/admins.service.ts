@@ -54,6 +54,19 @@ export async function isAdmin(token: TokenEmail): Promise<boolean> {
   return (await databaseAdminEmails()).has(email);
 }
 
+/**
+ * True only when the token's email is on the admin list (owner or portal
+ * admin) but Firebase has not verified it yet, so the UI can say "verify
+ * your email". Anyone else gets false, so nothing leaks about the list.
+ */
+export async function needsAdminVerification(token: TokenEmail): Promise<boolean> {
+  if (token.email_verified === true || typeof token.email !== "string") return false;
+  const email = token.email.trim().toLowerCase();
+  if (!email) return false;
+  if (adminEmails().has(email)) return true;
+  return (await databaseAdminEmails()).has(email);
+}
+
 /** Owners first (env order), then portal admins, oldest first. */
 export async function listAdmins(): Promise<AdminEntry[]> {
   const owners = [...adminEmails()];

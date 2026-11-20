@@ -10,7 +10,6 @@ import {
 
 import { useApp } from "../../app/providers";
 import { auth } from "../../firebase/firebase";
-import { apiRequest } from "../../utils/api";
 import { DEMO_MODE, getDemoSessionUser } from "../../demo/demoMode";
 import FeaturePaused from "../site/FeaturePaused";
 import { useFeature } from "../../hooks/useSiteStatus";
@@ -191,9 +190,9 @@ export default function WestForceChatbot() {
   const aiOn = useFeature("ai");
   const [open, setOpen] = useState(false);
 
-  // Close the chat first so the plans window is not hidden behind it.
+  // The plans window sits above the chat (z-index), so the chat stays open
+  // behind it and the user is back in their conversation after closing it.
   const askToPay = () => {
-    setOpen(false);
     openPaymentModal("Choose a plan to use the WestForce AI assistant.");
   };
 
@@ -256,23 +255,6 @@ export default function WestForceChatbot() {
 
     if (!message || loading || !aiOn) {
       return;
-    }
-
-    if (currentUser()) {
-      try {
-        const entitlement = await apiRequest("/api/payments/me");
-
-        if (!entitlement.isPaid) {
-          askToPay();
-          return;
-        }
-      } catch (entitlementError) {
-        setError(
-          entitlementError.message ||
-            "Unable to verify your access. Please try again."
-        );
-        return;
-      }
     }
 
     /*
@@ -350,8 +332,9 @@ export default function WestForceChatbot() {
       |
       */
 
+      // Limit notices are ours, not Gemini's, so they stay out of the history.
       const history = messages
-        .filter((item, index) => index > 0)
+        .filter((item, index) => index > 0 && !item.notice)
         .slice(-12)
         .map((item) => ({
           role: item.role,
@@ -399,6 +382,23 @@ export default function WestForceChatbot() {
       */
 
       if (!response.ok) {
+        if (
+          response.status === 429 &&
+          (result.code === "CHAT_LIMIT_FREE" ||
+            result.code === "CHAT_LIMIT_PAID")
+        ) {
+          setMessages((current) => [
+            ...current,
+            {
+              role: "model",
+              notice: true,
+              showPlans: result.code === "CHAT_LIMIT_FREE",
+              text: result.message,
+            },
+          ]);
+          return;
+        }
+
         if (response.status === 402) {
           askToPay();
           return;
@@ -593,8 +593,24 @@ export default function WestForceChatbot() {
                       </div>
                     )}
 
-                    <div className="westforce-chatbot-bubble">
+                    <div
+                      className={`westforce-chatbot-bubble${
+                        message.notice
+                          ? " westforce-chatbot-notice"
+                          : ""
+                      }`}
+                    >
                       {message.text}
+
+                      {message.showPlans && (
+                        <button
+                          type="button"
+                          className="westforce-chatbot-plans-button"
+                          onClick={askToPay}
+                        >
+                          See plans
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -637,7 +653,10 @@ export default function WestForceChatbot() {
               messages.length > 0 &&
               messages[
                 messages.length - 1
-              ]?.role === "model" && (
+              ]?.role === "model" &&
+              !messages[
+                messages.length - 1
+              ]?.notice && (
                 <div className="westforce-chatbot-suggestions">
                   <div className="westforce-chatbot-suggestions-label">
                     You can also ask

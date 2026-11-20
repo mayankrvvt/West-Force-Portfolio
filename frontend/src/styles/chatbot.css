@@ -572,6 +572,49 @@
 
 
 /* ==========================================================================
+   DAILY LIMIT NOTICE
+   ========================================================================== */
+
+.westforce-chatbot-notice {
+  background: var(--wf-frost);
+
+  border-color: rgba(13, 43, 69, 0.14);
+
+  color: var(--wf-navy);
+}
+
+.westforce-chatbot-plans-button {
+  display: block;
+
+  margin-top: 10px;
+
+  padding: 8px 14px;
+
+  border: 1px solid var(--wf-navy);
+
+  border-radius: 4px;
+
+  background: var(--wf-navy);
+
+  color: #ffffff;
+
+  font: inherit;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.westforce-chatbot-plans-button:hover {
+  background: var(--wf-navy-soft);
+}
+
+
+/* ==========================================================================
    ERROR
    ========================================================================== */
 
@@ -865,7 +908,8 @@
     height: 44px;
   }
 
-  .westforce-chatbot-suggestions button {
+  .westforce-chatbot-suggestions button,
+  .westforce-chatbot-plans-button {
     min-height: 44px;
     font-size: 13px;
   }
@@ -882,6 +926,7 @@
 @media (prefers-reduced-motion: reduce) {
   .westforce-chatbot-header-actions button,
   .westforce-chatbot-suggestions button,
+  .westforce-chatbot-plans-button,
   .westforce-chatbot-input-area button {
     transition: none;
   }

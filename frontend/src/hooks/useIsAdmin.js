@@ -22,19 +22,19 @@ function fetchAdminStatus(key, force) {
 export default function useIsAdmin() {
   const { user, loading: authLoading } = useAuth();
   const key = user ? user.uid || user.email || "signed-in" : null;
-  const [result, setResult] = useState({ key: null, attempt: -1, isAdmin: false, isOwner: false, error: "" });
+  const [result, setResult] = useState({ key: null, attempt: -1, isAdmin: false, isOwner: false, needsVerification: false, error: "" });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (authLoading || !key) return undefined;
     let active = true;
     fetchAdminStatus(key, attempt > 0).then(
-      ({ isAdmin, isOwner }) => {
-        if (active) setResult({ key, attempt, isAdmin, isOwner: isAdmin && isOwner, error: "" });
+      ({ isAdmin, isOwner, needsVerification }) => {
+        if (active) setResult({ key, attempt, isAdmin, isOwner: isAdmin && isOwner, needsVerification: !isAdmin && needsVerification, error: "" });
       },
       (error) => {
         console.error("Failed to check admin access:", error);
-        if (active) setResult({ key, attempt, isAdmin: false, isOwner: false, error: error.message || "Could not check your access." });
+        if (active) setResult({ key, attempt, isAdmin: false, isOwner: false, needsVerification: false, error: error.message || "Could not check your access." });
       }
     );
     return () => {
@@ -48,6 +48,8 @@ export default function useIsAdmin() {
   return {
     isAdmin: Boolean(key) && settled && result.isAdmin,
     isOwner: Boolean(key) && settled && result.isOwner,
+    // A listed admin whose email is not verified yet: show "verify your email".
+    needsVerification: Boolean(key) && settled && result.needsVerification === true,
     loading: authLoading || (Boolean(key) && !settled),
     error: settled ? result.error : "",
     refresh,

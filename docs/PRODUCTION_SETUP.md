@@ -213,7 +213,9 @@ Generate random secrets on your Mac with `openssl rand -hex 32`. Use a different
 | `RESUME_BUILD_DAILY_LIMIT` | No | AI resume builds per user per UTC day. Default 20, `0` turns it off. | | `20` |
 | `RESUME_ENHANCE_DAILY_LIMIT` | No | AI enhancements per user per day. Default 30. | | `30` |
 | `CHAT_ANON_DAILY_CAP` | No | Signed-out chat requests per day for everyone together. Default 500. | | `500` |
-| `CHAT_ANON_DAILY_PER_IP` | No | Signed-out chat requests per IP per day. Default 50. | | `50` |
+| `CHAT_ANON_DAILY_PER_IP` | No | Signed-out chat requests per IP per day. Default 10. | | `10` |
+| `CHAT_FREE_DAILY` | No | Chat requests per signed-in user without a plan per day. Default 30. | | `30` |
+| `CHAT_PAID_DAILY` | No | Chat requests per signed-in user with a paid plan per day. Default 200. | | `200` |
 
 **Uploads**
 

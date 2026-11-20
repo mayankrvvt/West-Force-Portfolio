@@ -63,18 +63,72 @@ describe("auth and missing records", () => {
     expect(res.body.message).toBe("User not found.");
   });
 
-  test("GET /me / PUT /me / DELETE /me with no portfolio -> 404", async () => {
+  test("GET /me / DELETE /me with no portfolio -> 404", async () => {
     const user = await newUser();
 
     for (const req of [
       request(app).get("/api/portfolios/me"),
-      request(app).put("/api/portfolios/me").send({ template: "x" }),
       request(app).delete("/api/portfolios/me"),
     ]) {
       const res = await as(user.token, req);
       expect(res.status).toBe(404);
       expect(res.body.message).toBe("Portfolio not found.");
     }
+  });
+
+  test("PUT /me with no portfolio creates a draft one, then GET returns it", async () => {
+    const user = await newUser();
+
+    const res = await as(
+      user.token,
+      request(app)
+        .put("/api/portfolios/me")
+        .send({ profile: { name: "Ann Lee", title: "Welder", workArea: "Brampton" } })
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.portfolio.status).toBe("draft");
+    expect(res.body.portfolio.publishedAt).toBeNull();
+    expect(res.body.portfolio.profile.name).toBe("Ann Lee");
+    expect(res.body.portfolio.profile.workArea).toBe("Brampton");
+    expect(res.body.portfolio.slug).toMatch(/^ann-lee-[a-z0-9]+$/);
+    expect(res.body.portfolio.documentProtection).not.toHaveProperty("pinHash");
+
+    const get = await as(user.token, request(app).get("/api/portfolios/me"));
+    expect(get.status).toBe(200);
+    expect(get.body.portfolio.profile.title).toBe("Welder");
+    expect(get.body.portfolio.slug).toBe(res.body.portfolio.slug);
+  });
+
+  test("PUT /me with no portfolio and no name still gets a slug", async () => {
+    const user = await newUser();
+    const res = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ profile: { title: "Cook" } })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.portfolio.slug).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  test("PUT /me with no portfolio and no Mongo user -> 404 User not found", async () => {
+    const user = await newUser({ withRecord: false });
+    const res = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ profile: { name: "Ann" } })
+    );
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("User not found.");
+  });
+
+  test("unpaid PUT /me with no portfolio and status published -> 402, nothing made", async () => {
+    const user = await newUser();
+    const res = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ status: "published", profile: { name: "A" } })
+    );
+    expect(res.status).toBe(402);
+    const get = await as(user.token, request(app).get("/api/portfolios/me"));
+    expect(get.status).toBe(404);
   });
 });
 

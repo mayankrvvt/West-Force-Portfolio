@@ -135,6 +135,27 @@ export async function createPortfolio(
     throw new AppError(409, "You already have a portfolio.");
   }
 
+  return createFor(user, body);
+}
+
+/**
+ * A starter slug for a portfolio made without one (first Profile save):
+ * the name in lowercase words plus a short random tail, e.g. "ann-lee-k3x9qa".
+ */
+export function starterSlug(name: unknown): string {
+  const base = toText(name || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+  const tail = Math.random().toString(36).slice(2, 8).padEnd(6, "0");
+
+  return `${base || "portfolio"}-${tail}`;
+}
+
+async function createFor(user: UserDocument, body: PortfolioBody): Promise<PortfolioDocument> {
   const status = body.status === "published" ? "published" : "draft";
   const documentProtection = body.documentProtection?.enabled
     ? await protectionFor(body.documentProtection, { keepExisting: false })
@@ -152,11 +173,25 @@ export async function createPortfolio(
   );
 }
 
+/**
+ * Update the signed-in user's portfolio. A user who has none yet (a new
+ * free user filling in the Profile page first) gets one made from this body,
+ * with a starter slug when none was sent. Publishing is still gated by
+ * requirePaymentToPublish on the route.
+ */
 export async function updatePortfolio(
   firebaseUid: string,
   body: PortfolioBody
 ): Promise<PortfolioDocument> {
-  const portfolio = await findOwnPortfolio(firebaseUid);
+  const user = await findOwner(firebaseUid);
+  const portfolio = await Portfolio.findOne({ userId: user._id }).select(
+    "+documentProtection.pinHash"
+  );
+
+  if (!portfolio) {
+    const slug = normalizeSlug(body.slug) || starterSlug(body.profile?.name || user.displayName);
+    return createFor(user, { ...body, slug });
+  }
 
   for (const [field, value] of Object.entries(pickEditable(body))) {
     if (field === "profile" && isPlainObject(value)) {

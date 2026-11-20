@@ -40,6 +40,22 @@ Backend tests run without a database or `.env`. The backend dev server won't sta
 
 Before you say a change is done, frontend lint and build must pass. If you touch the backend, its typecheck and tests must pass too.
 
+## Deploy (production)
+- **Frontend:** Vercel project `west-force-portfolio` (team "Maven"), site `https://west-force-portfolio.vercel.app`.
+  - `VITE_API_URL` on Vercel is the backend address. When it is set, the frontend calls it directly and `vercel.json` rewrites are not used.
+  - `VITE_*` values are read at build time, so redeploy Vercel after you change one.
+- **Backend:** a Render web service from repo `mayankrvvt/West-Force-Portfolio`, branch `main`, root `backend`, build `npm ci && npm run build`, start `npm start`, health check `/api/health`.
+  - Render services named West-Ventures (repo `mayankrvvt/West-Ventures`) and workforceiq-api are other projects. Don't change them.
+- **Render keys.** Required: `NODE_ENV=production`, `CLIENT_URL`, `MONGODB_URI`, `FIREBASE_SERVICE_ACCOUNT_JSON`, `INSIGHTS_HASH_SECRET`, `DOCUMENT_ACCESS_SECRET`. Also set:
+  - `NODE_VERSION=24`, because the lock file needs npm 11 and Node 22 fails `npm ci`.
+  - `TRUST_PROXY_HOPS`: 1 if the browser calls Render directly (`VITE_API_URL`), 2 if the call goes through the Vercel rewrite.
+  - `ADMIN_EMAILS` (with an S), `GEMINI_API_KEY`, `CLOUDINARY_URL`, and optionally `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
+- **Firebase:** project `westforce-portfolio` (set in `frontend/src/firebase/firebase.js`). Get the service account key from that project only.
+- **Stripe:** production only takes `sk_live_` keys and refuses `STRIPE_MODE=demo`. Leave Stripe out until the account is live.
+  - Webhook: `<backend>/api/payments/webhook`, events `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+- **Mail:** leave `MAIL_MODE` unset (no real mail) until `RESEND_API_KEY` and `MAIL_FROM` are ready.
+- **GitHub Actions:** CI runs on Node 24. `deploy.yml` uses secret `RENDER_DEPLOY_HOOK_URL` and variables `SITE_URL` and `API_BASE_URL`.
+
 ## Demo mode
 - `VITE_DEMO_LOGIN=true` logs in as the sample user "Emma Tremblay", a personal support worker in Brampton, ON.
 - The fake API is in `frontend/src/demo/demoApi.js`. Demo data is kept in localStorage, so clear it to see new sample data.

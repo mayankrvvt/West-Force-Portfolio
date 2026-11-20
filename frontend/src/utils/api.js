@@ -286,7 +286,7 @@ export async function apiRequest(
       "content-type"
     ) || "";
 
-  let result = {};
+  let result;
 
   if (
     contentType.includes(
@@ -303,7 +303,8 @@ export async function apiRequest(
       );
 
       throw new Error(
-        `Server returned invalid JSON (${response.status}).`
+        `Server returned invalid JSON (${response.status}).`,
+        { cause: error }
       );
     }
   } else {
@@ -473,7 +474,7 @@ export async function uploadFile(
       "content-type"
     ) || "";
 
-  let result = {};
+  let result;
 
   if (
     contentType.includes(
@@ -490,7 +491,8 @@ export async function uploadFile(
       );
 
       throw new Error(
-        `Server returned invalid JSON (${response.status}).`
+        `Server returned invalid JSON (${response.status}).`,
+        { cause: error }
       );
     }
   } else {
@@ -588,7 +590,7 @@ export async function publicApiRequest(
       "content-type"
     ) || "";
 
-  let result = {};
+  let result;
 
   if (
     contentType.includes(

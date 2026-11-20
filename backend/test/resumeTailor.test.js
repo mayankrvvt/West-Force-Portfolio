@@ -224,7 +224,8 @@ describe("POST /api/resumes/tailor", () => {
     expect(res.status).toBe(502);
     expect(res.body.code).toBe("AI_BAD_RESPONSE");
     expect(res.body.tailored).toBeUndefined();
-    expect(await usage(resumeTailorUsageKey(uid))).toBe(0);
+    // The use is given back after the response is sent, so wait for it.
+    await vi.waitFor(async () => expect(await usage(resumeTailorUsageKey(uid))).toBe(0));
   });
 
   test("the daily cap answers 429 without calling the AI", async () => {

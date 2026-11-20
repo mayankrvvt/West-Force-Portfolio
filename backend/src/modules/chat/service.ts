@@ -85,7 +85,7 @@ async function requestReply(contents: GeminiContent[], apiKey: string): Promise<
   });
 
   const responseText = await response.text();
-  let data: unknown = {};
+  let data: unknown;
   try {
     data = JSON.parse(responseText);
   } catch {

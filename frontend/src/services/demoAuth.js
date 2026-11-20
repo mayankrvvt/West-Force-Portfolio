@@ -1,3 +1,8 @@
+// Demo auth is dev-only unless explicitly enabled.
+const DEMO_ENABLED =
+  import.meta.env.DEV ||
+  import.meta.env.VITE_ENABLE_DEMO === "true";
+
 const DEMO_SESSION_KEY = "westforce_demo_session";
 const DEMO_USER_KEY = "westforce_demo_user";
 
@@ -46,6 +51,10 @@ export function signupDemoUser({
   email,
   password,
 }) {
+  if (!DEMO_ENABLED) {
+    return { success: false, error: "Demo auth is disabled." };
+  }
+
   const normalizedEmail = email?.trim().toLowerCase();
 
   if (
@@ -106,6 +115,8 @@ export function loginWithDemoCredentials(
   email,
   password
 ) {
+  if (!DEMO_ENABLED) return false;
+
   const normalizedEmail = email?.trim().toLowerCase();
 
   /*
@@ -152,6 +163,8 @@ export function loginWithDemoCredentials(
 export function createDemoSession(
   email = DEMO_USER.email
 ) {
+  if (!DEMO_ENABLED) return null;
+
   const normalizedEmail = email
     ?.trim()
     .toLowerCase();
@@ -211,6 +224,8 @@ export function createDemoSession(
 ----------------------------------------- */
 
 export function getDemoSession() {
+  if (!DEMO_ENABLED) return null;
+
   const session = localStorage.getItem(
     DEMO_SESSION_KEY
   );

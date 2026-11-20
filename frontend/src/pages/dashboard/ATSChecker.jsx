@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -6,8 +7,15 @@ import {
   ScanSearch,
   Sparkles,
 } from "lucide-react";
-import { checkATSResume } from "../../services/mockApi";
-import { uploadFile } from "../../utils/api";
+import { apiRequest, uploadFile } from "../../utils/api";
+
+/** A friendly message for each ATS error the server can send. */
+function atsErrorMessage(error) {
+  if (error?.status === 402) return "The ATS checker is part of the paid plans.";
+  if (error?.status === 429) return error.message || "You have used all ATS checks for today. Please try again tomorrow.";
+  if (error?.status === 504) return "The check took too long. Please try again.";
+  return error?.message || "Could not analyze this resume.";
+}
 
 const SKILL_TERMS = [
   "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Go",
@@ -33,6 +41,8 @@ function findSkills(text) {
 }
 
 export default function ATSChecker() {
+  const [searchParams] = useSearchParams();
+  const savedResumeId = searchParams.get("resumeId") || "";
   const [fileName, setFileName] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -40,6 +50,11 @@ export default function ATSChecker() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [needsPlan, setNeedsPlan] = useState(false);
+
+  // An uploaded resume wins; otherwise a saved resume opened from My Resumes.
+  const useSaved = !resumeText.trim() && Boolean(savedResumeId);
+  const hasResume = Boolean(resumeText.trim()) || useSaved;
 
   const skills = findSkills(resumeText);
 
@@ -73,18 +88,27 @@ export default function ATSChecker() {
   };
 
   const runCheck = async () => {
-    if (!fileName || !resumeText.trim()) {
+    if (!hasResume) {
       setError("Upload a readable resume before running the ATS check.");
+      return;
+    }
+    if (!jobDescription.trim()) {
+      setError("Paste the job description to compare your resume with.");
       return;
     }
 
     setError("");
+    setNeedsPlan(false);
     setLoading(true);
     try {
-      setResult(await checkATSResume({ resumeText, jobDescription }));
+      const body = useSaved
+        ? { resumeId: savedResumeId, jobDescription }
+        : { resumeText, jobDescription };
+      setResult(await apiRequest("/api/ats/check", { method: "POST", body: JSON.stringify(body) }));
     } catch (checkError) {
-      console.error("ATS check failed:", checkError);
-      setError(checkError.message || "Could not analyze this resume.");
+      console.error("ATS check failed:", checkError?.status);
+      if (checkError?.status === 402) setNeedsPlan(true);
+      setError(atsErrorMessage(checkError));
     } finally {
       setLoading(false);
     }
@@ -102,13 +126,13 @@ export default function ATSChecker() {
 
       <div className="product-notice">
         <ScanSearch size={15} />
-        <span>Analysis runs locally in your browser using the text extracted from your uploaded resume.</span>
+        <span>Your resume and the job description are checked by AI on our server. Up to 20 checks per day.</span>
       </div>
 
       {error && (
         <div className="product-notice" role="alert">
           <AlertCircle size={15} />
-          <span>{error}</span>
+          <span>{error}{needsPlan && <> <Link to="/pricing">See plans</Link></>}</span>
         </div>
       )}
 
@@ -132,7 +156,7 @@ export default function ATSChecker() {
               <div>
                 <FileSearch size={27} />
                 <h3>{uploading ? "Extracting resume text..." : fileName || "Upload resume"}</h3>
-                <p>{uploading ? "Please wait while we read the file." : fileName ? "Resume uploaded and ready for analysis." : "PDF, DOCX or TXT · up to 10 MB"}</p>
+                <p>{uploading ? "Please wait while we read the file." : fileName ? "Resume uploaded and ready for analysis." : useSaved ? "Using your saved resume. Upload a file to check a different one." : "PDF, DOCX or TXT · up to 10 MB"}</p>
               </div>
             </label>
 
@@ -170,7 +194,7 @@ export default function ATSChecker() {
             <div className="product-card-header">
               <div>
                 <h2>Target job description</h2>
-                <p>Optional, but recommended for job-specific keyword matching.</p>
+                <p>Paste the job you are applying for.</p>
               </div>
             </div>
             <textarea
@@ -181,11 +205,12 @@ export default function ATSChecker() {
                 setResult(null);
               }}
               placeholder="Paste the job description here..."
+              maxLength={20000}
             />
             <div className="product-inline-actions" style={{ marginTop: 14 }}>
               <button
                 className="product-button primary"
-                disabled={loading || uploading || !fileName || !resumeText.trim()}
+                disabled={loading || uploading || !hasResume || !jobDescription.trim()}
                 onClick={runCheck}
               >
                 <ScanSearch size={15} />
@@ -198,7 +223,7 @@ export default function ATSChecker() {
                 Use sample job
               </button>
             </div>
-            {!fileName && <p role="status">Upload a resume to enable ATS analysis.</p>}
+            {!hasResume && <p role="status">Upload a resume to enable ATS analysis.</p>}
           </div>
         </section>
 
@@ -207,7 +232,7 @@ export default function ATSChecker() {
             <div className="empty-product">
               <ScanSearch size={28} />
               <h2>Your ATS report will appear here</h2>
-              <p>Upload a resume and run a check to see job keyword matches, resume structure and recommendations.</p>
+              <p>Upload a resume, paste a job description and run a check to see keyword matches and suggestions.</p>
             </div>
           ) : (
             <ATSResult result={result} />
@@ -219,6 +244,10 @@ export default function ATSChecker() {
 }
 
 function ATSResult({ result }) {
+  const matched = result.matchedKeywords || [];
+  const missing = result.missingKeywords || [];
+  const suggestions = result.suggestions || [];
+
   return (
     <>
       <div style={{ textAlign: "center" }}>
@@ -226,47 +255,37 @@ function ATSResult({ result }) {
         <div className="product-score-ring" style={{ "--score": `${result.score}%` }}>
           <span>{result.score}</span>
         </div>
-        <h2 style={{ margin: "0 0 5px", color: "#17344e" }}>ATS compatibility score</h2>
+        <h2 style={{ margin: "0 0 5px", color: "#17344e" }}>ATS match score</h2>
         <p style={{ margin: 0, color: "#8394a5", fontSize: 11 }}>
-          {result.hasJobDescription ? "Based on this resume and target job description." : "Based on resume structure and readable content. Add a job description for keyword matching."}
+          {result.summary || "Based on this resume and the target job description."}
         </p>
       </div>
 
-      <div className="ats-score-grid">
-        {Object.entries(result.sections).map(([key, value]) => (
-          <div className="ats-score-item" key={key}>
-            <strong>{value}</strong><span>{key}</span>
-          </div>
-        ))}
-      </div>
-
-      {result.hasJobDescription && (
-        <>
-          <section style={{ marginTop: 22 }}>
-            <div className="product-card-header"><div><h3>Matched job keywords</h3></div></div>
-            <div className="keyword-grid">
-              {result.matchedKeywords.length ? result.matchedKeywords.map((word) => (
-                <span className="keyword-chip" key={word}><CheckCircle2 size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-              )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No job keywords matched yet.</span>}
-            </div>
-          </section>
-          <section style={{ marginTop: 22 }}>
-            <div className="product-card-header"><div><h3>Missing job keywords</h3></div></div>
-            <div className="keyword-grid">
-              {result.missingKeywords.length ? result.missingKeywords.map((word) => (
-                <span className="keyword-chip missing" key={word}><AlertCircle size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-              )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No missing keywords found.</span>}
-            </div>
-          </section>
-        </>
-      )}
-
       <section style={{ marginTop: 22 }}>
-        <div className="product-card-header"><div><h3><Sparkles size={15} style={{ verticalAlign: "-2px", marginRight: 5 }} />Recommendations</h3></div></div>
-        <ul style={{ display: "grid", gap: 9, paddingLeft: 17, color: "#74889b", fontSize: 11, lineHeight: 1.55 }}>
-          {result.recommendations.map((item) => <li key={item}>{item}</li>)}
-        </ul>
+        <div className="product-card-header"><div><h3>Matched job keywords</h3></div></div>
+        <div className="keyword-grid">
+          {matched.length ? matched.map((word) => (
+            <span className="keyword-chip" key={word}><CheckCircle2 size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
+          )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No job keywords matched yet.</span>}
+        </div>
       </section>
+      <section style={{ marginTop: 22 }}>
+        <div className="product-card-header"><div><h3>Missing job keywords</h3></div></div>
+        <div className="keyword-grid">
+          {missing.length ? missing.map((word) => (
+            <span className="keyword-chip missing" key={word}><AlertCircle size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
+          )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No missing keywords found.</span>}
+        </div>
+      </section>
+
+      {suggestions.length > 0 && (
+        <section style={{ marginTop: 22 }}>
+          <div className="product-card-header"><div><h3><Sparkles size={15} style={{ verticalAlign: "-2px", marginRight: 5 }} />Suggestions</h3></div></div>
+          <ul style={{ display: "grid", gap: 9, paddingLeft: 17, color: "#74889b", fontSize: 11, lineHeight: 1.55 }}>
+            {suggestions.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

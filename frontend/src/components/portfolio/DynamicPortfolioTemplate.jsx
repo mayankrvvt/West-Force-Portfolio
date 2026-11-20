@@ -39,6 +39,8 @@ function mapPortfolioData(portfolio) {
     documentProtection: {
       enabled:
         portfolio?.documentProtection?.enabled === true,
+      pinLength:
+        portfolio?.documentProtection?.pinLength || null,
     },
 
     // --------------------------------------------------
@@ -349,6 +351,7 @@ export default function DynamicPortfolioTemplate({
           protectionEnabled={
             data.documentProtection.enabled
           }
+          pinLength={data.documentProtection.pinLength}
         />
 
         {/* RESUME */}

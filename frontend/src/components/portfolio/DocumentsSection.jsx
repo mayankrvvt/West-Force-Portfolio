@@ -13,7 +13,15 @@ export default function DocumentsSection({
   data = [],
   protectionEnabled = false,
   portfolioSlug = "",
+  pinLength = null,
 }) {
+  // New PINs have 6 digits; older portfolios may still use 4.
+  const expectedLength =
+    pinLength === 4 || pinLength === 6 ? pinLength : null;
+  const pinLabel = expectedLength
+    ? `${expectedLength}-digit`
+    : "4- or 6-digit";
+
   const [pin, setPin] = useState("");
 
   const [unlocked, setUnlocked] = useState(
@@ -59,9 +67,13 @@ export default function DocumentsSection({
       return;
     }
 
-    if (!/^\d{4}$/.test(pin)) {
+    const validPin = expectedLength
+      ? pin.length === expectedLength && /^\d+$/.test(pin)
+      : /^(\d{4}|\d{6})$/.test(pin);
+
+    if (!validPin) {
       setError(
-        "Please enter your 4-digit PIN."
+        `Please enter your ${pinLabel} PIN.`
       );
       return;
     }
@@ -263,23 +275,25 @@ export default function DocumentsSection({
                         const value =
                           event.target.value
                             .replace(/\D/g, "")
-                            .slice(0, 4);
+                            .slice(0, expectedLength || 6);
 
                         setPin(value);
                         setError("");
                       }}
                       inputMode="numeric"
                       autoComplete="one-time-code"
-                      maxLength={4}
-                      placeholder="••••"
-                      aria-label="4-digit document PIN"
+                      maxLength={expectedLength || 6}
+                      placeholder={expectedLength === 4 ? "••••" : "••••••"}
+                      aria-label={`${pinLabel} document PIN`}
                     />
 
                     <button
                       type="submit"
                       disabled={
                         unlocking ||
-                        pin.length !== 4
+                        !(expectedLength
+                          ? pin.length === expectedLength
+                          : pin.length === 4 || pin.length === 6)
                       }
                     >
                       {unlocking

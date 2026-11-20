@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
   ArrowUpRight,
   BriefcaseBusiness,
   FileCheck2,
@@ -9,25 +10,28 @@ import {
   UserRound,
 } from "lucide-react";
 import { apiRequest } from "../../utils/api";
-import { getMockDashboardData } from "../../services/mockApi";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [portfolioResult, mockResult] = await Promise.all([
+        const [portfolioResult, summary] = await Promise.all([
           apiRequest("/api/portfolios/me").catch(() => null),
-          getMockDashboardData(),
+          apiRequest("/api/dashboard/summary").catch((err) => {
+            if (!cancelled) setError(err.message || "Could not load your dashboard numbers.");
+            return null;
+          }),
         ]);
         if (cancelled) return;
         setPortfolio(portfolioResult?.portfolio || portfolioResult?.data || portfolioResult || null);
-        setData(mockResult);
+        setData(summary);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -40,6 +44,10 @@ export default function Dashboard() {
 
   const name = portfolio?.profile?.name || "there";
   const slug = portfolio?.slug;
+  const stats = data?.stats || {};
+  const recentApplications = data?.recentApplications || [];
+  const recentResumes = data?.recentResumes || [];
+  const recommendedJobs = data?.recommendedJobs || [];
 
   return (
     <div className="dashboard-product">
@@ -54,18 +62,20 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {error && <div className="product-notice" role="alert"><AlertCircle size={15}/><span>{error}</span></div>}
+
       <div className="product-stat-grid">
-        <Stat icon={BriefcaseBusiness} label="Portfolio completion" value={`${data?.portfolioCompletion || 0}%`} />
-        <Stat icon={FileCheck2} label="Latest ATS score" value={`${data?.atsScore || 0}`} suffix="/100" />
-        <Stat icon={FileCheck2} label="Resume versions" value={data?.resumeCount || 0} />
-        <Stat icon={BriefcaseBusiness} label="Applications" value={data?.applicationCount || 0} />
+        <Stat icon={FileCheck2} label="Latest ATS score" value={typeof stats.latestAtsScore === "number" ? stats.latestAtsScore : "-"} suffix={typeof stats.latestAtsScore === "number" ? "/100" : ""} />
+        <Stat icon={FileCheck2} label="Resume versions" value={stats.resumes || 0} />
+        <Stat icon={BriefcaseBusiness} label="Applications" value={stats.applications || 0} />
+        <Stat icon={BriefcaseBusiness} label="Interviews" value={stats.interviews || 0} />
       </div>
 
       <div className="product-dashboard-grid">
         <section className="product-card">
           <div className="product-card-header">
             <div><h2>Your professional portfolio</h2><p>Your live portfolio uses the Canadian template and your saved profile data.</p></div>
-            <span className="product-eyebrow">{data?.published ? "PUBLISHED" : "DRAFT"}</span>
+            <span className="product-eyebrow">{portfolio?.status === "published" ? "PUBLISHED" : "DRAFT"}</span>
           </div>
           <div className="product-portfolio-preview">
             <div>
@@ -93,13 +103,25 @@ export default function Dashboard() {
       </div>
 
       <section className="product-card" style={{marginTop:18}}>
-        <div className="product-card-header"><div><h2>Recent activity</h2><p>A quick view of your latest career workspace activity.</p></div></div>
+        <div className="product-card-header"><div><h2>Recent activity</h2><p>Your latest applications and resumes.</p></div></div>
+        {recentApplications.length || recentResumes.length ? <div className="product-activity-list">
+          {recentApplications.map((item) => (
+            <div className="product-activity-item" key={`app-${item._id}`}><span className="activity-dot"/><div><strong>{item.role} at {item.company}</strong><p>Application · {item.status}</p></div><time>{new Date(item.updatedAt).toLocaleDateString()}</time></div>
+          ))}
+          {recentResumes.map((item) => (
+            <div className="product-activity-item" key={`resume-${item._id}`}><span className="activity-dot"/><div><strong>{item.title}</strong><p>Resume{typeof item.atsScore === "number" ? ` · ATS ${item.atsScore}` : ""}</p></div><time>{new Date(item.updatedAt || item.createdAt).toLocaleDateString()}</time></div>
+          ))}
+        </div> : <div className="empty-product"><p>No activity yet. Save a job or create a resume to get started.</p></div>}
+      </section>
+
+      {recommendedJobs.length > 0 && <section className="product-card" style={{marginTop:18}}>
+        <div className="product-card-header"><div><h2>Recommended jobs</h2><p>Picked from recent job searches.</p></div><button className="product-button" onClick={() => navigate("/dashboard/jobs")}>See all <ArrowUpRight size={14}/></button></div>
         <div className="product-activity-list">
-          {(data?.activity || []).map((item) => (
-            <div className="product-activity-item" key={item.id}><span className="activity-dot"/><div><strong>{item.title}</strong><p>{item.detail}</p></div><time>{item.time}</time></div>
+          {recommendedJobs.map((job) => (
+            <div className="product-activity-item" key={job._id}><span className="activity-dot"/><div><strong>{job.title}</strong><p>{[job.company, job.location].filter(Boolean).join(" · ")}</p></div>{job.url && <a href={job.url} target="_blank" rel="noopener noreferrer" style={{fontSize:10,fontWeight:700,color:"#087fbe"}}>View</a>}</div>
           ))}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter } from "react-router-dom";
 
 import Routes from "./routes";
+import ErrorBoundary from "./ErrorBoundary";
 
 import { AppProvider } from "./providers";
 import PaymentModal from "../components/common/PaymentModal";
@@ -18,17 +19,23 @@ export default function App() {
     <BrowserRouter>
       <AppProvider>
 
-        <Suspense fallback={null}>
-          <ScrollProgress />
-        </Suspense>
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <ScrollProgress />
+          </Suspense>
+        </ErrorBoundary>
 
         <Suspense fallback={<div role="status">Loading page...</div>}>
-          <Routes />
+          <ErrorBoundary>
+            <Routes />
+          </ErrorBoundary>
         </Suspense>
 
-        <Suspense fallback={null}>
-          <WestForceChatbot />
-        </Suspense>
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <WestForceChatbot />
+          </Suspense>
+        </ErrorBoundary>
 
         <PaymentModal />
 

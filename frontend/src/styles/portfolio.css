@@ -3295,6 +3295,18 @@ img {
   margin-top: 18px;
 }
 
+.builder-pin-upgrade {
+  max-width: 420px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #f2c96b;
+  border-radius: 8px;
+  background: #fff8e6;
+  color: #7a5200;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .builder-pin-field {
   max-width: 280px;
 

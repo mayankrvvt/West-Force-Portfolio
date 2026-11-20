@@ -204,18 +204,7 @@ export async function apiRequest(
       "application/json";
   }
 
-  console.log(
-    `[API] ${
-      options.method || "GET"
-    } ${url}`
-  );
 
-  console.log(
-    "[API] Firebase Authorization:",
-    Boolean(
-      requestHeaders.Authorization
-    )
-  );
 
   const response =
     await fetch(url, {
@@ -391,11 +380,6 @@ export async function uploadFile(
   const url =
     buildApiUrl(endpoint);
 
-  console.log(
-    `[UPLOAD] ${
-      options.method || "POST"
-    } ${url}`
-  );
 
   const response =
     await fetch(url, {

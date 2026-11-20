@@ -133,17 +133,17 @@ export default function Documents() {
   const validatePin = () => {
     setPinError("");
 
-    if (!/^\d{4}$/.test(documentPin)) {
+    if (!/^\d{6}$/.test(documentPin)) {
       setPinError(
-        "Your PIN must contain exactly 4 digits."
+        "Your PIN must contain exactly 6 digits."
       );
 
       return false;
     }
 
-    if (!/^\d{4}$/.test(confirmPin)) {
+    if (!/^\d{6}$/.test(confirmPin)) {
       setPinError(
-        "Please confirm your 4-digit PIN."
+        "Please confirm your 6-digit PIN."
       );
 
       return false;
@@ -187,7 +187,7 @@ export default function Documents() {
   const handlePinChange = (value, setter) => {
     const digitsOnly = value
       .replace(/\D/g, "")
-      .slice(0, 4);
+      .slice(0, 6);
 
     setter(digitsOnly);
 
@@ -376,7 +376,7 @@ export default function Documents() {
             </h3>
 
             <p>
-              Require a 4-digit PIN before
+              Require a 6-digit PIN before
               visitors can view documents
               on your public portfolio.
             </p>
@@ -413,8 +413,8 @@ export default function Documents() {
                     }
                     inputMode="numeric"
                     autoComplete="new-password"
-                    maxLength={4}
-                    placeholder="••••"
+                    maxLength={6}
+                    placeholder="••••••"
                     value={documentPin}
                     onChange={(event) =>
                       handlePinChange(
@@ -446,7 +446,7 @@ export default function Documents() {
                 </div>
 
                 <span>
-                  Enter exactly 4 digits.
+                  Enter exactly 6 digits.
                 </span>
               </div>
 
@@ -467,8 +467,8 @@ export default function Documents() {
                     }
                     inputMode="numeric"
                     autoComplete="new-password"
-                    maxLength={4}
-                    placeholder="••••"
+                    maxLength={6}
+                    placeholder="••••••"
                     value={confirmPin}
                     onChange={(event) =>
                       handlePinChange(
@@ -542,7 +542,7 @@ export default function Documents() {
 
                 <p>
                   Visitors must enter your
-                  4-digit PIN before they can
+                  6-digit PIN before they can
                   access your documents.
                 </p>
               </div>

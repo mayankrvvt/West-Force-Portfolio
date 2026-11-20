@@ -347,7 +347,7 @@ function sectionComplete(data, id) {
             Boolean(item.publicId || item.fileUrl)
         ) &&
         (!data.documentProtection?.enabled ||
-          /^\d{4}$/.test(
+          /^\d{6}$/.test(
             String(data.documentProtection?.pin || "")
           ))
       );
@@ -1328,8 +1328,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     }
 
     if (data.documentProtection?.enabled) {
-      if (!/^\d{4}$/.test(String(data.documentProtection.pin || ""))) {
-        return "Enter a 4-digit PIN to protect your documents.";
+      if (!/^\d{6}$/.test(String(data.documentProtection.pin || ""))) {
+        return "Enter a 6-digit PIN to protect your documents.";
       }
     }
   }
@@ -2933,7 +2933,7 @@ function DocumentsSection({
 
           <p>
             Visitors will be able to see your document names and details,
-            but they will need your 4-digit PIN before they can open the
+            but they will need your 6-digit PIN before they can open the
             actual files. Your resume remains public.
           </p>
 
@@ -2969,11 +2969,18 @@ function DocumentsSection({
             </strong>
           </label>
 
+          {protection.enabled && protection.pinLength === 4 && (
+            <p className="builder-pin-upgrade" role="note">
+              Your documents use an older 4-digit PIN. Please set a new
+              6-digit PIN below for stronger protection.
+            </p>
+          )}
+
           {protection.enabled && (
             <div className="builder-pin-field">
               <label>
                 <span>
-                  4-digit document PIN<b>*</b>
+                  6-digit document PIN<b>*</b>
                 </span>
 
                 <input
@@ -2982,7 +2989,7 @@ function DocumentsSection({
                   onChange={(event) => {
                     const value = event.target.value
                       .replace(/\D/g, "")
-                      .slice(0, 4);
+                      .slice(0, 6);
 
                     update(
                       "documentProtection.pin",
@@ -2990,8 +2997,8 @@ function DocumentsSection({
                     );
                   }}
                   inputMode="numeric"
-                  maxLength={4}
-                  placeholder="••••"
+                  maxLength={6}
+                  placeholder="••••••"
                   autoComplete="new-password"
                 />
 

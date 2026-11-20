@@ -16,6 +16,7 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
+  MailWarning,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -112,6 +113,7 @@ function SidebarContent({
   onNavigate,
   account,
   sections,
+  needsVerification = false,
 }) {
   const { pathname } = useLocation();
 
@@ -239,6 +241,18 @@ function SidebarContent({
 
       <div className="dashboard-sidebar-bottom">
 
+        {needsVerification && (
+          <p
+            className="dashboard-verify-notice"
+            title={collapsed ? "Verify your email to open the admin area." : undefined}
+          >
+            <MailWarning size={16} strokeWidth={1.8} aria-hidden="true" />
+            <span className={collapsed ? "sr-only" : undefined}>
+              Verify your email to open the admin area.
+            </span>
+          </p>
+        )}
+
         <NavLink
           to="/dashboard/profile"
           onClick={onNavigate}
@@ -312,7 +326,7 @@ export default function DashboardLayout() {
   const { user } = useAuth();
 
   // Never blocks the nav: the Admin link just appears once the check passes.
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, needsVerification } = useIsAdmin();
   const sections = isAdmin ? adminNavigation : navigation;
 
 
@@ -526,6 +540,7 @@ export default function DashboardLayout() {
           onNavigate={() => {}}
           account={account}
           sections={sections}
+          needsVerification={needsVerification}
         />
 
 
@@ -591,6 +606,7 @@ export default function DashboardLayout() {
           }
           account={account}
           sections={sections}
+          needsVerification={needsVerification}
         />
 
 

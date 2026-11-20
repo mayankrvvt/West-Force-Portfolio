@@ -2,8 +2,10 @@
  * Chat limits:
  *  - per client IP: 15 requests / minute (all chats, signed in or not);
  *  - signed-out chats per UTC day: one global cap (CHAT_ANON_DAILY_CAP, default 500)
- *    and one per IP (CHAT_ANON_DAILY_PER_IP, default 50). A slot is refunded when
- *    Gemini fails, so guests are not charged for errors.
+ *    and one per IP (CHAT_ANON_DAILY_PER_IP, default 10);
+ *  - signed-in chats per uid per UTC day: CHAT_FREE_DAILY (default 30) without a
+ *    plan, CHAT_PAID_DAILY (default 200) with one.
+ * A daily slot is refunded when Gemini fails, so nobody is charged for errors.
  *
  * The daily caps live in MongoDB (createMongoLimitStore), so a restart does not
  * reset them. The per-minute limiter stays in memory: it resets on restart and
@@ -15,7 +17,9 @@ import { endOfUtcDay, releaseUsage, takeUsage, utcDay } from "../../lib/usageCou
 export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 export const RATE_LIMIT_MAX_REQUESTS = 15;
 const DEFAULT_ANON_DAILY_CAP = 500;
-const DEFAULT_ANON_DAILY_PER_IP = 50;
+const DEFAULT_ANON_DAILY_PER_IP = 10;
+const DEFAULT_FREE_DAILY = 30;
+const DEFAULT_PAID_DAILY = 200;
 const RATE_LIMIT_SWEEP_SIZE = 10_000;
 
 export type RateLimitResult = { allowed: true; retryAfter: 0 } | { allowed: false; retryAfter: number };
@@ -25,6 +29,13 @@ export type AnonSlot = { day: string; ip: string };
 
 export type AnonSlotResult = { blocked: "global" | "ip" } | { blocked?: undefined; slot: AnonSlot };
 
+/** A taken daily slot of a signed-in user, needed to refund it. */
+export type UserSlot = { day: string; uid: string };
+
+export type UserTier = "free" | "paid";
+
+export type UserSlotResult = { blocked: true } | { blocked?: undefined; slot: UserSlot };
+
 export interface ChatLimitStore {
   /** Count one request for this IP against the per-minute limit. */
   hitRateLimit(ip: string): Promise<RateLimitResult>;
@@ -32,6 +43,10 @@ export interface ChatLimitStore {
   takeAnonSlot(ip: string): Promise<AnonSlotResult>;
   /** Give a slot back (ignored after the UTC day has rolled over). */
   refundAnonSlot(slot: AnonSlot): Promise<void>;
+  /** Count one signed-in chat against the user's daily cap for their tier. */
+  takeUserSlot(uid: string, tier: UserTier): Promise<UserSlotResult>;
+  /** Give a signed-in slot back (ignored after the UTC day has rolled over). */
+  refundUserSlot(slot: UserSlot): Promise<void>;
 }
 
 function readCap(value: string | undefined, fallback: number): number {
@@ -47,9 +62,17 @@ export function anonDailyCaps(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
+/** Daily chats per signed-in user, by tier. Read on every request. */
+export function userDailyCap(tier: UserTier, env: NodeJS.ProcessEnv = process.env): number {
+  return tier === "paid"
+    ? readCap(env.CHAT_PAID_DAILY, DEFAULT_PAID_DAILY)
+    : readCap(env.CHAT_FREE_DAILY, DEFAULT_FREE_DAILY);
+}
+
 export function createMemoryLimitStore(clock: () => number = Date.now): ChatLimitStore {
   const rateLimits = new Map<string, { startedAt: number; count: number }>();
   const anon = { day: "", count: 0, perIp: new Map<string, number>() };
+  const users = new Map<string, number>();
 
   function startDayIfNeeded(): string {
     const today = utcDay(clock());
@@ -57,6 +80,7 @@ export function createMemoryLimitStore(clock: () => number = Date.now): ChatLimi
       anon.day = today;
       anon.count = 0;
       anon.perIp.clear();
+      users.clear();
     }
     return today;
   }
@@ -117,17 +141,41 @@ export function createMemoryLimitStore(clock: () => number = Date.now): ChatLimi
         anon.perIp.set(slot.ip, ipCount - 1);
       }
     },
+
+    takeUserSlot(uid: string, tier: UserTier): UserSlotResult {
+      const day = startDayIfNeeded();
+      const count = users.get(uid) || 0;
+      if (count >= userDailyCap(tier)) return { blocked: true };
+
+      users.set(uid, count + 1);
+      return { slot: { day, uid } };
+    },
+
+    refundUserSlot(slot: UserSlot): void {
+      if (slot.day !== anon.day) return;
+
+      const count = users.get(slot.uid) || 0;
+      if (count <= 1) {
+        users.delete(slot.uid);
+      } else {
+        users.set(slot.uid, count - 1);
+      }
+    },
   };
 
   return {
     hitRateLimit: (ip) => Promise.resolve(sync.hitRateLimit(ip)),
     takeAnonSlot: (ip) => Promise.resolve(sync.takeAnonSlot(ip)),
     refundAnonSlot: (slot) => Promise.resolve(sync.refundAnonSlot(slot)),
+    takeUserSlot: (uid, tier) => Promise.resolve(sync.takeUserSlot(uid, tier)),
+    refundUserSlot: (slot) => Promise.resolve(sync.refundUserSlot(slot)),
   };
 }
 
 const anonGlobalKey = (day: string) => `chat:anon:global:${day}`;
 const anonIpKey = (day: string, ip: string) => `chat:anon:ip:${ip}:${day}`;
+// One counter per user per day; the cap depends on the tier at request time.
+const userKey = (day: string, uid: string) => `chat:user:${uid}:${day}`;
 
 /**
  * Daily caps in MongoDB (one counter per UTC day for all guests, one per IP),
@@ -164,6 +212,21 @@ export function createMongoLimitStore(clock: () => number = Date.now): ChatLimit
         releaseUsage(anonGlobalKey(slot.day)),
         releaseUsage(anonIpKey(slot.day, slot.ip)),
       ]);
+    },
+
+    async takeUserSlot(uid, tier) {
+      const now = clock();
+      const day = utcDay(now);
+
+      if (!(await takeUsage(userKey(day, uid), userDailyCap(tier), endOfUtcDay(now)))) {
+        return { blocked: true };
+      }
+
+      return { slot: { day, uid } };
+    },
+
+    async refundUserSlot(slot) {
+      await releaseUsage(userKey(slot.day, slot.uid));
     },
   };
 }

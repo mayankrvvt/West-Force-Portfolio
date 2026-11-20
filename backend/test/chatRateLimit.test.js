@@ -4,6 +4,9 @@ import { loadApp } from "./helpers/app";
 import { stubGeminiFetch } from "./helpers/gemini.js";
 import { startMongo, stopMongo } from "./helpers/mongo";
 
+// This file tests the per-minute limit, so keep the guest daily cap out of the way.
+process.env.CHAT_ANON_DAILY_PER_IP = "100";
+
 // Daily guest caps are stored in MongoDB.
 await startMongo();
 const app = await loadApp();
@@ -16,6 +19,7 @@ beforeAll(() => {
 afterAll(async () => {
   vi.unstubAllGlobals();
   await stopMongo();
+  delete process.env.CHAT_ANON_DAILY_PER_IP;
 });
 
 // Vercel appends the real client IP, then Render appends Vercel's IP, so the

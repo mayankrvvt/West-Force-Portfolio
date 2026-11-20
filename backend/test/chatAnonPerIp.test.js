@@ -55,4 +55,23 @@ describe("anonymous chat per-IP daily cap", () => {
     expect((await chat("203.0.113.90")).status).toBe(200);
     expect((await chat("203.0.113.90")).status).toBe(429);
   });
+
+  test("the default per-IP cap is 10, then 429 CHAT_LIMIT_FREE", async () => {
+    delete process.env.CHAT_ANON_DAILY_PER_IP;
+
+    try {
+      for (let i = 0; i < 10; i += 1) {
+        expect((await chat("203.0.113.100")).status).toBe(200);
+      }
+
+      const blocked = await chat("203.0.113.100");
+      expect(blocked.status).toBe(429);
+      expect(blocked.body.code).toBe("CHAT_LIMIT_FREE");
+      expect(blocked.body.message).toBe(
+        "You've used today's free messages. Please buy a plan to keep chatting."
+      );
+    } finally {
+      process.env.CHAT_ANON_DAILY_PER_IP = "2";
+    }
+  });
 });

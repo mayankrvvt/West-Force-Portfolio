@@ -7,7 +7,12 @@ import { apiRequest } from "../utils/api";
 /** GET /api/admin/me. Returns { isAdmin, isOwner } for the signed-in user. */
 export async function getAdminStatus() {
   const result = await apiRequest("/api/admin/me");
-  return { isAdmin: result?.isAdmin === true, isOwner: result?.isOwner === true };
+  return {
+    isAdmin: result?.isAdmin === true,
+    isOwner: result?.isOwner === true,
+    // Only sent to listed admins whose email is not verified yet.
+    needsVerification: result?.needsVerification === true,
+  };
 }
 
 /** GET /api/admin/admins. Owners come first. */

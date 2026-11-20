@@ -348,6 +348,31 @@ p {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Listed admin whose email is not verified yet: a quiet hint above the account */
+.dashboard-verify-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+}
+
+.dashboard-verify-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sidebar-collapsed .dashboard-verify-notice {
+  justify-content: center;
+}
+
 /* Small account card above Sign out */
 .dashboard-account {
   display: flex;

@@ -221,6 +221,28 @@ export async function getAuthHeaders() {
  * ======================================================
  */
 
+/** GET requests give up after this long, so pages never sit on skeletons. */
+export const GET_TIMEOUT_MS = 20000;
+
+/** error.code when a request took too long (error.status is 408). */
+export const TIMEOUT_CODE = "REQUEST_TIMEOUT";
+
+function timeoutError() {
+  return apiError(
+    "The server took too long to answer. Please try again.",
+    408,
+    { code: TIMEOUT_CODE }
+  );
+}
+
+/**
+ * Send a request to the API.
+ *
+ * GET requests time out after GET_TIMEOUT_MS. Other methods (uploads, AI,
+ * payments) have no limit unless the caller passes options.timeoutMs.
+ * The timer also covers the wait for the Firebase token. A caller's own
+ * options.signal still cancels the request.
+ */
 export async function apiRequest(
   endpoint,
   options = {}
@@ -229,6 +251,54 @@ export async function apiRequest(
     return (await loadDemoApi()).demoRequest(endpoint, options);
   }
 
+  const {
+    timeoutMs: requestedTimeout,
+    signal: callerSignal,
+    ...requestOptions
+  } = options;
+  const method = (requestOptions.method || "GET").toUpperCase();
+  const timeoutMs =
+    requestedTimeout ?? (method === "GET" ? GET_TIMEOUT_MS : 0);
+
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(callerSignal.reason);
+
+  if (callerSignal?.aborted) {
+    controller.abort(callerSignal.reason);
+  } else {
+    callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  }
+
+  let timer;
+  let timedOut = false;
+  const timeout =
+    timeoutMs > 0
+      ? new Promise((_, reject) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+            reject(timeoutError());
+          }, timeoutMs);
+        })
+      : null;
+
+  try {
+    const work = sendRequest(endpoint, requestOptions, controller.signal);
+    return await (timeout ? Promise.race([work, timeout]) : work);
+  } catch (error) {
+    if (timedOut) throw timeoutError();
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
+  }
+}
+
+async function sendRequest(
+  endpoint,
+  options,
+  signal
+) {
   const url =
     buildApiUrl(endpoint);
 
@@ -273,6 +343,8 @@ export async function apiRequest(
 
       credentials:
         "include",
+
+      signal,
     });
 
   /**

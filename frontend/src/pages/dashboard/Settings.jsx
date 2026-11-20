@@ -140,6 +140,7 @@ function JobPreferences() {
   const [savedForm, setSavedForm] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [status, setStatus] = useState({ saving: false, saved: false, error: "" });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -150,9 +151,15 @@ function JobPreferences() {
         setForm(next);
         setSavedForm(next);
       })
-      .catch((err) => { if (active) setLoadError(err.message || "Could not load your job preferences. Please reload the page."); });
+      .catch((err) => { if (active) setLoadError(err.message || "Could not load your job preferences. Please try again."); });
     return () => { active = false; };
-  }, []);
+  }, [attempt]);
+
+  // The form stays hidden until a load works, so a blank form can't be saved over real preferences.
+  const retry = () => {
+    setLoadError("");
+    setAttempt((n) => n + 1);
+  };
 
   // Opened from "Set your job preferences" on the Jobs page.
   useEffect(() => {
@@ -191,7 +198,7 @@ function JobPreferences() {
           <p>Saved to your account. We use them to pick “Jobs for you” in Canada.</p>
         </div>
       </div>
-      {loadError ? <div className="product-error" role="alert"><AlertCircle size={16} aria-hidden="true" /><span>{loadError}</span></div>
+      {loadError ? <div className="product-error" role="alert"><AlertCircle size={16} aria-hidden="true" /><span>{loadError}</span><button type="button" className="product-button" onClick={retry}>Try again</button></div>
         : !form ? <SkeletonRows count={3} label="Loading job preferences" />
         : <form onSubmit={save} noValidate>
           <div className="product-form-grid">

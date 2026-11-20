@@ -7,7 +7,7 @@ import { isAdmin, isOwner } from "../../middleware/requireAdmin";
 import { settingsPatchBody } from "../site/schema";
 import { dottedChanges, getSiteSettings, updateSiteSettings } from "../site/service";
 import { listActivity, logActivity } from "./activity.service";
-import { addAdmin, listAdmins, removeAdmin } from "./admins.service";
+import { addAdmin, listAdmins, needsAdminVerification, removeAdmin } from "./admins.service";
 import { activityQuery, addAdminBody, adminEmailParams, createJobBody, updateJobBody } from "./schema";
 import { createManualJob, deleteManualJob, listManualJobs, updateManualJob } from "./service";
 
@@ -20,7 +20,15 @@ const actorEmail = (req: Request) => (currentUser(req).email ?? "").trim().toLow
 export async function getAdminStatus(req: Request, res: Response): Promise<void> {
   const user = currentUser(req);
 
-  ok(res, { isAdmin: await isAdmin(user), isOwner: isOwner(user) });
+  const status = { isAdmin: await isAdmin(user), isOwner: isOwner(user) };
+
+  // Only listed admins with an unverified email get the hint; others see no new key.
+  if (!status.isAdmin && (await needsAdminVerification(user))) {
+    ok(res, { ...status, needsVerification: true });
+    return;
+  }
+
+  ok(res, status);
 }
 
 /** GET /api/admin/admins: any admin. */

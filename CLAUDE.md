@@ -44,8 +44,10 @@ Before you say a change is done, frontend lint and build must pass. If you touch
 - **Frontend:** Vercel project `west-force-portfolio` (team "Maven"), site `https://west-force-portfolio.vercel.app`.
   - `VITE_API_URL` on Vercel is the backend address. When it is set, the frontend calls it directly and `vercel.json` rewrites are not used.
   - `VITE_*` values are read at build time, so redeploy Vercel after you change one.
-- **Backend:** a Render web service from repo `mayankrvvt/West-Force-Portfolio`, branch `main`, root `backend`, build `npm ci && npm run build`, start `npm start`, health check `/api/health`.
-  - Render services named West-Ventures (repo `mayankrvvt/West-Ventures`) and workforceiq-api are other projects. Don't change them.
+- **Backend:** Render web service `West-Force-Portfolio-Main` (project "MAIN WEST VENTURE"), address `https://west-force-portfolio-main.onrender.com`.
+  - Repo `mayankrvvt/West-Force-Portfolio`, branch `main`, root `backend`, build `npm ci && npm run build`, start `npm start`, health check `/api/health`.
+  - It deploys by itself on every push to `main`. `/api/health` shows the running commit as `version`.
+  - The Render service West-Ventures (repo `mayankrvvt/West-Ventures`) is another project, and the old `west-force-portfolio.onrender.com` backend is not this service. Don't change either.
 - **Render keys.** Required: `NODE_ENV=production`, `CLIENT_URL`, `MONGODB_URI`, `FIREBASE_SERVICE_ACCOUNT_JSON`, `INSIGHTS_HASH_SECRET`, `DOCUMENT_ACCESS_SECRET`. Also set:
   - `NODE_VERSION=24`, because the lock file needs npm 11 and Node 22 fails `npm ci`.
   - `TRUST_PROXY_HOPS`: 1 if the browser calls Render directly (`VITE_API_URL`), 2 if the call goes through the Vercel rewrite.

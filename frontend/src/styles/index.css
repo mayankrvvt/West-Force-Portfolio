@@ -965,7 +965,7 @@ p {
   right: var(--space-4);
   bottom: var(--space-4);
   left: var(--space-4);
-  z-index: 1000;
+  z-index: 10000; /* above the chat button (9999) */
   display: flex;
   flex-wrap: wrap;
   align-items: center;

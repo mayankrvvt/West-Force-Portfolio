@@ -191,6 +191,12 @@ export default function WestForceChatbot() {
   const aiOn = useFeature("ai");
   const [open, setOpen] = useState(false);
 
+  // Close the chat first so the plans window is not hidden behind it.
+  const askToPay = () => {
+    setOpen(false);
+    openPaymentModal("Choose a plan to use the WestForce AI assistant.");
+  };
+
   const [input, setInput] = useState("");
 
   const [messages, setMessages] = useState([
@@ -257,9 +263,7 @@ export default function WestForceChatbot() {
         const entitlement = await apiRequest("/api/payments/me");
 
         if (!entitlement.isPaid) {
-          openPaymentModal(
-            "Choose a plan to use the WestForce AI assistant."
-          );
+          askToPay();
           return;
         }
       } catch (entitlementError) {
@@ -396,9 +400,7 @@ export default function WestForceChatbot() {
 
       if (!response.ok) {
         if (response.status === 402) {
-          openPaymentModal(
-            "Choose a plan to use the WestForce AI assistant."
-          );
+          askToPay();
           return;
         }
 

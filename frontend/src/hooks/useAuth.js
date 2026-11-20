@@ -1,31 +1,62 @@
 import { useEffect, useState } from "react";
 
 import {
-  onAuthStateChanged,
-} from "firebase/auth";
-
-import { auth } from "../firebase/firebase";
+  DEMO_MODE,
+  getDemoSessionUser,
+  subscribeDemoSession,
+} from "../demo/demoMode";
+import { loadFirebase } from "../utils/api";
 
 export default function useAuth() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() =>
+    DEMO_MODE ? getDemoSessionUser() : null
+  );
+  const [loading, setLoading] = useState(!DEMO_MODE);
 
   useEffect(() => {
-    const unsubscribe =
-      onAuthStateChanged(
-        auth,
-        (currentUser) => {
-          console.log(
-            "Firebase auth state:",
-            currentUser
-          );
+    // Local-dev-only demo login: no Firebase at all.
+    if (DEMO_MODE) {
+      return subscribeDemoSession(setUser);
+    }
 
-          setUser(currentUser);
-          setLoading(false);
-        }
+    // Firebase loads in its own chunk so it stays out of the main bundle.
+    // loading stays true until Firebase reports the session, as before.
+    let cancelled = false;
+    let unsubscribe = null;
+
+    // A flaky network can fail the chunk once; try one more time after a short wait.
+    // Loaded through api.js so public requests know a session may exist.
+    const loadWithRetry = () =>
+      loadFirebase().catch(
+        () =>
+          new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+            if (cancelled) throw new Error("cancelled");
+            return loadFirebase();
+          })
       );
 
-    return () => unsubscribe();
+    loadWithRetry()
+      .then(({ auth, onAuthStateChanged }) => {
+        if (cancelled) return;
+
+        unsubscribe = onAuthStateChanged(
+          auth,
+          (currentUser) => {
+            setUser(currentUser);
+            setLoading(false);
+          }
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Could not load sign in.", error);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   return {

@@ -1,0 +1,55 @@
+# Weekly "new jobs for you" email (backend: npm run jobs:digest).
+#
+# Runs Monday 13:00 UTC, two hours after collect-jobs.yml ("0 11 * * 1,4"),
+# so the week's new jobs are in. Only users who ticked "Email me new jobs for
+# you each week" in Settings and verified their email get it.
+#
+# This is the only place MAIL_MODE is live. Without RESEND_API_KEY or
+# MAIL_FROM the script logs what it would send and sends nothing.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   MONGODB_URI     required (Atlas must allow GitHub's IPs, see collect-jobs.yml)
+#   FIREBASE_SERVICE_ACCOUNT_JSON  required: each address and its "verified"
+#                   flag are read from Firebase Auth, never from the database
+#   RESEND_API_KEY  required to send
+#   MAIL_FROM       required to send, e.g. WestForce <jobs@your-domain>
+#   SITE_URL        public site address for links and the logo (the SITE_URL
+#                   repo variable works too)
+name: Job digest email
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run jobs:digest
+        env:
+          NODE_ENV: production
+          # Skips the web server's settings checks; the database and Firebase
+          # Admin are still needed.
+          JOBS_COLLECTOR_ONLY: "true"
+          MAIL_MODE: live
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          # The deploy smoke test already keeps SITE_URL as a repo variable.
+          SITE_URL: ${{ secrets.SITE_URL || vars.SITE_URL || 'https://west-force-portfolio.vercel.app' }}

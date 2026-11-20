@@ -163,43 +163,6 @@ export async function enhanceResume({
 
   /**
    * ----------------------------------------------------
-   * Log request
-   * ----------------------------------------------------
-   */
-
-  console.log(
-    "[Resume Enhancer] Starting enhancement..."
-  );
-
-  console.log(
-    "[Resume Enhancer] File:",
-    file.name
-  );
-
-  console.log(
-    "[Resume Enhancer] Type:",
-    file.type
-  );
-
-  console.log(
-    "[Resume Enhancer] Size:",
-    file.size
-  );
-
-  console.log(
-    "[Resume Enhancer] Target role:",
-    targetRole ||
-      "Software Engineer"
-  );
-
-  console.log(
-    "[Resume Enhancer] Country:",
-    country ||
-      "Canada"
-  );
-
-  /**
-   * ----------------------------------------------------
    * Upload resume
    * ----------------------------------------------------
    *
@@ -252,11 +215,6 @@ export async function enhanceResume({
    * ----------------------------------------------------
    */
 
-  console.log(
-    "[Resume Enhancer] Server response:",
-    response
-  );
-
   if (!response) {
     throw new Error(
       "No response received from the resume enhancement server."
@@ -270,10 +228,6 @@ export async function enhanceResume({
         "Gemini did not return an enhanced resume."
     );
   }
-
-  console.log(
-    "[Resume Enhancer] Enhancement completed successfully."
-  );
 
   return response;
 }

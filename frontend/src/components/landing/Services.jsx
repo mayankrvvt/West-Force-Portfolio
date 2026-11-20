@@ -1,190 +1,65 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-
+import { useRef } from "react";
 import {
-  BriefcaseBusiness,
-  UsersRound,
-  Video,
-  ChartNoAxesColumnIncreasing,
-  GraduationCap,
-  Plane,
+  ClipboardCheck,
+  Handshake,
+  HeartHandshake,
+  MessagesSquare,
   ShieldCheck,
-  HandHeart,
-  LockKeyhole,
-  ArrowUpRight,
+  Video,
 } from "lucide-react";
 
 import { services } from "../../constants/servicesData";
+import useRevealOnce from "./useRevealOnce";
 
-const serviceIcons = [
-  BriefcaseBusiness,
-  UsersRound,
-  Video,
-  ChartNoAxesColumnIncreasing,
-  GraduationCap,
-  Plane,
-  ShieldCheck,
-  HandHeart,
-  LockKeyhole,
-];
+const serviceIcons = {
+  matching: Handshake,
+  coaching: MessagesSquare,
+  video: Video,
+  assessment: ClipboardCheck,
+  verification: ShieldCheck,
+  aftercare: HeartHandshake,
+};
 
+// Six cards in a 3 column grid; they rise in once, 60ms apart (public.css).
 export default function Services() {
-  const sectionRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-
-    if (!section) return;
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (reduceMotion) return;
-
-    const cards = section.querySelectorAll(".service-card");
-
-    const cleanups = [];
-
-    cards.forEach((card) => {
-      const rotateXTo = gsap.quickTo(card, "rotationX", {
-        duration: 0.35,
-        ease: "power3.out",
-      });
-
-      const rotateYTo = gsap.quickTo(card, "rotationY", {
-        duration: 0.35,
-        ease: "power3.out",
-      });
-
-      const yTo = gsap.quickTo(card, "y", {
-        duration: 0.35,
-        ease: "power3.out",
-      });
-
-      const handlePointerMove = (event) => {
-        const rect = card.getBoundingClientRect();
-
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        const percentX = x / rect.width;
-        const percentY = y / rect.height;
-
-        const rotateY = (percentX - 0.5) * 8;
-        const rotateX = (0.5 - percentY) * 8;
-
-        card.style.setProperty("--mouse-x", `${x}px`);
-        card.style.setProperty("--mouse-y", `${y}px`);
-
-        rotateXTo(rotateX);
-        rotateYTo(rotateY);
-        yTo(-8);
-      };
-
-      const handlePointerLeave = () => {
-        rotateXTo(0);
-        rotateYTo(0);
-        yTo(0);
-
-        card.style.removeProperty("--mouse-x");
-        card.style.removeProperty("--mouse-y");
-      };
-
-      card.addEventListener(
-        "pointermove",
-        handlePointerMove
-      );
-
-      card.addEventListener(
-        "pointerleave",
-        handlePointerLeave
-      );
-
-      cleanups.push(() => {
-        card.removeEventListener(
-          "pointermove",
-          handlePointerMove
-        );
-
-        card.removeEventListener(
-          "pointerleave",
-          handlePointerLeave
-        );
-      });
-    });
-
-    return () => {
-      cleanups.forEach((cleanup) => cleanup());
-    };
-  }, []);
+  const listRef = useRef(null);
+  useRevealOnce(listRef);
 
   return (
     <section
-      ref={sectionRef}
       id="services"
-      className="services-section"
+      className="home-section"
+      aria-labelledby="services-title"
     >
       <div className="container">
+        <div className="home-section-head">
+          <p className="home-kicker">Services</p>
 
-        <div className="services-heading">
-          <p className="eyebrow">
-            OUR SERVICES
-          </p>
-
-          <h2>
-            Everything you need to move your career forward.
+          <h2 id="services-title">
+            A team behind your job search
           </h2>
 
           <p>
-            From employer matching to credential guidance,
-            WestForce brings your professional journey
-            together in one place.
+            Every plan includes coaching from the WestForce team, for the
+            parts of a job search that are hard to do alone.
           </p>
         </div>
 
-        <div className="services-grid">
+        <ul ref={listRef} className="service-list">
           {services.map((service, index) => {
-            const Icon = serviceIcons[index];
+            const Icon = serviceIcons[service.icon];
 
             return (
-              <article
-                key={service.title}
-                className="service-card"
-              >
-                <div
-                  className="service-card-glow"
-                  aria-hidden="true"
-                />
-
-                <div className="service-icon">
-                  <Icon
-                    size={24}
-                    strokeWidth={2}
-                  />
-                </div>
-
-                <div className="service-card-content">
-                  <span className="service-number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <h3>{service.title}</h3>
-
-                  <p>{service.description}</p>
-                </div>
-
-                <div className="service-arrow">
-                  <ArrowUpRight
-                    size={17}
-                    strokeWidth={2}
-                  />
-                </div>
-              </article>
+              <li key={service.title} style={{ "--i": index }}>
+                <span className="service-list-icon" aria-hidden="true">
+                  <Icon size={20} strokeWidth={1.75} />
+                </span>
+                <h3>{service.title}</h3>
+                <p>{service.description}</p>
+              </li>
             );
           })}
-        </div>
-
+        </ul>
       </div>
     </section>
   );

@@ -1,0 +1,425 @@
+/*
+ * Foundation: base type, focus, motion and the shared controls.
+ * Loaded last from index.css so these rules are the single source of truth
+ * for buttons, inputs, badges and modals.
+ */
+
+/* ---------- Base type ---------- */
+
+body {
+  font-family: var(--font-ui);
+  color: var(--wf-ink);
+  background: var(--wf-paper);
+  font-feature-settings: normal;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--wf-navy);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+h1 {
+  line-height: var(--leading-tight);
+  font-weight: 700;
+}
+
+h2,
+h3 {
+  line-height: var(--leading-snug);
+  font-weight: 700;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--wf-lake);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+::selection {
+  background: rgba(47, 111, 159, 0.22);
+}
+
+/*
+ * Named text styles (landing page type system). Sizes and line heights
+ * are Tailwind scale steps; use these instead of loose size + weight.
+ */
+.heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; }
+.heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; }
+.heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; }
+.heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; }
+.heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; }
+.heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
+.title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+.title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.title-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+.body-1 { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.body-2 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+.body-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+.body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.body-7 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+.caption-1 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.caption-3 { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
+.caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+.caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
+
+/* Long-form reading text (bio, experience) */
+.wf-read {
+  font-family: var(--font-read);
+  font-size: var(--text-md);
+  line-height: var(--leading-read);
+  max-width: var(--measure);
+}
+
+/* ---------- Focus: always visible for keyboard users ---------- */
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--wf-lake);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+/* ---------- Motion: respect the visitor's setting ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: 600 var(--text-base) / 1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+  background-image: none;
+  transition:
+    background-color 300ms var(--ease-out),
+    border-color 300ms var(--ease-out),
+    color 300ms var(--ease-out),
+    transform 200ms var(--ease-out);
+}
+
+.btn:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Physical press feedback */
+.btn:active:not(:disabled, [aria-disabled="true"]) {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary,
+.btn-hero {
+  background: var(--wf-navy);
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-hero:hover:not(:disabled) {
+  background: var(--wf-navy-soft);
+  color: #ffffff;
+}
+
+.btn-hero::before {
+  content: none;
+}
+
+.btn-secondary,
+.btn-hero-outline {
+  background: var(--wf-paper);
+  color: var(--wf-navy);
+  border-color: var(--wf-line-strong);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-hero-outline:hover:not(:disabled) {
+  background: var(--wf-frost);
+  border-color: var(--wf-navy);
+  color: var(--wf-navy);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--wf-navy);
+  padding: 0 var(--space-3);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--wf-frost);
+}
+
+.btn-danger {
+  background: var(--wf-paper);
+  color: var(--wf-danger);
+  border-color: currentColor;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--wf-danger-bg);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.btn-lg {
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+/* ---------- Form fields ---------- */
+
+.form-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.form-field > label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--wf-ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--wf-line-strong);
+  border-radius: var(--radius-control);
+  background: var(--wf-paper);
+  color: var(--wf-ink);
+  font: 400 var(--text-base) / 1.4 var(--font-ui);
+  box-shadow: none;
+  transition: border-color var(--duration) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--wf-ink-faint);
+}
+
+.input:hover {
+  border-color: var(--wf-ink-soft);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--wf-lake);
+  box-shadow: var(--focus-ring);
+}
+
+.input-error,
+.input[aria-invalid="true"] {
+  border-color: var(--wf-danger);
+}
+
+.form-hint {
+  font-size: var(--text-sm);
+  color: var(--wf-ink-soft);
+}
+
+.form-error {
+  font-size: var(--text-sm);
+  color: var(--wf-danger);
+}
+
+/* ---------- Badges: status words, not decoration ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-control);
+  font: 600 var(--text-xs) / 1.5 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+  border: 1px solid var(--wf-line);
+}
+
+.badge-success {
+  background: var(--wf-success-bg);
+  color: var(--wf-success);
+  border-color: transparent;
+}
+
+.badge-danger {
+  background: var(--wf-danger-bg);
+  color: var(--wf-danger);
+  border-color: transparent;
+}
+
+.badge-warning {
+  background: var(--wf-warning-bg);
+  color: var(--wf-warning);
+  border-color: transparent;
+}
+
+.badge-info {
+  background: var(--wf-info-bg);
+  color: var(--wf-navy-soft);
+  border-color: transparent;
+}
+
+/* ---------- The seal: the one place maple red appears ---------- */
+
+/* Small text, so it uses the darker ink red; the leaf keeps flag red */
+.wf-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--wf-maple-ink);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.wf-seal .maple-leaf {
+  flex: none;
+  color: var(--wf-maple);
+}
+
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4)
+    max(var(--space-4), env(safe-area-inset-bottom));
+  background: rgba(8, 30, 51, 0.55);
+  overscroll-behavior: contain;
+  backdrop-filter: none;
+}
+
+.modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow: auto;
+  padding: var(--space-6);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+  box-shadow: var(--shadow-float);
+}
+
+.modal > h2 {
+  margin: 0 var(--space-7) var(--space-4) 0;
+  font-size: var(--text-xl);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--wf-ink-soft);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: var(--wf-frost);
+  color: var(--wf-navy);
+}
+
+/* ---------- Session check (ProtectedRoute) ---------- */
+
+.session-loading {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+}
+
+/* ---------- Phones and touch (kept last so it wins) ---------- */
+
+/* Last line of defence against sideways scroll on narrow phones.
+   Wide things (tables, the Applications board) scroll in their own box. */
+html {
+  overflow-x: clip;
+}
+
+/* iOS zooms into any field under 16px. Page styles set smaller sizes on
+   many inputs, so this one rule wins on phones. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .modal {
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .modal-backdrop {
+    padding-inline: var(--space-3);
+  }
+}
+
+/* Finger sized targets on touch screens */
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 44px;
+  }
+}

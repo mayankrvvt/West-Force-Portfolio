@@ -1,8 +1,10 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
+import { CheckCircle2, Link2Off } from "lucide-react";
 
-import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
+import AuthLayout, { AuthAlert } from "../../components/layout/AuthLayout";
+import PasswordField from "./PasswordField";
 
 import {
   confirmPasswordReset,
@@ -10,6 +12,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "../../firebase/firebase";
+import { DEMO_MODE } from "../../demo/demoMode";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -22,6 +25,7 @@ export default function ResetPassword() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const getFirebaseErrorMessage = (errorCode) => {
     switch (errorCode) {
@@ -45,6 +49,13 @@ export default function ResetPassword() {
     }
   };
 
+  const clearErrors = (name) => {
+    if (error) setError("");
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({ ...previous, [name]: "" }));
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -57,41 +68,41 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setError(
-        "Password must be at least 6 characters long."
-      );
-      return;
+    const errors = {};
+
+    if (password.length < 8) {
+      errors.password = password ? "Use at least 8 characters." : "Choose a new password.";
     }
 
-    if (password !== confirm) {
-      setError("Passwords do not match.");
+    if (!confirm) {
+      errors.confirm = "Type your new password again.";
+    } else if (password !== confirm) {
+      errors.confirm = "Passwords do not match.";
+    }
+
+    setFieldErrors(errors);
+
+    const firstInvalid = ["password", "confirm"].find((name) => errors[name]);
+
+    if (firstInvalid) {
+      document.getElementById(firstInvalid)?.focus();
       return;
     }
 
     setLoading(true);
 
     try {
-      // Verify that the reset code is still valid
-      await verifyPasswordResetCode(
-        auth,
-        oobCode
-      );
-
-      // Set the new password
-      await confirmPasswordReset(
-        auth,
-        oobCode,
-        password
-      );
+      // The literal DEV check lets Vite drop this branch (DEMO_MODE alone leaves a demo chunk).
+      if (import.meta.env.DEV && DEMO_MODE) {
+        await (await import("../../demo/demoApi")).demoActionCode("resetPassword", oobCode);
+      } else {
+        // Check the code is still valid, then set the new password.
+        await verifyPasswordResetCode(auth, oobCode);
+        await confirmPasswordReset(auth, oobCode, password);
+      }
 
       setDone(true);
     } catch (resetError) {
-      console.error(
-        "Password reset error:",
-        resetError
-      );
-
       setError(
         getFirebaseErrorMessage(
           resetError.code
@@ -102,88 +113,90 @@ export default function ResetPassword() {
     }
   };
 
+  if (done) {
+    return (
+      <AuthLayout
+        icon={<CheckCircle2 size={22} />}
+        title="Password updated"
+        lede="You can now sign in with your new password."
+      >
+        <Link to="/auth/sign-in" className="btn btn-primary btn-lg full-width">
+          Sign in
+        </Link>
+      </AuthLayout>
+    );
+  }
+
+  /* No code in the link: say so up front instead of after they type a password. */
+  if (!oobCode) {
+    return (
+      <AuthLayout
+        icon={<Link2Off size={22} />}
+        title="This link is not complete"
+        lede="Reset links only work once and expire after a while. Ask for a new one and use the newest email."
+      >
+        <Link to="/auth/forgot-password" className="btn btn-primary btn-lg full-width">
+          Send a new reset link
+        </Link>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">
-          ACCOUNT RECOVERY
+    <AuthLayout
+      title="Choose a new password"
+      lede="Use at least 8 characters. You will use it the next time you sign in."
+      footer={
+        <p>
+          Link not working?{" "}
+          <Link to="/auth/forgot-password">Request a new one</Link>
         </p>
+      }
+    >
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-        <h1>Reset password</h1>
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <PasswordField
+          id="password"
+          name="password"
+          label="New password"
+          rule={8}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            clearErrors("password");
+          }}
+          autoComplete="new-password"
+          error={fieldErrors.password}
+          disabled={loading}
+          required
+        />
 
-        {done ? (
-          <>
-            <p>
-              Your password has been successfully
-              reset.
-            </p>
+        <PasswordField
+          id="confirm"
+          name="confirm"
+          label="Confirm new password"
+          value={confirm}
+          onChange={(event) => {
+            setConfirm(event.target.value);
+            clearErrors("confirm");
+          }}
+          autoComplete="new-password"
+          error={fieldErrors.confirm}
+          disabled={loading}
+          required
+        />
 
-            <p>
-              You can now sign in using your new
-              password.
-            </p>
-
-            <Link to="/auth/sign-in">
-              <Button className="full-width">
-                Sign in
-              </Button>
-            </Link>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div
-                className="signin-error"
-                role="alert"
-              >
-                {error}
-              </div>
-            )}
-
-            <Input
-              id="password"
-              name="password"
-              label="New password"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
-              placeholder="Enter new password"
-              autoComplete="new-password"
-              minLength={6}
-              disabled={loading}
-              required
-            />
-
-            <Input
-              id="confirm"
-              name="confirm"
-              label="Confirm password"
-              type="password"
-              value={confirm}
-              onChange={(event) =>
-                setConfirm(event.target.value)
-              }
-              placeholder="Confirm new password"
-              autoComplete="new-password"
-              minLength={6}
-              disabled={loading}
-              required
-            />
-
-            <Button
-              type="submit"
-              className="full-width"
-              disabled={loading}
-            >
-              {loading
-                ? "Resetting..."
-                : "Reset password"}
-            </Button>
-          </form>
-        )}
-      </div>
-    </div>
+        <Button
+          type="submit"
+          size="lg"
+          className="full-width auth-submit"
+          disabled={loading}
+          aria-busy={loading || undefined}
+        >
+          {loading ? "Saving…" : "Save new password"}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

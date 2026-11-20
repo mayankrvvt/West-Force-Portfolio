@@ -1,112 +1,58 @@
 import { useRef } from "react";
-import {
-  FileText,
-  Video,
-  BarChart3,
-  Award,
-} from "lucide-react";
+import { FileText, Video, BarChart3, Award } from "lucide-react";
 
 import { portfolioFeatures } from "../../constants/siteData";
+import useRevealOnce from "./useRevealOnce";
 
-const featureIcons = [
-  FileText,
-  Video,
-  BarChart3,
-  Award,
-];
+const featureIcons = {
+  document: FileText,
+  video: Video,
+  chart: BarChart3,
+  certificate: Award,
+};
 
+// Cards rise 12px and fade in, 60ms apart, once (public.css).
 export default function PortfolioFeatures() {
-  const sectionRef = useRef(null);
-
-  const handlePointerMove = (event) => {
-    const card = event.currentTarget;
-
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return;
-    }
-
-    const rect = card.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    card.style.setProperty("--mouse-x", `${x}px`);
-    card.style.setProperty("--mouse-y", `${y}px`);
-  };
+  const listRef = useRef(null);
+  useRevealOnce(listRef);
 
   return (
     <section
-      ref={sectionRef}
-      id="portfolio-features"
-      className="portfolio-features-section"
+      id="portfolio"
+      className="home-section home-section-frost"
+      aria-labelledby="portfolio-title"
     >
       <div className="container">
+        <div className="home-section-head">
+          <p className="home-kicker">Your portfolio</p>
 
-        <div className="section-heading portfolio-features-heading">
-          <p className="eyebrow">
-            YOUR PORTFOLIO
-          </p>
-
-          <h2>
-            Everything employers need, in one place.
+          <h2 id="portfolio-title">
+            The four things employers ask for, in one place
           </h2>
 
           <p>
-            Give employers a complete picture of your
-            experience, skills and potential without
-            sending multiple files.
+            Stop attaching the same files to every application. Each part
+            of your portfolio has its own section, and you can update it
+            whenever something changes.
           </p>
         </div>
 
-        <div className="portfolio-features-grid">
+        <ul ref={listRef} className="feature-list">
           {portfolioFeatures.map((feature, index) => {
-            const Icon = featureIcons[index];
+            const Icon = featureIcons[feature.icon];
 
             return (
-              <article
-                key={feature.title}
-                className="portfolio-feature-card"
-                onPointerMove={handlePointerMove}
-              >
-                <div
-                  className="portfolio-feature-glow"
-                  aria-hidden="true"
-                />
-
-                <div className="portfolio-feature-icon">
-                  <Icon
-                    size={25}
-                    strokeWidth={2}
-                  />
-                </div>
-
-                <div className="portfolio-feature-content">
-                  <span className="portfolio-feature-number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <h3>
-                    {feature.title}
-                  </h3>
-
-                  <p>
-                    {feature.description}
-                  </p>
-                </div>
-
-                <span
-                  className="portfolio-feature-arrow"
-                  aria-hidden="true"
-                >
-                  ↗
+              <li key={feature.title} style={{ "--i": index }}>
+                <span className="feature-list-icon" aria-hidden="true">
+                  <Icon size={20} strokeWidth={1.75} />
                 </span>
-              </article>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+                <span className="feature-list-detail">{feature.detail}</span>
+              </li>
             );
           })}
-        </div>
-
+        </ul>
       </div>
     </section>
   );

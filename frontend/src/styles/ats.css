@@ -1,0 +1,385 @@
+/*
+ * ATS checker results: score breakdown, advice and history.
+ * Loaded by pages/dashboard/ATSChecker.jsx. Shared ATS layout rules
+ * (.ats-layout, .keyword-chip and friends) stay in dashboard-product.css.
+ */
+
+/* ---------- Score ---------- */
+
+.ats-report-title {
+  margin: 0 0 var(--space-3);
+  color: var(--wf-navy);
+  font-size: var(--text-md);
+}
+
+.ats-breakdown {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.ats-score-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.ats-score-number {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ats-score-number strong {
+  color: var(--wf-navy);
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.ats-score-number span,
+.ats-score-band {
+  color: var(--wf-ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.ats-score-band {
+  margin: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--wf-info-bg);
+  color: var(--wf-navy);
+}
+
+/* Each segment's width is the check's weight; its fill is the share earned. */
+.ats-points-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.ats-points-segment {
+  --tone: var(--wf-lake);
+  min-width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--tone) var(--fill, 0%), var(--wf-line) var(--fill, 0%));
+}
+
+.ats-points-segment.is-pass { --tone: var(--wf-success); }
+.ats-points-segment.is-warn { --tone: var(--wf-warning); }
+.ats-points-segment.is-fail { --tone: var(--wf-danger); }
+
+/* ---------- Breakdown list ---------- */
+
+.ats-check-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ats-check {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+}
+
+.ats-check-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ats-check-head strong {
+  flex: 1;
+  min-width: 0;
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.ats-check-icon {
+  flex-shrink: 0;
+}
+
+.ats-check.is-pass .ats-check-icon { color: var(--wf-success); }
+.ats-check.is-warn .ats-check-icon { color: var(--wf-warning); }
+.ats-check.is-fail .ats-check-icon { color: var(--wf-danger); }
+
+.ats-check-points {
+  min-width: var(--space-7);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ats-check-detail {
+  margin: 0;
+  padding-left: calc(16px + var(--space-2));
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
+}
+
+.ats-check-fixes {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: calc(16px + var(--space-2) + var(--space-4));
+  color: var(--wf-ink);
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
+}
+
+/* ---------- Advice ---------- */
+
+.ats-advice h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ats-advice h3 svg {
+  color: var(--wf-lake);
+}
+
+.ats-advice-summary {
+  margin: 0 0 var(--space-3);
+  color: var(--wf-ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+/* ---------- Inputs ---------- */
+
+.ats-job-title {
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- History ---------- */
+
+.ats-history {
+  margin-top: var(--space-5);
+}
+
+.ats-history-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.ats-history-head h2 {
+  margin: 0;
+  color: var(--wf-navy);
+  font-size: var(--text-md);
+}
+
+.ats-history-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--wf-lake);
+}
+
+.ats-history-count {
+  min-width: var(--space-5);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.ats-history-empty {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-4) var(--space-2);
+  border: 1px dashed var(--wf-line-strong);
+  border-radius: var(--radius-object);
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.ats-history-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ats-history-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+}
+
+.ats-history-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ats-history-text strong {
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ats-history-text span {
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+}
+
+.ats-history-change {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.ats-history-change.is-up { color: var(--wf-success); }
+.ats-history-change.is-down { color: var(--wf-danger); }
+
+.ats-history-score {
+  min-width: var(--space-6);
+  color: var(--wf-navy);
+  font-size: var(--text-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ---------- Trend chart ---------- */
+
+.ats-trend {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.ats-trend-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  overflow: visible;
+}
+
+.ats-trend-grid line {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+
+.ats-trend-grid text,
+.ats-trend-end {
+  fill: var(--wf-ink-faint);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ats-trend-end {
+  fill: var(--wf-navy);
+  font-weight: 700;
+}
+
+.ats-trend-area {
+  fill: var(--wf-lake);
+  opacity: 0.1;
+}
+
+.ats-trend-line {
+  fill: none;
+  stroke: var(--wf-lake);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ats-trend-dot {
+  fill: var(--wf-lake);
+  stroke: var(--wf-paper);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.ats-trend-hit {
+  fill: transparent;
+  cursor: default;
+}
+
+.ats-trend-tip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+  max-width: min(220px, 60vw);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-control);
+  background: var(--wf-paper);
+  box-shadow: var(--shadow-float);
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - var(--space-3)));
+}
+
+.ats-trend-tip strong {
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+}
+
+/* One load moment: the line draws in. Skipped when motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+  .ats-trend-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: ats-trend-draw var(--duration-move) var(--ease-out) forwards;
+  }
+}
+
+@keyframes ats-trend-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .ats-check-detail,
+  .ats-check-fixes {
+    padding-left: 0;
+  }
+
+  .ats-check-fixes {
+    padding-left: var(--space-4);
+  }
+}

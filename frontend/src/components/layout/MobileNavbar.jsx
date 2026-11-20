@@ -1,25 +1,23 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 export default function MobileNavbar() {
   return (
-    <nav className="mobile-dashboard-nav">
-
-      <Link to="/dashboard">
+    <nav className="mobile-dashboard-nav" aria-label="Dashboard">
+      <NavLink to="/dashboard" end>
         Dashboard
-      </Link>
+      </NavLink>
 
-      <Link to="/dashboard/portfolio">
+      <NavLink to="/dashboard/portfolio">
         Portfolio
-      </Link>
+      </NavLink>
 
-      <Link to="/dashboard/jobs">
+      <NavLink to="/dashboard/jobs">
         Jobs
-      </Link>
+      </NavLink>
 
-      <Link to="/dashboard/applications">
+      <NavLink to="/dashboard/applications">
         Applications
-      </Link>
-
+      </NavLink>
     </nav>
   );
 }

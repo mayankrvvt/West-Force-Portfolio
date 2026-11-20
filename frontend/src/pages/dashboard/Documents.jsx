@@ -1,296 +1,157 @@
 import { useRef, useState } from "react";
 import {
-  Upload,
+  Award,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CircleCheck,
   FileText,
   GraduationCap,
-  Globe,
-  BriefcaseBusiness,
+  HeartPulse,
+  School,
   ShieldCheck,
-  Languages,
-  Award,
-  CheckCircle2,
-  X,
+  Trash2,
+  Upload,
+  Users,
 } from "lucide-react";
+import { formatDate } from "../../utils/formatDate";
+import { formatFileSize } from "../../utils/formatFileSize";
 
+// These keys only live in this browser (localStorage); the server never sees
+// them. "school", "bachelor", "experience" and "training" are kept from the
+// old list so files people already added still show up.
 const DOCUMENT_TYPES = [
-  {
-    id: "school",
-    title: "10th–12th Certificate",
-    description: "Secondary and higher-secondary certificates",
-    icon: GraduationCap,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "bachelor",
-    title: "Bachelor Degree Certificate",
-    description: "Degree certificate and academic documents",
-    icon: GraduationCap,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "wes",
-    title: "WES Report",
-    description: "World Education Services evaluation report",
-    icon: Globe,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "experience",
-    title: "Work Experience",
-    description: "Experience letters and employment records",
-    icon: BriefcaseBusiness,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "training",
-    title: "Training Documents",
-    description: "Training, internship and course certificates",
-    icon: Award,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "passport",
-    title: "Passport",
-    description: "Passport identification page",
-    icon: ShieldCheck,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
-  {
-    id: "ielts",
-    title: "IELTS",
-    description: "IELTS test report form",
-    icon: Languages,
-    accept: ".pdf,.jpg,.jpeg,.png",
-  },
+  { id: "school", title: "High school diploma", description: "Your Ontario Secondary School Diploma or the one from your province.", icon: School },
+  { id: "bachelor", title: "College or university diploma", description: "Diploma, degree or transcript from a college or university.", icon: GraduationCap },
+  { id: "licence", title: "Professional licence or registration", description: "Proof you are licensed or registered with a regulatory body.", icon: BadgeCheck },
+  { id: "police-check", title: "Police check", description: "Criminal record check or vulnerable sector check.", icon: ShieldCheck },
+  { id: "first-aid", title: "First aid and CPR", description: "Standard first aid, CPR or BLS certificate that is still valid.", icon: HeartPulse },
+  { id: "training", title: "Training certificates", description: "Courses, workshops and safety training such as WHMIS.", icon: Award },
+  { id: "experience", title: "Work experience letters", description: "Letters from past employers that confirm your role and dates.", icon: BriefcaseBusiness },
+  { id: "references", title: "References", description: "Names and contact details of people who can speak to your work.", icon: Users },
 ];
 
 const STORAGE_KEY = "westforce_documents";
 
-export default function Documents() {
-  const [documents, setDocuments] = useState(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "{}"
-      );
-    } catch {
-      return {};
-    }
-  });
+function readDocuments() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
 
+function writeDocuments(documents) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+  } catch {
+    /* Storage can be blocked (private mode); the list still works for this visit. */
+  }
+}
+
+export default function Documents() {
+  const [documents, setDocuments] = useState(readDocuments);
   const [activeUpload, setActiveUpload] = useState(null);
   const inputRef = useRef(null);
 
   const handleUploadClick = (documentId) => {
     setActiveUpload(documentId);
-
-    setTimeout(() => {
-      inputRef.current?.click();
-    }, 0);
+    setTimeout(() => inputRef.current?.click(), 0);
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
+    if (!file || !activeUpload) return;
 
-    if (!file || !activeUpload) {
-      return;
-    }
-
-    const updatedDocuments = {
+    const updated = {
       ...documents,
-      [activeUpload]: {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadedAt: new Date().toISOString(),
-      },
+      [activeUpload]: { name: file.name, size: file.size, type: file.type, uploadedAt: new Date().toISOString() },
     };
-
-    setDocuments(updatedDocuments);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(updatedDocuments)
-    );
-
+    setDocuments(updated);
+    writeDocuments(updated);
     event.target.value = "";
     setActiveUpload(null);
   };
 
   const handleRemove = (documentId) => {
-    const updatedDocuments = {
-      ...documents,
-    };
-
-    delete updatedDocuments[documentId];
-
-    setDocuments(updatedDocuments);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(updatedDocuments)
-    );
+    const updated = { ...documents };
+    delete updated[documentId];
+    setDocuments(updated);
+    writeDocuments(updated);
   };
 
-  const formatFileSize = (bytes) => {
-    if (!bytes) {
-      return "";
-    }
-
-    if (bytes < 1024) {
-      return `${bytes} B`;
-    }
-
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const uploadedCount = Object.keys(documents).length;
+  const uploadedCount = DOCUMENT_TYPES.filter((type) => documents[type.id]).length;
+  const percent = Math.round((uploadedCount / DOCUMENT_TYPES.length) * 100);
 
   return (
-    <div className="documents-page">
-      <div className="documents-header">
+    <div className="dashboard-product documents-page">
+      <header className="product-page-header">
         <div>
-          <p className="documents-kicker">
-            DOCUMENT CENTER
-          </p>
-
-          <h2>Your documents</h2>
-
-          <p className="documents-description">
-            Upload and manage the documents required for
-            your professional profile and employer
-            verification.
-          </p>
+          <h1>Documents</h1>
+          <p>Keep the documents Canadian employers often ask for in one place, ready when you apply.</p>
         </div>
-
         <div className="documents-progress">
-          <strong>
-            {uploadedCount}/{DOCUMENT_TYPES.length}
-          </strong>
-
-          <span>Documents uploaded</span>
+          <span><strong>{uploadedCount} of {DOCUMENT_TYPES.length}</strong> added</span>
+          <div className="progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label="Documents added">
+            <span style={{ transform: `scaleX(${percent / 100})` }} />
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="documents-grid">
-        {DOCUMENT_TYPES.map((document) => {
-          const Icon = document.icon;
-          const uploaded = documents[document.id];
+      {uploadedCount === 0 && (
+        <div className="product-notice">
+          <Upload size={16} aria-hidden="true" />
+          <span>Start with the document an employer asked for, or your highest diploma.</span>
+        </div>
+      )}
 
+      <ul className="document-list">
+        {DOCUMENT_TYPES.map((type) => {
+          const Icon = type.icon;
+          const uploaded = documents[type.id];
           return (
-            <article
-              className={`document-upload-card ${
-                uploaded ? "document-uploaded" : ""
-              }`}
-              key={document.id}
-            >
-              <div className="document-card-top">
-                <div className="document-card-icon">
-                  <Icon size={24} strokeWidth={1.8} />
-                </div>
-
-                {uploaded && (
-                  <span className="document-status">
-                    <CheckCircle2 size={14} />
-                    Uploaded
-                  </span>
+            <li className={`document-row ${uploaded ? "uploaded" : ""}`} key={type.id}>
+              <span className="document-row-icon"><Icon size={18} aria-hidden="true" /></span>
+              <div className="document-row-copy">
+                <h2>{type.title}</h2>
+                {uploaded ? (
+                  <p className="document-row-file">
+                    <FileText size={13} aria-hidden="true" />
+                    <span className="document-row-name">{uploaded.name}</span>
+                    <span className="document-row-detail">{formatFileSize(uploaded.size)}{uploaded.uploadedAt && `, ${formatDate(uploaded.uploadedAt)}`}</span>
+                  </p>
+                ) : (
+                  <p>{type.description}</p>
                 )}
               </div>
-
-              <div className="document-card-content">
-                <h3>{document.title}</h3>
-
-                <p>{document.description}</p>
-              </div>
-
-              {uploaded ? (
-                <div className="document-file">
-                  <div className="document-file-info">
-                    <FileText size={18} />
-
-                    <div>
-                      <strong>
-                        {uploaded.name}
-                      </strong>
-
-                      <span>
-                        {formatFileSize(
-                          uploaded.size
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="document-file-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUploadClick(
-                          document.id
-                        )
-                      }
-                      className="document-change-button"
-                    >
-                      Replace
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleRemove(
-                          document.id
-                        )
-                      }
-                      className="document-remove-button"
-                      aria-label={`Remove ${document.title}`}
-                    >
-                      <X size={17} />
-                    </button>
-                  </div>
+              <div className="document-row-side">
+                {uploaded
+                  ? <span className="document-row-status done"><CircleCheck size={13} aria-hidden="true" />Uploaded</span>
+                  : <span className="document-row-status">Not yet</span>}
+                <div className="document-row-actions">
+                  {uploaded ? (
+                    <>
+                      <button type="button" className="product-button compact" onClick={() => handleUploadClick(type.id)} aria-label={`Replace ${type.title}`}>Replace</button>
+                      <button type="button" className="icon-button danger" onClick={() => handleRemove(type.id)} aria-label={`Remove ${type.title}`} title="Remove"><Trash2 size={15} aria-hidden="true" /></button>
+                    </>
+                  ) : (
+                    <button type="button" className="product-button compact" onClick={() => handleUploadClick(type.id)} aria-label={`Upload ${type.title}`}><Upload size={14} aria-hidden="true" />Upload</button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  className="document-upload-button"
-                  onClick={() =>
-                    handleUploadClick(
-                      document.id
-                    )
-                  }
-                >
-                  <Upload size={17} />
-                  Upload document
-                </button>
-              )}
-            </article>
+              </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        onChange={handleFileChange}
-        hidden
-      />
+      <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} hidden />
 
-      <div className="documents-note">
-        <ShieldCheck size={19} />
-
+      <aside className="product-tip">
+        <ShieldCheck size={18} aria-hidden="true" />
         <div>
-          <strong>Document security</strong>
-
-          <p>
-            Your documents are stored locally for now.
-            Secure cloud storage and document verification
-            will be connected when the backend is added.
-          </p>
+          <strong>Where your files go</strong>
+          <p>This page keeps a list of the files you picked on this device only. To show documents to employers, add them to your portfolio.</p>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

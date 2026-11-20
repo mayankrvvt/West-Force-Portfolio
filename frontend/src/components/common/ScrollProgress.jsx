@@ -1,8 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+// Plain scroll listener instead of GSAP, so every page skips the GSAP chunk.
 
 export default function ScrollProgress() {
   const progressRef = useRef(null);
@@ -21,26 +19,41 @@ export default function ScrollProgress() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        progress,
-        {
-          scaleX: 0,
-        },
-        {
-          scaleX: 1,
-          transformOrigin: "left center",
-          ease: "none",
-          scrollTrigger: {
-            start: "top top",
-            end: "bottom bottom",
-            scrub: true,
-          },
-        }
-      );
-    });
+    let frame = 0;
 
-    return () => ctx.revert();
+    const paint = () => {
+      frame = 0;
+      const root = document.documentElement;
+      const scrollable = root.scrollHeight - window.innerHeight;
+      const ratio =
+        scrollable > 0
+          ? Math.min(Math.max(window.scrollY / scrollable, 0), 1)
+          : 0;
+      progress.style.transform = `scaleX(${ratio})`;
+    };
+
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+
+    paint();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+
+    // Page height changes (new route, content loading) move the end point.
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(schedule);
+    resizeObserver?.observe(document.body);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      resizeObserver?.disconnect();
+      progress.style.removeProperty("transform");
+    };
   }, []);
 
   return (

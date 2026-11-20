@@ -1,131 +1,168 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect, useRef } from "react";
 
 import { howItWorks } from "../../constants/siteData";
 
-gsap.registerPlugin(ScrollTrigger);
+// Scroll range, as viewport fractions: starts when the list top reaches 78%
+// of the viewport and ends when its bottom reaches 60%.
+const START_AT = 0.78;
+const END_AT = 0.6;
+// Catch-up time constant in seconds; about the old GSAP "scrub: 0.4" lag.
+const SMOOTHING = 0.13;
 
-export default function HowItWorks() {
-  const sectionRef = useRef(null);
+/**
+ * The three steps from sign-up to sharing. Use headingLevel={1} when this
+ * section is the whole page (the /how-it-works route).
+ *
+ * Each step (but the last) owns a connector that runs from its marker to the
+ * next one: across on desktop, down on phones. The geometry is pure CSS, so
+ * it is exact in both layouts. As you scroll, the connectors fill in order
+ * and each marker fills when the line reaches it. Without JS or with reduced
+ * motion every connector is full and every marker is filled (CSS defaults).
+ * Each step's text sits faded until its marker is reached.
+ * tone="frost" gives the section the frost band (home page rhythm).
+ */
+export default function HowItWorks({ headingLevel = 2, tone = "white" }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
+  const StepHeading = headingLevel === 1 ? "h2" : "h3";
+  const listRef = useRef(null);
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
+  useEffect(() => {
+    const list = listRef.current;
 
-    if (!section) return;
+    if (!list) return undefined;
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const media = window.matchMedia(
+      "(prefers-reduced-motion: no-preference)"
+    );
 
-    if (reduceMotion) return;
+    const setup = () => {
+      const steps = [...list.querySelectorAll(":scope > li")];
+      const segments = steps.length - 1;
+      const state = { progress: 0 };
 
-    const ctx = gsap.context(() => {
-      const steps = gsap.utils.toArray(".how-it-works-step");
-      const line = section.querySelector(".steps-progress-fill");
+      // progress 0..1 over the whole list; connector i fills over its slice.
+      const paint = () => {
+        const along = state.progress * segments;
+        steps.forEach((step, i) => {
+          const fill = Math.min(Math.max(along - i, 0), 1);
+          step.style.setProperty("--fill", fill.toFixed(3));
+          step.classList.toggle(
+            "is-reached",
+            i === 0 ? state.progress > 0.001 : along >= i - 0.001
+          );
+        });
+      };
 
-      gsap.fromTo(
-        steps,
-        {
-          opacity: 0,
-          y: 50,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.18,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 75%",
-            once: true,
-          },
+      const targetProgress = () => {
+        const viewport = window.innerHeight;
+        const rect = list.getBoundingClientRect();
+        const distance = rect.height + (START_AT - END_AT) * viewport;
+        if (distance <= 0) return 1;
+        const raw = (START_AT * viewport - rect.top) / distance;
+        return Math.min(Math.max(raw, 0), 1);
+      };
+
+      let frame = 0;
+      let lastTime = 0;
+
+      // Ease state.progress toward the scroll position, then stop.
+      const tick = (time) => {
+        const target = targetProgress();
+        const elapsed = lastTime ? (time - lastTime) / 1000 : 1 / 60;
+        lastTime = time;
+
+        const step = 1 - Math.exp(-elapsed / SMOOTHING);
+        state.progress += (target - state.progress) * step;
+
+        if (Math.abs(target - state.progress) < 0.001) {
+          state.progress = target;
         }
-      );
 
-      if (line) {
-        gsap.fromTo(
-          line,
-          {
-            scaleX: 0,
-          },
-          {
-            scaleX: 1,
-            transformOrigin: "left center",
-            ease: "none",
-            scrollTrigger: {
-              trigger: section,
-              start: "top 65%",
-              end: "bottom 65%",
-              scrub: 1,
-            },
-          }
-        );
-      }
-    }, section);
+        paint();
 
-    return () => ctx.revert();
+        if (state.progress !== target) {
+          frame = requestAnimationFrame(tick);
+        } else {
+          frame = 0;
+          lastTime = 0;
+        }
+      };
+
+      const schedule = () => {
+        if (!frame) frame = requestAnimationFrame(tick);
+      };
+
+      list.classList.add("is-live");
+      // Start at the current scroll position, without easing in from zero.
+      state.progress = targetProgress();
+      paint();
+
+      window.addEventListener("scroll", schedule, { passive: true });
+      window.addEventListener("resize", schedule);
+
+      return () => {
+        if (frame) cancelAnimationFrame(frame);
+        window.removeEventListener("scroll", schedule);
+        window.removeEventListener("resize", schedule);
+        list.classList.remove("is-live");
+        steps.forEach((step) => {
+          step.classList.remove("is-reached");
+          step.style.removeProperty("--fill");
+        });
+      };
+    };
+
+    let teardown = media.matches ? setup() : null;
+
+    const handleChange = () => {
+      teardown?.();
+      teardown = media.matches ? setup() : null;
+    };
+
+    media.addEventListener("change", handleChange);
+
+    return () => {
+      media.removeEventListener("change", handleChange);
+      teardown?.();
+    };
   }, []);
 
   return (
     <section
-      ref={sectionRef}
       id="how-it-works"
-      className="how-it-works-section"
+      className={`home-section${tone === "frost" ? " home-section-frost" : ""}`}
+      aria-labelledby="how-it-works-title"
     >
       <div className="container">
+        <div className="home-section-head">
+          <p className="home-kicker">How it works</p>
 
-        <div className="how-it-works-heading">
-          <p className="eyebrow">
-            HOW IT WORKS
-          </p>
-
-          <h2>
-            From documents to professional portfolio.
-          </h2>
+          <Heading id="how-it-works-title">
+            From documents to a portfolio employers can open
+          </Heading>
 
           <p>
-            Everything is designed to make sharing your
-            professional story simple, secure and effective.
+            Three steps, from creating your account to sending
+            your first link.
           </p>
         </div>
 
-        <div className="how-it-works-wrapper">
-
-          <div
-            className="steps-progress"
-            aria-hidden="true"
-          >
-            <div className="steps-progress-fill" />
-          </div>
-
-          <div className="how-it-works-grid">
-            {howItWorks.map((step) => (
-              <article
-                className="how-it-works-step"
-                key={step.number}
+        <ol ref={listRef} className="step-list">
+          {howItWorks.map((step) => (
+            <li key={step.number}>
+              <span className="step-list-link" aria-hidden="true" />
+              <span
+                className="step-list-number"
+                data-step={step.number}
+                aria-hidden="true"
               >
-                <div className="step-number">
-                  {step.number}
-                </div>
-
-                <span className="step-label">
-                  STEP {step.number}
-                </span>
-
-                <h3>
-                  {step.title}
-                </h3>
-
-                <p>
-                  {step.description}
-                </p>
-              </article>
-            ))}
-          </div>
-
-        </div>
+                {step.number}
+              </span>
+              <StepHeading>{step.title}</StepHeading>
+              <p>{step.description}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

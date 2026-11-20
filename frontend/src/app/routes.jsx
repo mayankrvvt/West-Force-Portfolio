@@ -15,6 +15,7 @@ const SignIn = lazy(() => import("../pages/auth/SignIn"));
 const SignUp = lazy(() => import("../pages/auth/SignUp"));
 const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("../pages/auth/ResetPassword"));
+const AuthAction = lazy(() => import("../pages/auth/AuthAction"));
 const PaymentSuccess = lazy(() => import("../pages/payment/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("../pages/payment/PaymentCancelled"));
 const Welcome = lazy(() => import("../pages/onboarding/Welcome"));
@@ -32,6 +33,7 @@ const DashboardDocuments = lazy(() => import("../pages/dashboard/Documents"));
 const AIResumeBuilder = lazy(() => import("../pages/dashboard/AIResumeBuilder"));
 const ATSChecker = lazy(() => import("../pages/dashboard/ATSChecker"));
 const Resumes = lazy(() => import("../pages/dashboard/Resumes"));
+const TailorResume = lazy(() => import("../pages/dashboard/TailorResume"));
 const DashboardCertificates = lazy(() => import("../pages/dashboard/Certificates"));
 const Applications = lazy(() => import("../pages/dashboard/Applications"));
 const VideoQA = lazy(() => import("../pages/dashboard/VideoQA"));
@@ -39,6 +41,11 @@ const Jobs = lazy(() => import("../pages/dashboard/Jobs"));
 const Profile = lazy(() => import("../pages/dashboard/Profile"));
 const Settings = lazy(() => import("../pages/dashboard/Settings"));
 const ResumeEditor = lazy(() => import("../pages/dashboard/ResumeEditor"));
+const AdminJobs = lazy(() => import("../pages/dashboard/AdminJobs"));
+const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
+const AdminAdmins = lazy(() => import("../pages/admin/AdminAdmins"));
+const AdminSettings = lazy(() => import("../pages/admin/AdminSettings"));
+const AdminActivity = lazy(() => import("../pages/admin/AdminActivity"));
 const PublicPortfolio = lazy(() => import("../pages/portfolio/PublicPortfolio"));
 const PortfolioNotFound = lazy(() => import("../pages/portfolio/PortfolioNotFound"));
 
@@ -48,7 +55,10 @@ const PortfolioNotFound = lazy(() => import("../pages/portfolio/PortfolioNotFoun
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import PaidAccessRoute from "../components/common/PaidAccessRoute";
+import AdminRoute from "../components/common/AdminRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import { RouteTitle } from "../hooks/usePageTitle";
+import ScrollToTop from "../components/common/ScrollToTop";
 
 // ---------------------------------------------------------
 // Routes
@@ -56,6 +66,10 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 
 function AppRoutes() {
   return (
+    <>
+    {/* Sets the tab title for every route; keep it before the routes so pages can override it */}
+    <RouteTitle />
+    <ScrollToTop />
     <RouterRoutes>
 
       {/* =====================================================
@@ -104,6 +118,12 @@ function AppRoutes() {
       <Route
         path="/auth/reset-password"
         element={<ResetPassword />}
+      />
+
+      {/* Links in account emails (verify, reset, email change). */}
+      <Route
+        path="/auth/action"
+        element={<AuthAction />}
       />
 
       {/* =====================================================
@@ -218,6 +238,11 @@ function AppRoutes() {
             />
 
             <Route
+              path="/dashboard/tailor-resume"
+              element={<TailorResume />}
+            />
+
+            <Route
               path="/dashboard/resumes"
               element={<Resumes />}
             />
@@ -253,6 +278,32 @@ function AppRoutes() {
             element={<Settings />}
           />
 
+          {/* ADMIN: only for admins; others go back to /dashboard */}
+          <Route element={<AdminRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route
+                path="/admin"
+                element={<Navigate to="/admin/jobs" replace />}
+              />
+              <Route
+                path="/admin/jobs"
+                element={<AdminJobs />}
+              />
+              <Route
+                path="/admin/admins"
+                element={<AdminAdmins />}
+              />
+              <Route
+                path="/admin/settings"
+                element={<AdminSettings />}
+              />
+              <Route
+                path="/admin/activity"
+                element={<AdminActivity />}
+              />
+            </Route>
+          </Route>
+
         </Route>
 
       </Route>
@@ -281,6 +332,7 @@ function AppRoutes() {
       />
 
     </RouterRoutes>
+    </>
   );
 }
 

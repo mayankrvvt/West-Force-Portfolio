@@ -1,65 +1,51 @@
-import { useRef } from "react";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
 
 import Hero from "../../components/landing/Hero";
+import FieldsStrip from "../../components/landing/FieldsStrip";
+import PortfolioFeatures from "../../components/landing/PortfolioFeatures";
+import Outcome from "../../components/landing/Outcome";
+import HowItWorks from "../../components/landing/HowItWorks";
+import TaglineReveal from "../../components/landing/TaglineReveal";
 import EmployerShowcase from "../../components/landing/EmployerShowcase";
 import Services from "../../components/landing/Services";
-import PortfolioFeatures from "../../components/landing/PortfolioFeatures";
-import HowItWorks from "../../components/landing/HowItWorks";
 import Pricing from "../../components/landing/Pricing";
+import FAQ from "../../components/landing/FAQ";
 import CTA from "../../components/landing/CTA";
 
 import ScrollTutorial from "../../components/landing/ScrollTutorial";
 
-import useGsapReveal from "../../hooks/useGsapReveal";
-
 export default function Home() {
-  const pageRef = useRef(null);
+  const { hash, key } = useLocation();
 
-  useGsapReveal(pageRef);
+  // Router navigation does not scroll to a #hash on its own.
+  useEffect(() => {
+    if (!hash) return;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  }, [hash, key]);
 
+  // Bands alternate white and frost, and the page closes on navy:
+  // hero, portfolio (frost), outcome, how it works (frost), tagline,
+  // employer view (frost), services, pricing (frost), FAQ, closing CTA.
   return (
     <>
       <Navbar />
 
-      <main
-        ref={pageRef}
-        className="home-page"
-      >
-        {/* Hero */}
+      <main id="main" className="home-page">
         <Hero />
-
-        {/* Employer Showcase */}
-        <section data-reveal="up">
-          <EmployerShowcase />
-        </section>
-
-        {/* Services */}
-        <section data-reveal="up">
-          <Services />
-        </section>
-
-        {/* Portfolio Features */}
-        <section data-reveal="up">
-          <PortfolioFeatures />
-        </section>
-
-        {/* How It Works */}
-        <section data-reveal="up">
-          <HowItWorks />
-        </section>
-
-        {/* Pricing */}
-        <section data-reveal="up">
-          <Pricing />
-        </section>
-
-        {/* Call To Action */}
-        <section data-reveal="up">
-          <CTA />
-        </section>
+        <FieldsStrip />
+        <PortfolioFeatures />
+        <Outcome />
+        <HowItWorks tone="frost" />
+        <TaglineReveal />
+        <EmployerShowcase />
+        <Services />
+        <Pricing tone="frost" />
+        <FAQ />
+        <CTA />
       </main>
 
       <Footer />

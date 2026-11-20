@@ -1,269 +1,164 @@
-import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import gsap from "gsap";
+import {
+  ArrowRight,
+  Award,
+  BarChart3,
+  Check,
+  FileText,
+  Lock,
+  LockOpen,
+  Play,
+} from "lucide-react";
 
-import Button from "../common/Button";
+import MapleLeaf from "../brand/MapleLeaf";
 
+// Sample content for the product preview (the demo user, Emma Tremblay).
+const skills = ["Personal care", "Dementia care", "Mobility support", "First aid and CPR"];
+
+const documents = [
+  { name: "Resume", detail: "PDF, 2 pages", Icon: FileText },
+  { name: "Certificates", detail: "3 files", Icon: Award },
+  { name: "Skills report", detail: "TestGorilla", Icon: BarChart3 },
+];
+
+const assurances = [
+  "One payment, no monthly fee",
+  "Documents locked behind your PIN",
+  "Coaching on every plan",
+];
+
+/*
+ * Load sequence (CSS only, public.css "Hero entrance"): the headline lines
+ * rise, the lede, buttons and assurances follow, then the preview settles
+ * onto its navy stage and the "PIN accepted" note slides in. Reduced motion
+ * gets the final state at once.
+ */
 export default function Hero() {
-  const heroRef = useRef(null);
-  const glowRef = useRef(null);
-  const contentRef = useRef(null);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    const glow = glowRef.current;
-    const content = contentRef.current;
-
-    if (!hero || !glow || !content) {
-      return;
-    }
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (reduceMotion) {
-      gsap.set(content, {
-        opacity: 1,
-        y: 0,
-      });
-
-      return;
-    }
-
-    /* ---------------------------------------------
-       HERO ENTRANCE ANIMATION
-    --------------------------------------------- */
-
-    const intro = gsap.timeline({
-      defaults: {
-        ease: "power3.out",
-      },
-    });
-
-    intro.fromTo(
-      content.querySelector(".hero-eyebrow"),
-      {
-        opacity: 0,
-        y: 20,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-      }
-    );
-
-    intro.fromTo(
-      content.querySelector("h1"),
-      {
-        opacity: 0,
-        y: 45,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-      },
-      "-=0.3"
-    );
-
-    intro.fromTo(
-      content.querySelector(".hero-copy"),
-      {
-        opacity: 0,
-        y: 25,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-      },
-      "-=0.55"
-    );
-
-    intro.fromTo(
-      content.querySelector(".hero-actions"),
-      {
-        opacity: 0,
-        y: 20,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-      },
-      "-=0.4"
-    );
-
-    /* ---------------------------------------------
-       INITIAL GLOW
-    --------------------------------------------- */
-
-    gsap.set(glow, {
-      x: 0,
-      y: 0,
-      scale: 1,
-    });
-
-    /* ---------------------------------------------
-       MOUSE INTERACTION
-    --------------------------------------------- */
-
-    const handlePointerMove = (event) => {
-      const rect = hero.getBoundingClientRect();
-
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      const moveX = (x - centerX) / 12;
-      const moveY = (y - centerY) / 12;
-
-      gsap.to(glow, {
-        x: moveX,
-        y: moveY,
-        scale: 1.08,
-        duration: 0.8,
-        ease: "power3.out",
-        overwrite: true,
-      });
-
-      gsap.to(content, {
-        x: moveX * 0.12,
-        y: moveY * 0.12,
-        duration: 1,
-        ease: "power3.out",
-        overwrite: true,
-      });
-    };
-
-    const handlePointerLeave = () => {
-      gsap.to(glow, {
-        x: 0,
-        y: 0,
-        scale: 1,
-        duration: 1,
-        ease: "power3.out",
-      });
-
-      gsap.to(content, {
-        x: 0,
-        y: 0,
-        duration: 1,
-        ease: "power3.out",
-      });
-    };
-
-    hero.addEventListener("pointermove", handlePointerMove);
-    hero.addEventListener("pointerleave", handlePointerLeave);
-
-    /* ---------------------------------------------
-       CLEANUP
-    --------------------------------------------- */
-
-    return () => {
-      hero.removeEventListener("pointermove", handlePointerMove);
-      hero.removeEventListener("pointerleave", handlePointerLeave);
-
-      intro.kill();
-      gsap.killTweensOf(glow);
-      gsap.killTweensOf(content);
-    };
-  }, []);
-
-  /* ---------------------------------------------
-     MAGNETIC BUTTON
-  --------------------------------------------- */
-
-  const handleButtonMove = (event) => {
-    const button = event.currentTarget;
-
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return;
-    }
-
-    const rect = button.getBoundingClientRect();
-
-    const x = event.clientX - rect.left - rect.width / 2;
-    const y = event.clientY - rect.top - rect.height / 2;
-
-    gsap.to(button, {
-      x: x * 0.15,
-      y: y * 0.15,
-      duration: 0.3,
-      ease: "power2.out",
-    });
-  };
-
-  const handleButtonLeave = (event) => {
-    gsap.to(event.currentTarget, {
-      x: 0,
-      y: 0,
-      duration: 0.5,
-      ease: "elastic.out(1, 0.5)",
-    });
-  };
-
   return (
-    <section
-      ref={heroRef}
-      className="hero"
-    >
-      {/* Animated background glow */}
-      <div
-        ref={glowRef}
-        className="hero-glow"
-        aria-hidden="true"
-      />
+    <section className="home-hero" aria-labelledby="home-hero-title">
+      <MapleLeaf className="home-hero-leaf" />
 
-      <div className="container">
-        <div
-          ref={contentRef}
-          className="hero-content"
-        >
-          <p className="hero-eyebrow">
-            WESTFORCE PROFESSIONAL
+      <div className="container home-hero-inner">
+        <div className="home-hero-copy">
+          <p className="home-kicker home-hero-kicker">
+            Professional portfolios for job seekers in Canada
           </p>
 
-          <h1>
-            Your career deserves
-            <br />
-            more than a resume.
+          <h1 id="home-hero-title">
+            <span className="home-hero-line">Let employers meet you</span>{" "}
+            <span className="home-hero-line">before the interview.</span>
           </h1>
 
-          <p className="hero-copy">
-            Build a professional portfolio that brings your
-            resume, video, skills, certificates and experience
-            together in one secure link — ready to share with
-            Canadian employers.
+          <p className="home-hero-lede">
+            Put your resume, a short intro video, certificates and work
+            history on one page. Send one link, and only employers with
+            your PIN can open your documents.
           </p>
 
-          <div className="hero-actions">
-            <Link
-              to="/auth/sign-up"
-              onPointerMove={handleButtonMove}
-              onPointerLeave={handleButtonLeave}
-            >
-              <Button variant="hero">
-                Build your portfolio
-              </Button>
+          <div className="home-hero-actions">
+            <Link to="/auth/sign-up" className="btn btn-primary btn-lg">
+              Build your portfolio
             </Link>
 
-            <Link
-              to="/how-it-works"
-              onPointerMove={handleButtonMove}
-              onPointerLeave={handleButtonLeave}
-            >
-              <Button variant="hero-outline">
-                See how it works
-              </Button>
+            <Link to="/how-it-works" className="home-text-link">
+              See how it works
+              <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
             </Link>
           </div>
+
+          <ul className="home-hero-assure">
+            {assurances.map((item) => (
+              <li key={item}>
+                <Check size={16} strokeWidth={2.25} aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="home-hero-visual">
+          <div className="home-hero-stage" aria-hidden="true" />
+
+          <figure className="hero-preview" aria-label="Sample portfolio for Emma Tremblay, as an employer sees it">
+            <div className="hero-preview-bar">
+              <span className="hero-preview-dots" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+
+              <span className="hero-preview-url">
+                <Lock size={12} strokeWidth={2.25} aria-hidden="true" />
+                <span className="hero-preview-host">west-force-portfolio.vercel.app/portfolio/</span>
+                <strong>emma-tremblay</strong>
+              </span>
+            </div>
+
+            <div className="hero-preview-body">
+              <div className="hero-preview-person">
+                <span className="hero-preview-avatar" aria-hidden="true">ET</span>
+
+                <span className="hero-preview-who">
+                  <span className="hero-preview-name">Emma Tremblay</span>
+                  <span className="hero-preview-role">Personal support worker, Brampton, ON</span>
+                </span>
+
+                <span className="hero-preview-status">Open to work</span>
+              </div>
+
+              <div className="hero-preview-video">
+                <span className="hero-preview-play" aria-hidden="true">
+                  <Play size={18} strokeWidth={2} />
+                </span>
+
+                <span className="hero-preview-video-text">
+                  <span className="hero-preview-video-title">Intro video</span>
+                  <span className="hero-preview-video-meta">Hi, I am Emma. I have four years of home care experience.</span>
+                </span>
+
+                <span className="hero-preview-video-time">1:24</span>
+              </div>
+
+              <ul className="hero-preview-skills" aria-label="Skills">
+                {skills.map((skill) => (
+                  <li key={skill}>{skill}</li>
+                ))}
+              </ul>
+
+              <ul className="hero-preview-docs" aria-label="Documents">
+                {documents.map((doc, index) => {
+                  const Icon = doc.Icon;
+                  return (
+                    <li key={doc.name} style={{ "--row": index }}>
+                      <span className="hero-preview-doc-icon" aria-hidden="true">
+                        <Icon size={16} strokeWidth={2} />
+                      </span>
+                      <span className="hero-preview-doc-name">{doc.name}</span>
+                      <span className="hero-preview-doc-detail">{doc.detail}</span>
+                      <Lock className="hero-preview-doc-lock" size={14} strokeWidth={2.25} aria-hidden="true" />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <figcaption className="hero-preview-foot">
+              <span className="wf-seal">
+                <MapleLeaf width="14" height="14" />
+                PIN protected documents
+              </span>
+            </figcaption>
+          </figure>
+
+          <p className="hero-preview-note" aria-hidden="true">
+            <span className="hero-preview-note-icon">
+              <LockOpen size={16} strokeWidth={2} />
+            </span>
+            <span>
+              <strong>PIN accepted</strong>
+              <span>Hiring manager opened the resume</span>
+            </span>
+          </p>
         </div>
       </div>
     </section>

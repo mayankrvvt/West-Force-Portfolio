@@ -7,8 +7,8 @@ export default function HowItWorks() {
     <>
       <Navbar />
 
-      <main className="page-top">
-        <Section />
+      <main id="main" className="public-page">
+        <Section headingLevel={1} />
       </main>
 
       <Footer />

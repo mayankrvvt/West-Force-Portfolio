@@ -1,21 +1,39 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { plans } from "../../constants/pricingData";
 import Button from "../common/Button";
+import { Check } from "lucide-react";
+
+import useRevealOnce from "./useRevealOnce";
 import useAuth from "../../hooks/useAuth";
 import { useApp } from "../../app/providers";
+import { PAUSED_TEXT, useFeature } from "../../hooks/useSiteStatus";
 
-export default function Pricing() {
+/**
+ * Plan cards. returnTo is where sign-in sends the visitor back to before the
+ * payment modal opens. Use headingLevel={1} when this is the whole page.
+ * tone="frost" gives the section the frost band (home page rhythm).
+ * Cards rise in once, 60ms apart (public.css).
+ */
+export default function Pricing({ returnTo = "/", headingLevel = 2, tone = "white" }) {
+  const gridRef = useRef(null);
+  useRevealOnce(gridRef);
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { openPaymentModal } = useApp();
+  const paymentsOn = useFeature("payments");
+
+  const Heading = headingLevel === 1 ? "h1" : "h2";
+  const PlanHeading = headingLevel === 1 ? "h2" : "h3";
 
   const handleCheckout = (plan) => {
     if (!user) {
       navigate("/auth/sign-in", {
         state: {
           from: {
-            pathname: "/",
+            pathname: returnTo,
           },
           purchasePlan: plan.key,
         },
@@ -26,99 +44,80 @@ export default function Pricing() {
     openPaymentModal("Continue with your selected plan.", plan.key);
   };
 
-  const handlePointerMove = (event) => {
-    const card = event.currentTarget;
-
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return;
-    }
-
-    const rect = card.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    card.style.setProperty("--mouse-x", `${x}px`);
-    card.style.setProperty("--mouse-y", `${y}px`);
-  };
-
   return (
-    <section id="pricing" className="pricing-section">
+    <section
+      id="pricing"
+      className={`home-section${tone === "frost" ? " home-section-frost" : ""}`}
+      aria-labelledby="pricing-title"
+    >
       <div className="container">
-        {/* Heading */}
-        <div className="pricing-heading">
-          <p className="eyebrow">PRICING</p>
+        <div className="home-section-head">
+          <p className="home-kicker">Pricing</p>
 
-          <h2>Simple, group-friendly pricing</h2>
+          <Heading id="pricing-title">
+            One payment, lower when you join as a group
+          </Heading>
 
-          <p className="pricing-intro">
-            Bring friends, family or colleagues — the more candidates you
-            sign up together, the lower the per-person price.
+          <p>
+            Sign up on your own, or with four friends, family
+            members or colleagues and each of you pays $300 less.
+            There is no monthly fee.
           </p>
         </div>
 
-        {/* Error */}
-        {/* Pricing Cards */}
-        <div className="pricing-grid">
-          {plans.map((plan) => {
-            return (
-              <article
-                key={plan.key}
-                className={`price-card ${plan.featured ? "featured" : ""}`}
-                onPointerMove={handlePointerMove}
+        <div ref={gridRef} className="plan-grid">
+          {plans.map((plan, index) => (
+            <article
+              key={plan.key}
+              className={`plan${plan.featured ? " plan-featured" : ""}`}
+              aria-labelledby={`plan-${plan.key}`}
+              style={{ "--i": index }}
+            >
+              {plan.featured && (
+                <span className="plan-badge">Best value</span>
+              )}
+
+              <PlanHeading id={`plan-${plan.key}`} className="plan-name">
+                {plan.name}
+              </PlanHeading>
+
+              <p className="plan-subtitle">{plan.subtitle}</p>
+
+              <p className="plan-price">
+                <strong>${(plan.price * plan.quantity).toLocaleString("en-CA")}</strong>
+                <span>CAD, paid once</span>
+              </p>
+
+              <p className="plan-total">
+                {plan.quantity > 1
+                  ? `$${plan.price} CAD per person for ${plan.quantity} people`
+                  : "For one person"}
+              </p>
+
+              <ul className="plan-features">
+                {plan.features.map((feature) => (
+                  <li key={feature}>
+                    <Check className="plan-feature-check" size={16} strokeWidth={2.5} aria-hidden="true" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                type="button"
+                variant={plan.featured ? "primary" : "secondary"}
+                className="plan-button"
+                onClick={() => handleCheckout(plan)}
+                disabled={!paymentsOn}
               >
-                {plan.featured && (
-                  <span className="popular">Most popular</span>
-                )}
-
-                <div className="price-card-content">
-                  <div className="price-card-header">
-                    <h3>{plan.name}</h3>
-
-                    <p className="plan-subtitle">
-                      {plan.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="price">
-                    <strong>${plan.price}</strong>
-
-                    <span>CAD per person</span>
-                  </div>
-
-                  <ul className="price-features">
-                    {plan.features.map((feature) => (
-                      <li key={feature}>
-                        <span className="feature-dot">•</span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="price-button-link">
-                    <Button
-                      type="button"
-                      onClick={() => handleCheckout(plan)}
-                      className={`price-button ${
-                        plan.featured
-                          ? "price-button-featured"
-                          : ""
-                      }`}
-                    >
-                      Get started
-                    </Button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                {paymentsOn ? `Choose ${plan.name}` : PAUSED_TEXT.payments}
+              </Button>
+            </article>
+          ))}
         </div>
 
-        {/* Footer note */}
-        <p className="pricing-note">
-          All prices in CAD. One-time fee — no monthly subscription.
+        <p className="plan-note">
+          All prices in Canadian dollars. You pay once; there is no subscription.
         </p>
       </div>
     </section>

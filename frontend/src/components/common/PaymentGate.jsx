@@ -14,7 +14,7 @@ export default function PaymentGate({
 
   if (loading) {
     return (
-      <div>
+      <div className="empty-product" role="status">
         Checking your plan...
       </div>
     );
@@ -29,17 +29,10 @@ export default function PaymentGate({
   }
 
   return (
-    <div
-      style={{
-        padding: "24px",
-        borderRadius: "16px",
-        background: "#f5f9fc",
-        border: "1px solid #dfe8ef",
-      }}
-    >
-      <h3>
+    <div className="empty-product">
+      <h2>
         Unlock this feature
-      </h3>
+      </h2>
 
       <p>
         Complete your WestForce payment
@@ -48,6 +41,7 @@ export default function PaymentGate({
 
       <button
         type="button"
+        className="btn btn-primary"
         onClick={() => openPaymentModal("Choose a plan to unlock this feature.")}
       >
         View plans

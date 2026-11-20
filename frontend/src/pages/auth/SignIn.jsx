@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -9,19 +9,36 @@ import {
 
 import { auth } from "../../firebase/firebase";
 
-import gsap from "gsap";
-
 import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
+import AuthLayout, { AuthAlert } from "../../components/layout/AuthLayout";
+import PasswordField from "./PasswordField";
 import { useApp } from "../../app/providers";
+import { DEMO_MODE, signInDemo } from "../../demo/demoMode";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSignIn({ email, password }) {
+  const errors = {};
+
+  if (!email) {
+    errors.email = "Enter your email address.";
+  } else if (!EMAIL_PATTERN.test(email)) {
+    errors.email = "Enter an email like name@example.com.";
+  }
+
+  if (!password) {
+    errors.password = "Enter your password.";
+  }
+
+  return errors;
+}
 
 export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const { openPaymentModal } = useApp();
 
-  const pageRef = useRef(null);
-  const cardRef = useRef(null);
-  const glowRef = useRef(null);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -29,179 +46,8 @@ export default function SignIn() {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
-  /* -----------------------------------------
-     Entrance animations
-  ----------------------------------------- */
-
-  useLayoutEffect(() => {
-    const page = pageRef.current;
-    const card = cardRef.current;
-    const glow = glowRef.current;
-
-    if (!page || !card || !glow) {
-      return;
-    }
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        return;
-      }
-
-      gsap.fromTo(
-        card,
-        {
-          opacity: 0,
-          y: 45,
-          scale: 0.97,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 1,
-          ease: "power3.out",
-        }
-      );
-
-      gsap.fromTo(
-        glow,
-        {
-          opacity: 0,
-          scale: 0.7,
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 1.4,
-          delay: 0.15,
-          ease: "power2.out",
-        }
-      );
-
-      gsap.to(".signin-orb-one", {
-        x: 70,
-        y: -45,
-        duration: 7,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
-      gsap.to(".signin-orb-two", {
-        x: -55,
-        y: 50,
-        duration: 9,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
-      gsap.to(".signin-orb-three", {
-        x: 35,
-        y: 35,
-        duration: 6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    }, page);
-
-    return () => {
-      ctx.revert();
-    };
-  }, []);
-
-  /* -----------------------------------------
-     Background mouse interaction
-  ----------------------------------------- */
-
-  const handlePointerMove = (event) => {
-    if (
-      window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches
-    ) {
-      return;
-    }
-
-    const page = pageRef.current;
-    const glow = glowRef.current;
-
-    if (!page || !glow) {
-      return;
-    }
-
-    const rect = page.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    gsap.to(glow, {
-      x: x - 250,
-      y: y - 250,
-      duration: 1.2,
-      ease: "power3.out",
-      overwrite: true,
-    });
-  };
-
-  /* -----------------------------------------
-     Card tilt
-  ----------------------------------------- */
-
-  const handleCardPointerMove = (event) => {
-    if (
-      window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches
-    ) {
-      return;
-    }
-
-    const card = cardRef.current;
-
-    if (!card) {
-      return;
-    }
-
-    const rect = card.getBoundingClientRect();
-
-    const x =
-      (event.clientX - rect.left) / rect.width - 0.5;
-
-    const y =
-      (event.clientY - rect.top) / rect.height - 0.5;
-
-    gsap.to(card, {
-      rotateY: x * 3,
-      rotateX: y * -3,
-      transformPerspective: 1200,
-      duration: 0.45,
-      ease: "power3.out",
-      overwrite: true,
-    });
-  };
-
-  const handleCardPointerLeave = () => {
-    const card = cardRef.current;
-
-    if (!card) {
-      return;
-    }
-
-    gsap.to(card, {
-      rotateY: 0,
-      rotateX: 0,
-      duration: 0.7,
-      ease: "power3.out",
-    });
-  };
 
   /* -----------------------------------------
      Form handling
@@ -217,6 +63,10 @@ export default function SignIn() {
 
     if (error) {
       setError("");
+    }
+
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({ ...previous, [name]: "" }));
     }
   };
 
@@ -248,7 +98,7 @@ export default function SignIn() {
         return "Network error. Please check your internet connection.";
 
       case "auth/operation-not-allowed":
-        return "Email/password sign-in is not enabled in Firebase.";
+        return "Sign in with email is turned off right now. Please try again later.";
 
       case "auth/user-token-expired":
         return "Your session expired. Please sign in again.";
@@ -257,7 +107,7 @@ export default function SignIn() {
         return "Please sign in again to continue.";
 
       default:
-        return `Firebase error: ${errorCode || "unknown-error"}`;
+        return `Sign in failed (${errorCode || "unknown error"}). Check your details and try again.`;
     }
   };
 
@@ -327,13 +177,13 @@ export default function SignIn() {
        Validate form
     ----------------------------------------- */
 
-    if (!email) {
-      setError("Please enter your email address.");
-      return;
-    }
+    const errors = validateSignIn({ email, password });
+    setFieldErrors(errors);
 
-    if (!password) {
-      setError("Please enter your password.");
+    const firstInvalid = Object.keys(errors)[0];
+
+    if (firstInvalid) {
+      document.getElementById(firstInvalid)?.focus();
       return;
     }
 
@@ -362,16 +212,6 @@ export default function SignIn() {
 
       const user = userCredential.user;
 
-      console.log(
-        "Firebase Sign In successful:",
-        user.uid
-      );
-
-      console.log(
-        "Signed in email:",
-        user.email
-      );
-
       /* -----------------------------------------
          Get Firebase ID token
 
@@ -386,10 +226,6 @@ export default function SignIn() {
           "Firebase authentication token could not be created."
         );
       }
-
-      console.log(
-        "Firebase ID token obtained successfully."
-      );
 
       /* -----------------------------------------
          Create / find user in MongoDB
@@ -411,14 +247,6 @@ export default function SignIn() {
             displayName: user.displayName || "",
             photoURL: user.photoURL || "",
           }),
-        }
-      );
-
-      console.log(
-        "POST /api/users response:",
-        {
-          status: response.status,
-          statusText: response.statusText,
         }
       );
 
@@ -471,11 +299,6 @@ export default function SignIn() {
       /* -----------------------------------------
          Verify successful backend response
       ----------------------------------------- */
-
-      console.log(
-        "MongoDB user:",
-        result?.user
-      );
 
       /* -----------------------------------------
          Navigate
@@ -544,179 +367,103 @@ export default function SignIn() {
     }
   };
 
+  /* Local-dev-only demo login (never in production builds). */
+  const continueAsDemo = () => {
+    signInDemo();
+    navigate(location.state?.from?.pathname || "/dashboard", {
+      replace: true,
+    });
+  };
+
   /* -----------------------------------------
      Render
   ----------------------------------------- */
 
   return (
-    <main
-      ref={pageRef}
-      className="signin-page"
-      onPointerMove={handlePointerMove}
+    <AuthLayout
+      title="Welcome back"
+      lede="Sign in to update your portfolio and share it with employers."
+      footer={
+        <p>
+          New to WestForce?{" "}
+          <Link to="/auth/sign-up">Create an account</Link>
+        </p>
+      }
     >
-      {/* Animated background */}
+      {location.state?.signupNotice && (
+        <AuthAlert tone="success">{location.state.signupNotice}</AuthAlert>
+      )}
 
-      <div
-        className="signin-background"
-        aria-hidden="true"
-      >
-        <div
-          ref={glowRef}
-          className="signin-mouse-glow"
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <Input
+          id="email"
+          name="email"
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          error={fieldErrors.email}
+          disabled={loading}
+          required
         />
 
-        <div className="signin-orb signin-orb-one" />
-
-        <div className="signin-orb signin-orb-two" />
-
-        <div className="signin-orb signin-orb-three" />
-
-        <div className="signin-grid-pattern" />
-      </div>
-
-      {/* Sign in card */}
-
-      <div
-        ref={cardRef}
-        className="signin-card"
-        onPointerMove={handleCardPointerMove}
-        onPointerLeave={handleCardPointerLeave}
-      >
-        {/* Logo */}
-
-        <Link
-          to="/"
-          className="signin-logo"
-          aria-label="WestForce home"
-        >
-          <img
-            src="/favicon.png"
-            alt="WestForce"
+        <div className="auth-field-group">
+          <PasswordField
+            id="password"
+            name="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            error={fieldErrors.password}
+            disabled={loading}
+            required
           />
-        </Link>
 
-        {/* Heading */}
-
-        <div className="signin-heading">
-          <p className="signin-eyebrow">
-            WESTFORCE PORTFOLIO
-          </p>
-
-          <h1>Welcome back</h1>
-
-          <p>
-            Sign in to access your professional
-            portfolio.
-          </p>
-        </div>
-
-        {location.state?.signupNotice && (
-          <div
-            className="signin-notice"
-            role="status"
-          >
-            {location.state.signupNotice}
-          </div>
-        )}
-
-        {/* Error */}
-
-        {error && (
-          <div
-            className="signin-error"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-
-        <form
-          className="signin-form"
-          onSubmit={handleSubmit}
-        >
-          {/* Email */}
-
-          <div className="signin-field">
-            <label htmlFor="email">
-              Email
-            </label>
-
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              autoComplete="email"
-              disabled={loading}
-              required
-            />
-          </div>
-
-          {/* Password */}
-
-          <div className="signin-field">
-            <label htmlFor="password">
-              Password
-            </label>
-
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              disabled={loading}
-              required
-            />
-          </div>
-
-          {/* Forgot password */}
-
-          <Link
-            to="/auth/forgot-password"
-            className="signin-forgot"
-          >
+          <Link to="/auth/forgot-password" className="auth-inline-link">
             Forgot your password?
           </Link>
+        </div>
 
-          {/* Submit */}
+        <Button
+          type="submit"
+          size="lg"
+          className="full-width auth-submit"
+          disabled={loading}
+          aria-busy={loading || undefined}
+        >
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
 
-          <button
-            type="submit"
-            className="signin-button"
+      {DEMO_MODE && (
+        <div className="auth-demo">
+          <p className="auth-divider">
+            <span>or</span>
+          </p>
+
+          <Button
+            variant="secondary"
+            size="lg"
+            className="full-width"
+            onClick={continueAsDemo}
             disabled={loading}
           >
-            <span>
-              {loading
-                ? "Signing in..."
-                : "Sign in"}
-            </span>
+            Explore the demo account
+          </Button>
 
-            {!loading && (
-              <span className="signin-button-arrow">
-                →
-              </span>
-            )}
-          </button>
-        </form>
-
-        {/* Sign up */}
-
-        <div className="signin-divider" />
-
-        <p className="signin-signup">
-          Don't have an account?{" "}
-          <Link to="/auth/sign-up">
-            Create account
-          </Link>
-        </p>
-      </div>
-    </main>
+          <p className="auth-demo-note">
+            Signs you in as Emma Tremblay, a sample job seeker. Changes stay on this device.
+          </p>
+        </div>
+      )}
+    </AuthLayout>
   );
 }

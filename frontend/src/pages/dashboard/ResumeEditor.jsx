@@ -13,7 +13,7 @@ import {
 } from "react-router-dom";
 
 import {
-  useEffect,
+  useId,
   useState,
 } from "react";
 
@@ -360,13 +360,14 @@ const addCertification = () => {
           }
         >
           <ArrowLeft size={17} />
-          Resume Builder
+          Resume builder
         </button>
 
 
         <div className="resume-editor-title">
 
           <input
+            aria-label="Resume title"
             value={
               resume.title
             }
@@ -384,7 +385,7 @@ const addCertification = () => {
           />
 
           <span>
-            Editable Resume
+            Editable resume
           </span>
 
         </div>
@@ -419,7 +420,7 @@ const addCertification = () => {
 
             {saving
               ? "Saving..."
-              : "Save Resume"}
+              : "Save resume"}
           </button>
 
         </div>
@@ -441,7 +442,7 @@ const addCertification = () => {
         <section className="resume-editor-controls">
 
           <EditorSection
-            title="Personal Information"
+            title="Personal information"
           >
 
             <Field
@@ -513,11 +514,12 @@ const addCertification = () => {
 
 
           <EditorSection
-            title="Professional Summary"
+            title="Professional summary"
           >
 
             <textarea
               className="resume-editor-textarea"
+              aria-label="Professional summary"
               value={
                 resume.content.summary
               }
@@ -577,7 +579,7 @@ const addCertification = () => {
                 addExperience
               }
             >
-              Add Experience
+              Add experience
             </AddButton>
 
           </EditorSection>
@@ -613,7 +615,7 @@ const addCertification = () => {
                 addEducation
               }
             >
-              Add Education
+              Add education
             </AddButton>
 
           </EditorSection>
@@ -625,6 +627,7 @@ const addCertification = () => {
 
             <textarea
               className="resume-editor-textarea"
+              aria-label="Skills, separated by commas"
               rows={5}
               value={
                 resume.content.skills.join(
@@ -679,7 +682,7 @@ const addCertification = () => {
                 addProject
               }
             >
-              Add Project
+              Add project
             </AddButton>
 
           </EditorSection>
@@ -743,7 +746,7 @@ const addCertification = () => {
             <AddButton
                 onClick={addCertification}
               >
-                Add Certification
+                Add certification
               </AddButton>
 
           </EditorSection>
@@ -813,14 +816,17 @@ function Field({
   value,
   onChange,
 }) {
+  const id = useId();
+
   return (
     <div className="resume-editor-field">
 
-      <label>
+      <label htmlFor={id}>
         {label}
       </label>
 
       <input
+        id={id}
         className="resume-editor-input"
         value={value || ""}
         onChange={(event) =>
@@ -870,6 +876,7 @@ function ExperienceEditor({
           type="button"
           onClick={onDelete}
           title="Delete experience"
+          aria-label={`Delete experience ${index + 1}`}
         >
           <Trash2 size={15} />
         </button>

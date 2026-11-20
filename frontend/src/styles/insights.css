@@ -1,0 +1,231 @@
+/* Portfolio views card (dashboard home and My portfolio).
+   Builds on product-card and the Applications board column look. */
+
+.insights-card {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.insights-card .product-card-header {
+  margin-bottom: 0;
+}
+
+.insights-retry {
+  margin-left: auto;
+}
+
+/* Totals: three quiet tiles in a row */
+.insights-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.insights-total {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-object);
+  background: rgba(13, 43, 69, 0.035);
+}
+
+.insights-total dt {
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.insights-total dd {
+  margin: 0;
+  color: var(--wf-navy);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.insights-empty {
+  padding: var(--space-6) var(--space-3);
+}
+
+/* Documents opened and recent activity */
+.insights-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.insights-column {
+  min-height: 0;
+}
+
+.insights-column-documents .application-column-dot {
+  background: var(--wf-lake);
+}
+
+.insights-column-activity .application-column-dot {
+  background: var(--wf-navy);
+}
+
+.insights-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insights-item {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+}
+
+.insights-item strong {
+  overflow-wrap: anywhere;
+  color: var(--wf-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.insights-item span,
+.insights-item time {
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+}
+
+.insights-privacy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+}
+
+.insights-privacy svg {
+  flex-shrink: 0;
+  color: var(--wf-lake);
+}
+
+/* Mini bar chart */
+.mini-bar-chart {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  min-width: 0;
+}
+
+.mini-bar-chart-plot {
+  position: relative;
+}
+
+.mini-bar-chart-svg {
+  display: block;
+  overflow: visible;
+}
+
+.mini-bar-chart-bar {
+  fill: var(--wf-lake);
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: mini-bar-grow var(--duration-move) var(--ease-out) both;
+  transition: fill var(--duration) var(--ease-out);
+}
+
+.mini-bar-chart-bar.is-active {
+  fill: var(--wf-navy);
+}
+
+.mini-bar-chart-baseline {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+
+.mini-bar-chart-peak {
+  fill: var(--wf-ink-soft);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.mini-bar-chart-hit {
+  fill: transparent;
+}
+
+.mini-bar-chart-tooltip {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--wf-paper);
+  box-shadow: var(--shadow-float);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.mini-bar-chart-tooltip strong {
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.mini-bar-chart-tooltip span {
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+}
+
+.mini-bar-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+}
+
+@keyframes mini-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .insights-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .insights-totals {
+    gap: var(--space-1);
+  }
+
+  .insights-total {
+    padding: var(--space-2);
+  }
+
+  .insights-total dd {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-bar-chart-bar {
+    animation: none;
+    transition: none;
+  }
+}

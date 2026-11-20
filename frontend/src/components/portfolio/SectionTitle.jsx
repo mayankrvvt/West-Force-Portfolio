@@ -1,18 +1,11 @@
 import React from "react";
 
+/* `eyebrow` is accepted for older callers but no longer shown. */
+// eslint-disable-next-line no-unused-vars
 export default function SectionTitle({ eyebrow, title, description }) {
   return (
     <div className="portfolio-section-heading">
-      {eyebrow && (
-        <div className="section-eyebrow">
-          <span></span>
-          {eyebrow}
-        </div>
-      )}
-      <div className="section-title-row">
-        <h2>{title}</h2>
-        <span className="section-number" aria-hidden="true">/</span>
-      </div>
+      <h2>{title}</h2>
       {description && <p>{description}</p>}
     </div>
   );

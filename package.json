@@ -1,0 +1,16 @@
+{
+  "name": "west-force-portfolio",
+  "private": true,
+  "description": "Runs the frontend and backend scripts from the repo root.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "install:all": "npm ci --prefix frontend && npm ci --prefix backend",
+    "dev": "npm run dev --prefix frontend",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+    "typecheck": "npm run typecheck --prefix backend",
+    "test": "npm test --prefix backend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend && npm run check:bundle --prefix frontend"
+  }
+}

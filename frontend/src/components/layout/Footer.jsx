@@ -1,66 +1,42 @@
 import { Link } from "react-router-dom";
 
+import { publicNavigation } from "../../constants/navigation";
+
 export default function Footer() {
   return (
-    <footer className="footer">
-
-      <div className="container footer-inner">
-
-        <div>
-
-          <Link
-            to="/"
-            className="brand"
-          >
-            <img
-              src="/favicon.png"
-              alt="WestForce"
-            />
-
-            <span>
-              WestForce Portfolio
-            </span>
+    <footer className="site-footer">
+      <div className="container site-footer-inner">
+        <div className="site-footer-about">
+          <Link to="/" className="site-brand" aria-label="WestForce home">
+            <img className="site-brand-mark" src="/favicon.png" alt="WestForce" width="32" height="32" />
+            <span>WestForce</span>
           </Link>
 
           <p>
-            One professional link.
-            Every credential.
-            Every employer.
+            Your resume, video and certificates on one page, with
+            documents behind a PIN. Made for job seekers in Canada.
           </p>
-
         </div>
 
-        <div className="footer-links">
+        <nav className="site-footer-nav" aria-label="Footer">
+          <ul>
+            {publicNavigation.map((item) => (
+              <li key={item.label}>
+                <Link to={item.href}>{item.label}</Link>
+              </li>
+            ))}
 
-          <Link to="/#services">
-            Services
-          </Link>
-
-          <Link to="/#portfolio">
-            Portfolio
-          </Link>
-
-          <Link to="/how-it-works">
-            How it works
-          </Link>
-
-          <Link to="/video-resume-guide">
-            Video resume guide
-          </Link>
-
-          <Link to="/pricing">
-            Pricing
-          </Link>
-
-        </div>
-
+            <li>
+              <Link to="/auth/sign-in">Sign in</Link>
+            </li>
+          </ul>
+        </nav>
       </div>
 
-      <div className="container copyright">
-        © 2026 WestForce Professional
-        Portfolio
+      <div className="container site-footer-legal">
+        <p>© {new Date().getFullYear()} WestForce Professional Portfolio</p>
+        <p>All prices in Canadian dollars.</p>
       </div>
-
     </footer>
   );
 }

@@ -3,30 +3,36 @@ import SectionTitle from "./SectionTitle";
 
 export default function EducationSection({ data }) {
   return (
-    <section id="education" className="portfolio-section alternate-section">
-      <SectionTitle
-        eyebrow="EDUCATION"
-        title="Education Details"
-        description="My academic background and professional education."
-      />
+    <section id="education" className="portfolio-section">
+      <SectionTitle title="Education" />
 
-      <div className="timeline">
+      <div className="portfolio-section-body cv-list">
         {data.map((education, index) => (
-          <div className="timeline-item" key={index}>
-            <div className="timeline-dot"></div>
-
-            <div className="timeline-card">
-              <span className="timeline-year">
-                {education.year}
-              </span>
-
+          <article
+            className="cv-entry"
+            key={`${education.institution}-${education.degree}-${index}`}
+          >
+            <div className="cv-entry-body">
               <h3>{education.degree}</h3>
 
-              <h4>{education.institution}</h4>
+              <p className="cv-entry-org">
+                {education.institution}
+                {education.fieldOfStudy && (
+                  <span className="cv-entry-place">
+                    {education.fieldOfStudy}
+                  </span>
+                )}
+              </p>
 
-              <p>{education.description}</p>
+              {education.description && (
+                <p className="cv-entry-text">{education.description}</p>
+              )}
             </div>
-          </div>
+
+            {education.year && (
+              <p className="cv-entry-date">{education.year}</p>
+            )}
+          </article>
         ))}
       </div>
     </section>

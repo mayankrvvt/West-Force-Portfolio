@@ -1,13 +1,26 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
   FileSearch,
+  Lightbulb,
   ScanSearch,
-  Sparkles,
 } from "lucide-react";
-import { checkATSResume } from "../../services/mockApi";
-import { uploadFile } from "../../utils/api";
+import AtsHistory from "../../components/ats/AtsHistory";
+import ScoreBreakdown from "../../components/ats/ScoreBreakdown";
+import { extractResumeText, getAtsHistory, runAtsCheck } from "../../services/atsService";
+import FeaturePaused from "../../components/site/FeaturePaused";
+import { useFeature } from "../../hooks/useSiteStatus";
+import "../../styles/ats.css";
+
+/** A friendly message for each ATS error the server can send. */
+function atsErrorMessage(error) {
+  if (error?.status === 402) return "The ATS checker is part of the paid plans.";
+  if (error?.status === 429) return error.message || "You have used all ATS checks for today. Please try again tomorrow.";
+  if (error?.status === 504) return "The check took too long. Please try again.";
+  return error?.message || "Could not analyze this resume.";
+}
 
 const SKILL_TERMS = [
   "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Go",
@@ -33,13 +46,38 @@ function findSkills(text) {
 }
 
 export default function ATSChecker() {
+  const [searchParams] = useSearchParams();
+  const aiOn = useFeature("ai");
+  const savedResumeId = searchParams.get("resumeId") || "";
   const [fileName, setFileName] = useState("");
   const [resumeText, setResumeText] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [needsPlan, setNeedsPlan] = useState(false);
+  const [history, setHistory] = useState({ checks: [], loading: true, error: "", hidden: false });
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const checks = await getAtsHistory();
+      setHistory({ checks, loading: false, error: "", hidden: false });
+    } catch (historyError) {
+      // Free plans cannot use the checker, so there is no history to show.
+      const hidden = historyError?.status === 402;
+      setHistory({ checks: [], loading: false, error: "Could not load your past checks.", hidden });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  // An uploaded resume wins; otherwise a saved resume opened from My Resumes.
+  const useSaved = !resumeText.trim() && Boolean(savedResumeId);
+  const hasResume = Boolean(resumeText.trim()) || useSaved;
 
   const skills = findSkills(resumeText);
 
@@ -55,15 +93,14 @@ export default function ATSChecker() {
     setUploading(true);
 
     try {
-      const extracted = await uploadFile("/api/resumes/extract-text", file);
-      const text = extracted?.resumeText?.trim();
+      const extracted = await extractResumeText(file);
 
-      if (!text) {
+      if (!extracted.resumeText) {
         throw new Error("No readable text could be extracted from this resume.");
       }
 
-      setResumeText(text);
-      setFileName(extracted.fileName || file.name);
+      setResumeText(extracted.resumeText);
+      setFileName(extracted.fileName);
     } catch (uploadError) {
       console.error("ATS resume upload failed:", uploadError);
       setError(uploadError.message || "Could not upload or read this resume.");
@@ -73,18 +110,27 @@ export default function ATSChecker() {
   };
 
   const runCheck = async () => {
-    if (!fileName || !resumeText.trim()) {
+    if (!aiOn) return;
+    if (!hasResume) {
       setError("Upload a readable resume before running the ATS check.");
+      return;
+    }
+    if (!jobDescription.trim()) {
+      setError("Paste the job description to compare your resume with.");
       return;
     }
 
     setError("");
+    setNeedsPlan(false);
     setLoading(true);
     try {
-      setResult(await checkATSResume({ resumeText, jobDescription }));
+      const source = useSaved ? { resumeId: savedResumeId } : { resumeText };
+      setResult(await runAtsCheck({ ...source, jobDescription, jobTitle }));
+      loadHistory();
     } catch (checkError) {
-      console.error("ATS check failed:", checkError);
-      setError(checkError.message || "Could not analyze this resume.");
+      console.error("ATS check failed:", checkError?.status);
+      if (checkError?.status === 402) setNeedsPlan(true);
+      setError(atsErrorMessage(checkError));
     } finally {
       setLoading(false);
     }
@@ -94,26 +140,25 @@ export default function ATSChecker() {
     <div className="dashboard-product">
       <header className="product-page-header">
         <div>
-          <span className="product-eyebrow">BUILD & AI</span>
-          <h1>ATS Resume Checker</h1>
-          <p>Compare your uploaded resume with a job description and review keyword coverage and resume structure.</p>
+          <h1>ATS resume checker</h1>
+          <p>Compare your resume with a job description and see which keywords and sections are missing.</p>
         </div>
       </header>
 
       <div className="product-notice">
-        <ScanSearch size={15} />
-        <span>Analysis runs locally in your browser using the text extracted from your uploaded resume.</span>
+        <ScanSearch size={16} aria-hidden="true" />
+        <span>Your score comes from clear rules you can see below. AI only adds advice. Up to 20 checks per day.</span>
       </div>
 
       {error && (
-        <div className="product-notice" role="alert">
-          <AlertCircle size={15} />
-          <span>{error}</span>
+        <div className="product-error" role="alert">
+          <AlertCircle size={16} aria-hidden="true" />
+          <span>{error}{needsPlan && <> <Link to="/pricing">See plans</Link></>}</span>
         </div>
       )}
 
       <div className="ats-layout">
-        <section>
+        <section className="ats-inputs">
           <div className="product-card">
             <div className="product-card-header">
               <div>
@@ -121,7 +166,7 @@ export default function ATSChecker() {
                 <p>Upload a PDF, DOCX or plain-text resume before checking.</p>
               </div>
             </div>
-            <label className="product-upload-zone" style={{ minHeight: 170 }}>
+            <label className="product-upload-zone">
               <input
                 type="file"
                 accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -130,15 +175,15 @@ export default function ATSChecker() {
                 hidden
               />
               <div>
-                <FileSearch size={27} />
-                <h3>{uploading ? "Extracting resume text..." : fileName || "Upload resume"}</h3>
-                <p>{uploading ? "Please wait while we read the file." : fileName ? "Resume uploaded and ready for analysis." : "PDF, DOCX or TXT · up to 10 MB"}</p>
+                <span className="product-upload-icon"><FileSearch size={20} aria-hidden="true" /></span>
+                <h3>{uploading ? "Reading your resume…" : fileName || "Upload resume"}</h3>
+                <p>{uploading ? "Please wait while we read the file." : fileName ? "Resume uploaded and ready for analysis." : useSaved ? "Using your saved resume. Upload a file to check a different one." : "PDF, DOCX or TXT, up to 10 MB"}</p>
               </div>
             </label>
 
             {resumeText && (
               <>
-                <div className="product-field" style={{ marginTop: 16 }}>
+                <div className="product-field">
                   <label htmlFor="ats-resume-text">Extracted resume text</label>
                   <textarea
                     id="ats-resume-text"
@@ -150,7 +195,7 @@ export default function ATSChecker() {
                     }}
                   />
                 </div>
-                <div className="product-field" style={{ marginTop: 14 }}>
+                <div className="product-field">
                   <label>Skills found in the extracted text</label>
                   {skills.length ? (
                     <div className="keyword-grid">
@@ -159,7 +204,7 @@ export default function ATSChecker() {
                       ))}
                     </div>
                   ) : (
-                    <p role="status">No recognized skills found. You can review or edit the extracted text above.</p>
+                    <p className="field-hint" role="status">No skills found yet. You can review or edit the text above.</p>
                   )}
                 </div>
               </>
@@ -170,26 +215,40 @@ export default function ATSChecker() {
             <div className="product-card-header">
               <div>
                 <h2>Target job description</h2>
-                <p>Optional, but recommended for job-specific keyword matching.</p>
+                <p>Paste the job you are applying for.</p>
               </div>
             </div>
+            <div className="product-field ats-job-title">
+              <label htmlFor="ats-job-title">Job title (optional)</label>
+              <input
+                id="ats-job-title"
+                className="product-input"
+                value={jobTitle}
+                maxLength={200}
+                onChange={(event) => setJobTitle(event.target.value)}
+                placeholder="Personal support worker"
+              />
+            </div>
+            <label className="sr-only" htmlFor="ats-job-description">Job description</label>
             <textarea
+              id="ats-job-description"
               className="product-textarea"
               value={jobDescription}
               onChange={(event) => {
                 setJobDescription(event.target.value);
                 setResult(null);
               }}
-              placeholder="Paste the job description here..."
+              placeholder="Paste the job description here"
+              maxLength={20000}
             />
-            <div className="product-inline-actions" style={{ marginTop: 14 }}>
+            <div className="product-inline-actions">
               <button
                 className="product-button primary"
-                disabled={loading || uploading || !fileName || !resumeText.trim()}
+                disabled={loading || uploading || !hasResume || !jobDescription.trim() || !aiOn}
                 onClick={runCheck}
               >
-                <ScanSearch size={15} />
-                {loading ? "Checking..." : "Check ATS Score"}
+                <ScanSearch size={16} aria-hidden="true" />
+                {loading ? "Checking…" : "Check ATS score"}
               </button>
               <button
                 className="product-button"
@@ -198,75 +257,79 @@ export default function ATSChecker() {
                 Use sample job
               </button>
             </div>
-            {!fileName && <p role="status">Upload a resume to enable ATS analysis.</p>}
+            <FeaturePaused feature="ai" />
+            {!hasResume && <p className="field-hint" role="status">Upload a resume first, then run the check.</p>}
           </div>
         </section>
 
-        <section className="product-card">
+        <section className="product-card ats-report">
           {!result ? (
             <div className="empty-product">
-              <ScanSearch size={28} />
+              <span className="empty-product-icon"><ScanSearch size={22} aria-hidden="true" /></span>
               <h2>Your ATS report will appear here</h2>
-              <p>Upload a resume and run a check to see job keyword matches, resume structure and recommendations.</p>
+              <p>Three steps to your score:</p>
+              <ol className="ats-steps">
+                <li className={hasResume ? "done" : ""}>Upload your resume</li>
+                <li className={jobDescription.trim() ? "done" : ""}>Paste the job description</li>
+                <li>Select Check ATS score</li>
+              </ol>
             </div>
           ) : (
             <ATSResult result={result} />
           )}
         </section>
       </div>
+
+      {!history.hidden && (
+        <AtsHistory checks={history.checks} loading={history.loading} error={history.error} />
+      )}
     </div>
   );
 }
 
 function ATSResult({ result }) {
+  const matched = result.keywords?.matched || result.matchedKeywords || [];
+  const missing = result.keywords?.missing || result.missingKeywords || [];
+  const advice = result.advice;
+
   return (
     <>
-      <div style={{ textAlign: "center" }}>
-        <span className="product-eyebrow">ATS ANALYSIS</span>
-        <div className="product-score-ring" style={{ "--score": `${result.score}%` }}>
-          <span>{result.score}</span>
+      <h2 className="ats-report-title">ATS match score</h2>
+      <ScoreBreakdown score={result.score} breakdown={result.breakdown || []} />
+
+      <section className="ats-result-section">
+        <div className="product-card-header"><div><h3>Matched job keywords</h3></div></div>
+        <div className="keyword-grid">
+          {matched.length ? matched.map((word) => (
+            <span className="keyword-chip" key={word}><CheckCircle2 size={12} aria-hidden="true" />{word}</span>
+          )) : <span className="ats-empty">No job keywords matched yet.</span>}
         </div>
-        <h2 style={{ margin: "0 0 5px", color: "#17344e" }}>ATS compatibility score</h2>
-        <p style={{ margin: 0, color: "#8394a5", fontSize: 11 }}>
-          {result.hasJobDescription ? "Based on this resume and target job description." : "Based on resume structure and readable content. Add a job description for keyword matching."}
-        </p>
-      </div>
-
-      <div className="ats-score-grid">
-        {Object.entries(result.sections).map(([key, value]) => (
-          <div className="ats-score-item" key={key}>
-            <strong>{value}</strong><span>{key}</span>
-          </div>
-        ))}
-      </div>
-
-      {result.hasJobDescription && (
-        <>
-          <section style={{ marginTop: 22 }}>
-            <div className="product-card-header"><div><h3>Matched job keywords</h3></div></div>
-            <div className="keyword-grid">
-              {result.matchedKeywords.length ? result.matchedKeywords.map((word) => (
-                <span className="keyword-chip" key={word}><CheckCircle2 size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-              )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No job keywords matched yet.</span>}
-            </div>
-          </section>
-          <section style={{ marginTop: 22 }}>
-            <div className="product-card-header"><div><h3>Missing job keywords</h3></div></div>
-            <div className="keyword-grid">
-              {result.missingKeywords.length ? result.missingKeywords.map((word) => (
-                <span className="keyword-chip missing" key={word}><AlertCircle size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-              )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No missing keywords found.</span>}
-            </div>
-          </section>
-        </>
-      )}
-
-      <section style={{ marginTop: 22 }}>
-        <div className="product-card-header"><div><h3><Sparkles size={15} style={{ verticalAlign: "-2px", marginRight: 5 }} />Recommendations</h3></div></div>
-        <ul style={{ display: "grid", gap: 9, paddingLeft: 17, color: "#74889b", fontSize: 11, lineHeight: 1.55 }}>
-          {result.recommendations.map((item) => <li key={item}>{item}</li>)}
-        </ul>
       </section>
+      <section className="ats-result-section">
+        <div className="product-card-header"><div><h3>Missing job keywords</h3></div></div>
+        <div className="keyword-grid">
+          {missing.length ? missing.map((word) => (
+            <span className="keyword-chip missing" key={word}><AlertCircle size={12} aria-hidden="true" />{word}</span>
+          )) : <span className="ats-empty">No missing keywords found.</span>}
+        </div>
+      </section>
+
+      {advice && (advice.summary || advice.suggestions?.length > 0) && (
+        <section className="ats-result-section ats-advice">
+          <div className="product-card-header">
+            <div>
+              <h3><Lightbulb size={16} aria-hidden="true" /> Advice for this job</h3>
+              <p>Written by AI. It does not change your score.</p>
+            </div>
+          </div>
+          {advice.summary && <p className="ats-advice-summary">{advice.summary}</p>}
+          {advice.suggestions?.length > 0 && (
+            <ul className="ats-suggestions">
+              {advice.suggestions.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
     </>
   );
 }

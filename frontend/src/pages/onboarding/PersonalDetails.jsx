@@ -5,24 +5,35 @@ export default function PersonalDetails() {
     <OnboardingForm
       step="1 of 7"
       title="Personal details"
-      description="Tell us the basics about yourself."
+      description="The basics employers see first. You can change any of this later."
       next="/onboarding/documents"
       fields={[
-        ["fullName", "Full name", "text"],
+        ["fullName", "Full name", "text", { autoComplete: "name" }],
         [
           "headline",
           "Professional headline",
           "text",
+          {
+            placeholder: "Personal support worker",
+            hint: "Your job title or the role you want next.",
+          },
         ],
         [
           "location",
-          "Current location",
+          "City and province",
           "text",
+          { placeholder: "Brampton, ON", autoComplete: "address-level2" },
         ],
         [
           "phone",
           "Phone number",
           "tel",
+          {
+            placeholder: "416 555 0123",
+            autoComplete: "tel",
+            optional: true,
+            hint: "Optional. Only shown if you choose to share it.",
+          },
         ],
       ]}
     />

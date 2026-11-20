@@ -7,10 +7,8 @@ export default function ProtectedRoute() {
 
   if (loading) {
     return (
-      <main className="auth-page">
-        <div className="auth-card">
-          <p>Checking your session...</p>
-        </div>
+      <main className="session-loading">
+        <p role="status">Checking your session…</p>
       </main>
     );
   }

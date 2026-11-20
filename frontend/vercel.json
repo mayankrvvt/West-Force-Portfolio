@@ -25,7 +25,7 @@
       "destination": "https://west-force-portfolio.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ]

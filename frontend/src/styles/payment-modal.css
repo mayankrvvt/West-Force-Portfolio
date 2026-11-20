@@ -1,7 +1,8 @@
 .payment-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  /* Above the chat button (chatbot.css, 9999) so the backdrop covers it. */
+  z-index: 10000;
   display: grid;
   place-items: center;
   overflow-y: auto;

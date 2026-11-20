@@ -194,7 +194,8 @@ describe("POST /api/resumes/build", () => {
 
     generateContent.mockResolvedValueOnce(reply({ content: {} }));
     expect((await build(token)).status).toBe(502);
-    expect(await usage(resumeBuildUsageKey(uid))).toBe(0);
+    // The use is given back after the response is sent, so wait for it.
+    await vi.waitFor(async () => expect(await usage(resumeBuildUsageKey(uid))).toBe(0));
 
     generateContent.mockResolvedValue(reply(goodResume));
     expect((await build(token)).status).toBe(200);

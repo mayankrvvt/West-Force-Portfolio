@@ -228,7 +228,8 @@ describe("POST /api/ats/check", () => {
 
     const { atsUsageKey } = await import("../src/modules/ats/limits");
     const { usageCount } = await import("../src/lib/usageCounter");
-    expect(await usageCount(atsUsageKey(uid))).toBe(0);
+    // The use is given back after the response is sent, so wait for it.
+    await vi.waitFor(async () => expect(await usageCount(atsUsageKey(uid))).toBe(0));
   });
 
   test("the daily limit survives a server restart (stored in MongoDB)", async () => {

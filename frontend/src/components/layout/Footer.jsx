@@ -7,28 +7,35 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="container site-footer-inner">
         <div className="site-footer-about">
-          <Link to="/" className="site-brand">
-            <img src="/favicon.png" alt="" width="28" height="28" />
-            <span>WestForce Portfolio</span>
+          <Link to="/" className="site-brand" aria-label="WestForce home">
+            <img className="site-brand-mark" src="/favicon.png" alt="WestForce" width="32" height="32" />
+            <span>WestForce</span>
           </Link>
 
           <p>
-            One secure link for your resume, video and
-            credentials, ready for Canadian employers.
+            Your resume, video and certificates on one page, with
+            documents behind a PIN. Made for job seekers in Canada.
           </p>
         </div>
 
         <nav className="site-footer-nav" aria-label="Footer">
-          {publicNavigation.map((item) => (
-            <Link key={item.label} to={item.href}>
-              {item.label}
-            </Link>
-          ))}
+          <ul>
+            {publicNavigation.map((item) => (
+              <li key={item.label}>
+                <Link to={item.href}>{item.label}</Link>
+              </li>
+            ))}
+
+            <li>
+              <Link to="/auth/sign-in">Sign in</Link>
+            </li>
+          </ul>
         </nav>
       </div>
 
       <div className="container site-footer-legal">
-        <p>© 2026 WestForce Professional Portfolio</p>
+        <p>© {new Date().getFullYear()} WestForce Professional Portfolio</p>
+        <p>All prices in Canadian dollars.</p>
       </div>
     </footer>
   );

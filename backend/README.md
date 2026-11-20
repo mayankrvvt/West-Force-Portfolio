@@ -55,7 +55,7 @@ src/
   app.ts             Express app: middleware, routes, error handler
   lib/               shared code: config, db, errors, logger, respond,
                      validate (zod), text, usageCounter (MongoDB daily limits),
-                     clients/ (Gemini, Firebase, Stripe, Cloudinary, Supabase, Adzuna)
+                     clients/ (Gemini, Firebase, Stripe, Cloudinary, Supabase)
   middleware/        auth (Firebase token), requirePaid, rateLimit
   modules/<name>/    one folder per feature:
                      routes.ts -> controller.ts -> service.ts -> model.ts, schema.ts (zod)

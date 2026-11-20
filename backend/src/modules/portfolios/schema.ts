@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { toText } from "../../lib/text";
+import { JOB_TYPES, LANGUAGES, SHIFTS } from "./model";
 
 /** Express leaves req.body undefined when no JSON body is sent. */
 const orEmpty = (value: unknown) => (value === undefined || value === null ? {} : value);
@@ -34,12 +35,45 @@ const protectionInput = z.preprocess(
     .optional()
 );
 
+const trimmed = (max: number, label: string) =>
+  z.string().trim().max(max, `${label} must be ${max} characters or fewer.`);
+
+/**
+ * Hire facts inside `profile`. Each one is optional so a partial save can
+ * send just one; other profile keys pass through as before.
+ */
+const profileInput = z.looseObject({
+  availability: z
+    .object({
+      jobTypes: z
+        .array(z.enum(JOB_TYPES, { message: "Choose full time, part time or casual." }))
+        .optional(),
+      shifts: z
+        .array(z.enum(SHIFTS, { message: "Choose days, evenings, nights or weekends." }))
+        .optional(),
+      startDate: z
+        .string()
+        .regex(/^(now|\d{4}-\d{2}-\d{2})?$/, "Start date must be now or a date.")
+        .optional(),
+    })
+    .optional(),
+  workArea: trimmed(120, "Work area").optional(),
+  travel: z
+    .object({ willing: z.boolean().optional(), ownCar: z.boolean().optional() })
+    .optional(),
+  languages: z
+    .array(z.enum(LANGUAGES, { message: "Languages can be English or French." }))
+    .optional(),
+  driversLicence: trimmed(40, "Driver's licence").optional(),
+});
+
 /** POST /api/portfolios and PUT /api/portfolios/me. */
 export const portfolioBody = z.preprocess(
   orEmpty,
   z.looseObject({
     slug: z.unknown().optional(),
     status: z.unknown().optional(),
+    profile: profileInput.optional(),
     documentProtection: protectionInput,
   })
 );

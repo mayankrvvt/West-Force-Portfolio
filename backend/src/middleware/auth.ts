@@ -16,40 +16,43 @@ export async function authenticateUser(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const result = await verifyBearerToken(req);
+
+  if ("error" in result) {
+    sendError(req, res, 401, result.error);
+    return;
+  }
+
+  req.user = result.user;
+  next();
+}
+
+/**
+ * Check "Authorization: Bearer <token>" without answering. Gives the decoded
+ * user, or the 401 message authenticateUser would send. Never throws.
+ */
+export async function verifyBearerToken(
+  req: Request
+): Promise<{ user: DecodedIdToken } | { error: string }> {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    sendError(req, res, 401, "Authorization header is required.");
-    return;
-  }
+  if (!authHeader) return { error: "Authorization header is required." };
 
-  if (!authHeader.startsWith("Bearer ")) {
-    sendError(req, res, 401, "Invalid authorization format.");
-    return;
-  }
+  if (!authHeader.startsWith("Bearer ")) return { error: "Invalid authorization format." };
 
   const token = authHeader.split("Bearer ")[1];
 
-  if (!token) {
-    sendError(req, res, 401, "Authentication token is missing.");
-    return;
-  }
-
-  let decoded: DecodedIdToken;
+  if (!token) return { error: "Authentication token is missing." };
 
   try {
-    decoded = await auth.verifyIdToken(token);
+    return { user: await auth.verifyIdToken(token) };
   } catch (error) {
     (req.log ?? logger).warn(
       { reason: error instanceof Error ? error.message : String(error) },
       "Authentication error"
     );
-    sendError(req, res, 401, "Invalid or expired authentication token.");
-    return;
+    return { error: "Invalid or expired authentication token." };
   }
-
-  req.user = decoded;
-  next();
 }
 
 /** req.user after authenticateUser has run. */

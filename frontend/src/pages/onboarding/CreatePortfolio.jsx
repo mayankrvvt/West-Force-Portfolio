@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../../utils/api";
 import { auth } from "../../firebase/firebase";
+import { DEMO_MODE, getDemoSessionUser } from "../../demo/demoMode";
+
+// In demo mode there is no Firebase session, so use the demo user instead.
+const currentUser = () => (DEMO_MODE ? getDemoSessionUser() : auth.currentUser);
+import "../../styles/onboarding.css";
 
 import {
+  ArrowLeft,
   ShieldCheck,
   Award,
   BriefcaseBusiness,
@@ -34,6 +40,17 @@ const emptyPortfolio = {
     phone: "",
     imageUrl: "",
     availableForWork: true,
+
+    // Hire facts shown at the top of the portfolio (all optional)
+    availability: {
+      jobTypes: [],
+      shifts: [],
+      startDate: "",
+    },
+    workArea: "",
+    travel: { willing: false, ownCar: false },
+    languages: [],
+    driversLicence: "",
   },
 
   hero: {
@@ -43,7 +60,7 @@ const emptyPortfolio = {
   },
 
   about: {
-    title: "About Me",
+    title: "About me",
     description: "",
     videoUrl: "",
     videoPublicId: "",
@@ -84,7 +101,7 @@ const steps = [
   },
   {
     id: "hero",
-    label: "Hero",
+    label: "Headline",
     icon: PlayCircle,
   },
   {
@@ -133,61 +150,61 @@ const sectionCopy = {
   profile: {
     title: "Tell employers who you are",
     description:
-      "Start with the professional information that will identify you across your portfolio.",
+      "Your name, the job you do and the link people will open. You can change these later.",
   },
 
   hero: {
-    title: "Make a strong first impression",
+    title: "Write your headline",
     description:
-      "Create the headline and introduction visitors will see at the top of your portfolio.",
+      "The first lines employers read at the top of your portfolio. Keep it short and plain.",
   },
 
   about: {
-    title: "Tell your professional story",
+    title: "Tell your story",
     description:
-      "Add a concise biography and an optional introduction video.",
+      "A few lines about your work and what you are looking for. A short intro video is optional.",
   },
 
   experience: {
     title: "Add your work experience",
     description:
-      "Show employers where you have worked and what you accomplished there.",
+      "Start with your most recent job. A line or two about each role is enough.",
   },
 
   education: {
     title: "Add your education",
     description:
-      "Add schools, degrees, fields of study and completion years.",
+      "Your diploma, degree or certificate program, and where you studied.",
   },
 
   skills: {
     title: "Highlight your skills",
     description:
-      "Choose the skills you want employers to notice first.",
+      "Pick the skills you want employers to notice first.",
   },
 
   documents: {
-    title: "Add your credentials",
+    title: "Add your certificates",
     description:
-      "Upload certificates, awards, licences and other supporting documents.",
+      "Certificates, licences and awards. Turn on a PIN so only people you trust can open them.",
   },
 
   resume: {
     title: "Add your resume",
     description:
-      "Attach the resume you want employers to access from your portfolio.",
+      "Upload the resume employers can download from your portfolio.",
   },
 
   social: {
-    title: "Connect your professional profiles",
+    title: "Add your profiles",
     description:
-      "Add links that help employers learn more about your work.",
+      "Links like LinkedIn help employers learn more about you. Add at least one.",
   },
 
   review: {
-    title: "Your portfolio is almost ready",
+    title: "Check everything over",
     description:
-      "Review the information you entered before continuing to your dashboard.",
+      "Here is what you entered. Fix anything that is missing, then finish to open your dashboard.",
   },
 };
 
@@ -377,6 +394,9 @@ const [savedAt, setSavedAt] = useState(null);
 
 const [portfolioExists, setPortfolioExists] = useState(false);
 const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+// Saving is blocked when the saved portfolio could not be loaded,
+// so an empty form never overwrites real data
+const [loadFailed, setLoadFailed] = useState(false);
 const [savingPortfolio, setSavingPortfolio] = useState(false);
 
   // Firebase file upload state
@@ -386,6 +406,29 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
   const step = steps[currentStep];
 
   const isReview = step.id === "review";
+
+  // Move focus and scroll to the new step heading so keyboard and
+  // screen reader users land on the step they just opened.
+  const headingRef = useRef(null);
+  const firstStepRender = useRef(true);
+
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    window.scrollTo({
+      top: 0,
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+
+    headingRef.current?.focus({ preventScroll: true });
+  }, [currentStep]);
 
   const completedSections = useMemo(
     () =>
@@ -479,6 +522,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           "Failed to load portfolio:",
           error
         );
+        setLoadFailed(true);
       }
     } finally {
       setLoadingPortfolio(false);
@@ -601,7 +645,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     return;
   }
 
-  const user = auth.currentUser;
+  const user = currentUser();
 
   if (!user) {
     setError("You must be signed in before uploading a file.");
@@ -764,11 +808,6 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     }
 
     setUploadProgress(100);
-
-    console.log(
-      "Cloudinary upload successful:",
-      uploadedFile.url
-    );
   } catch (error) {
     console.error(
       "Cloudinary upload error:",
@@ -843,7 +882,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       return;
     }
 
-    const user = auth.currentUser;
+    const user = currentUser();
 
     if (!user) {
       setError(
@@ -884,7 +923,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
         signatureData = await signatureResponse.json();
       } catch {
         throw new Error(
-          "The Cloudinary upload signature response was invalid."
+          "Upload failed. The server sent an unexpected reply. Try again in a moment."
         );
       }
 
@@ -896,7 +935,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
       if (!signatureData?.uploadUrl || !signatureData?.signature || !signatureData?.apiKey) {
         throw new Error(
-          "The server did not return the required Cloudinary upload details."
+          "Upload failed. The server could not start the upload. Try again in a moment."
         );
       }
 
@@ -924,19 +963,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
         formData.append("api_key", String(signatureData.apiKey));
         formData.append("signature", String(signatureData.signature));
 
-        console.info("[cloudinary] sending chunk", {
-          index: index + 1,
-          totalChunks,
-          start,
-          end,
-          contentRange,
-          chunkSize: chunk.size,
-        });
-
         uploadedFile = await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          const requestStartedAt = performance.now();
-          let lastProgress = { loaded: 0, total: null };
 
           xhr.open("POST", signatureData.uploadUrl, true);
           xhr.timeout = 300000;
@@ -944,28 +972,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           xhr.setRequestHeader("X-Unique-Upload-Id", uploadId);
           xhr.setRequestHeader("Content-Range", contentRange);
 
-          xhr.upload.onloadstart = () => {
-            console.info("[cloudinary] chunk transfer started", {
-              chunkIndex: index + 1,
-              contentRange,
-              chunkSize: chunk.size,
-            });
-          };
-
           xhr.upload.onprogress = (progressEvent) => {
-            lastProgress = {
-              loaded: progressEvent.loaded,
-              total: progressEvent.lengthComputable
-                ? progressEvent.total
-                : null,
-            };
-
             if (!progressEvent.lengthComputable) {
-              console.info("[cloudinary] chunk bytes transferred", {
-                chunkIndex: index + 1,
-                bytesLoaded: progressEvent.loaded,
-                totalComputable: false,
-              });
               return;
             }
 
@@ -979,69 +987,15 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               Math.round((fileBytesLoaded / file.size) * 100)
             );
 
-            console.info("[cloudinary] upload progress", {
-              chunkIndex: index + 1,
-              totalChunks,
-              bytesLoaded: progressEvent.loaded,
-              bytesTotal: progressEvent.total,
-              percent: Math.round(requestProgress * 100),
-              fileBytesLoaded: Math.round(fileBytesLoaded),
-              totalProgress,
-            });
-
             setUploadProgress(totalProgress);
           };
 
-          xhr.upload.onloadend = () => {
-            console.info("[cloudinary] chunk transfer ended", {
-              chunkIndex: index + 1,
-              bytesLoaded: lastProgress.loaded,
-              bytesTotal: lastProgress.total,
-              elapsedMs: Math.round(performance.now() - requestStartedAt),
-            });
-          };
-
           xhr.onload = () => {
-            let responseBody = (xhr.responseText || "").slice(0, 2000);
-
-            try {
-              const payload = JSON.parse(xhr.responseText);
-
-              if (payload && typeof payload === "object") {
-                const sanitizedPayload = { ...payload };
-
-                ["api_key", "signature", "secure_url", "url"].forEach(
-                  (key) => {
-                    if (key in sanitizedPayload) {
-                      sanitizedPayload[key] = "[redacted]";
-                    }
-                  }
-                );
-
-                responseBody = JSON.stringify(sanitizedPayload).slice(0, 2000);
-              }
-            } catch {
-              responseBody = responseBody.replace(
-                /(api_key|signature)=([^&\s]+)/gi,
-                "$1=[redacted]"
-              );
-            }
-
-            console.info("[cloudinary] upload response", {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              responseBody,
-              bytesLoaded: lastProgress.loaded,
-              bytesTotal: lastProgress.total,
-              elapsedMs: Math.round(performance.now() - requestStartedAt),
-            });
-
             if (xhr.status < 200 || xhr.status >= 300) {
-              console.error("[cloudinary] HTTP error response body", {
+              console.error("[cloudinary] upload failed", {
                 status: xhr.status,
-                body: (xhr.responseText || "").slice(0, 2000),
               });
-              let message = "Cloudinary video upload failed.";
+              let message = "Video upload failed. Check your connection and try again.";
 
               try {
                 const payload = JSON.parse(xhr.responseText);
@@ -1058,7 +1012,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               const payload = JSON.parse(xhr.responseText);
 
               if (payload?.error) {
-                throw new Error(payload.error.message || "Cloudinary rejected the chunk upload.");
+                throw new Error(payload.error.message || "Video upload failed. Check your connection and try again.");
               }
 
               if (payload?.done === false) {
@@ -1067,22 +1021,15 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               }
 
               if (!payload?.secure_url && !payload?.public_id && !payload?.done) {
-                throw new Error("Cloudinary did not return a final upload result.");
+                throw new Error("Video upload did not finish. Try again.");
               }
-
-              console.info("[cloudinary] upload success", {
-                public_id: payload.public_id,
-                resource_type: payload.resource_type,
-                secure_url: payload.secure_url,
-                done: payload.done,
-              });
 
               resolve(payload);
             } catch (error) {
               reject(
                 new Error(
                   error.message ||
-                    "The Cloudinary upload response was invalid."
+                    "Video upload failed. The server sent an unexpected reply. Try again."
                 )
               );
             }
@@ -1091,13 +1038,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           xhr.onerror = () => {
             console.error("[cloudinary] upload network error", {
               status: xhr.status,
-              statusText: xhr.statusText,
-              readyState: xhr.readyState,
               online: navigator.onLine,
-              responsePreview: (xhr.responseText || "").slice(0, 500),
-              bytesLoaded: lastProgress.loaded,
-              bytesTotal: lastProgress.total,
-              elapsedMs: Math.round(performance.now() - requestStartedAt),
             });
             reject(new Error("Network error while uploading the video."));
           };
@@ -1105,25 +1046,13 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           xhr.ontimeout = () => {
             console.error("[cloudinary] upload timeout", {
               timeout: xhr.timeout,
-              readyState: xhr.readyState,
               online: navigator.onLine,
-              responsePreview: (xhr.responseText || "").slice(0, 500),
-              bytesLoaded: lastProgress.loaded,
-              bytesTotal: lastProgress.total,
-              elapsedMs: Math.round(performance.now() - requestStartedAt),
             });
             reject(new Error("Video upload timed out. Please try again."));
           };
 
           xhr.onabort = () => {
-            console.warn("[cloudinary] upload aborted", {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              readyState: xhr.readyState,
-              bytesLoaded: lastProgress.loaded,
-              bytesTotal: lastProgress.total,
-              elapsedMs: Math.round(performance.now() - requestStartedAt),
-            });
+            console.warn("[cloudinary] upload aborted");
             reject(new Error("Video upload was cancelled."));
           };
 
@@ -1138,7 +1067,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
       }
 
       if (!uploadedFile || (!uploadedFile.secure_url && uploadedFile.done !== true)) {
-        throw new Error("Cloudinary did not finish the video upload successfully.");
+        throw new Error("Video upload did not finish. Check your connection and try again.");
       }
 
       const secureUrl = uploadedFile.secure_url || uploadedFile.url;
@@ -1162,7 +1091,6 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
       setUploadProgress(100);
       uploadSucceeded = true;
-      console.log("Video upload successful:", secureUrl);
 
       const persistedUpload = {
         ...data,
@@ -1259,14 +1187,14 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
         item.startYear &&
         !/^\d{4}$/.test(String(item.startYear))
       ) {
-        return "Start year must be a four-digit year.";
+        return "Enter the start year as a full year, like 2020.";
       }
 
       if (
         item.endYear &&
         !/^\d{4}$/.test(String(item.endYear))
       ) {
-        return "End year must be a four-digit year.";
+        return "Enter the end year as a full year, like 2024.";
       }
 
       if (
@@ -1362,6 +1290,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
   }
 
   async function finish() {
+    if (loadingPortfolio || loadFailed) return;
+
     const incompleteSections = steps
       .slice(0, -1)
       .filter(
@@ -1475,19 +1405,27 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
             to="/"
             className="portfolio-builder-brand"
           >
-            <img
-              src="/favicon.png"
-              alt="WestForce"
-            />
+            <img src="/favicon.png" alt="" className="onboarding-leaf" width="30" height="30" />
 
             <span>WestForce</span>
           </Link>
 
-          <div className="portfolio-builder-save" role="status">
+          <div className="builder-topbar-end">
+            <div className="portfolio-builder-save" role="status">
+              {savedAt && (
+                <Check size={14} aria-hidden="true" />
+              )}
 
-            {savedAt
-              ? "Draft saved in this session"
-              : "Saving draft..."}
+              <span>
+                {savedAt
+                  ? "Draft saved on this device"
+                  : "Saving draft…"}
+              </span>
+            </div>
+
+            <Link to="/dashboard" className="ob-exit">
+              Exit setup
+            </Link>
           </div>
         </header>
 
@@ -1552,6 +1490,9 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                     onClick={() =>
                       handleStepClick(index)
                     }
+                    aria-current={
+                      active ? "step" : undefined
+                    }
                     disabled={
                       index ===
                       steps.length - 1
@@ -1597,7 +1538,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 />
               </div>
 
-              <h1>
+              <h1 ref={headingRef} tabIndex={-1}>
                 {sectionCopy[step.id].title}
               </h1>
 
@@ -1615,8 +1556,29 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               </div>
             )}
 
-            <div className="builder-form-card">
+            {loadFailed && (
+              <div className="builder-error" role="alert">
+                We couldn't load your saved portfolio, so saving is off to
+                protect it. Check your connection and reload the page.
+              </div>
+            )}
 
+            <div className="builder-form-card" key={step.id}>
+
+              {loadingPortfolio && (
+                <div
+                  className="onboarding-skeleton"
+                  role="status"
+                  aria-label="Loading your saved portfolio"
+                >
+                  <span className="ob-skeleton-line wide" />
+                  <span className="ob-skeleton-line" />
+                  <span className="ob-skeleton-block" />
+                </div>
+              )}
+
+              {!loadingPortfolio && (
+              <>
               {step.id === "profile" && (
                 <ProfileSection
                   data={data}
@@ -1713,6 +1675,8 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
     }}
   />
 )}
+              </>
+              )}
 
             </div>
 
@@ -1726,6 +1690,7 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 onClick={back}
                 disabled={currentStep === 0}
               >
+                <ArrowLeft size={16} aria-hidden="true" />
                 Back
               </button>
 
@@ -1733,25 +1698,28 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
                 {!isReview && (
                   <span className="builder-session-note">
-                    Your information is saved automatically.
+                    Your changes save as you go.
                   </span>
                 )}
 
                 {isReview ? (
                   <button
                     type="button"
-                    className="btn btn-primary builder-primary"
+                    className="btn btn-primary"
                     onClick={finish}
-                    disabled={savingPortfolio}
+                    disabled={
+                      savingPortfolio || loadingPortfolio || loadFailed
+                    }
+                    aria-busy={savingPortfolio || undefined}
                   >
                     {savingPortfolio
-                      ? "Saving portfolio..."
+                      ? "Saving portfolio…"
                       : "Finish and open dashboard"}
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="btn btn-primary builder-primary"
+                    className="btn btn-primary"
                     onClick={next}
                   >
                     Continue
@@ -1886,6 +1854,8 @@ function ProfileSection({
             {profile.imageUrl ? (
               <img
                 src={profile.imageUrl}
+                width="80"
+                height="80"
                 alt={profile.name || "Profile"}
               />
             ) : (
@@ -1948,7 +1918,7 @@ function ProfileSection({
           label="Location"
           value={profile.location}
           onChange={(value) => update("profile.location", value)}
-          placeholder="e.g. Dehradun, India"
+          placeholder="e.g. Calgary, AB"
           help="Optional."
         />
 
@@ -1965,7 +1935,7 @@ function ProfileSection({
           label="Phone"
           value={profile.phone}
           onChange={(value) => update("profile.phone", value)}
-          placeholder="e.g. +91 98765 43210"
+          placeholder="e.g. +1 416 555 0134"
           type="tel"
           help="Optional."
         />
@@ -2029,8 +1999,179 @@ function ProfileSection({
             </label>
           </div>
         </div>
+
+        <div className="builder-field-full">
+          <WorkDetails profile={profile} update={update} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/* =========================================================
+   WORK DETAILS (hire facts, all optional)
+   ========================================================= */
+
+const JOB_TYPE_CHOICES = [
+  { value: "full_time", label: "Full time" },
+  { value: "part_time", label: "Part time" },
+  { value: "casual", label: "Casual" },
+];
+
+const SHIFT_CHOICES = [
+  { value: "days", label: "Days" },
+  { value: "evenings", label: "Evenings" },
+  { value: "nights", label: "Nights" },
+  { value: "weekends", label: "Weekends" },
+];
+
+const LANGUAGE_CHOICES = [
+  { value: "en", label: "English" },
+  { value: "fr", label: "French" },
+];
+
+function toggleValue(list, value) {
+  const current = Array.isArray(list) ? list : [];
+
+  return current.includes(value)
+    ? current.filter((item) => item !== value)
+    : [...current, value];
+}
+
+function ChipGroup({ legend, choices, selected, onToggle }) {
+  const picked = Array.isArray(selected) ? selected : [];
+
+  return (
+    <fieldset className="builder-chip-group">
+      <legend>{legend}</legend>
+
+      <div className="builder-chips">
+        {choices.map((choice) => {
+          const isOn = picked.includes(choice.value);
+
+          return (
+            <button
+              key={choice.value}
+              type="button"
+              className="builder-chip"
+              aria-pressed={isOn}
+              onClick={() => onToggle(choice.value)}
+            >
+              {isOn && <Check size={14} aria-hidden="true" />}
+              {choice.label}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function WorkDetails({ profile, update }) {
+  const availability = profile.availability || {};
+  const travel = profile.travel || {};
+  const startDate = availability.startDate || "";
+  const startsNow = startDate === "now";
+
+  function setAvailability(field, value) {
+    update("profile.availability", { ...availability, [field]: value });
+  }
+
+  function setTravel(field) {
+    update("profile.travel", { ...travel, [field]: !travel[field] });
+  }
+
+  return (
+    <section className="builder-work-details" aria-labelledby="work-details-title">
+      <div className="builder-work-details-head">
+        <strong id="work-details-title">Work details</strong>
+        <p>
+          Optional. These show at the top of your portfolio so an employer
+          can see at a glance if you fit the job.
+        </p>
+      </div>
+
+      <div className="builder-work-details-grid">
+        <ChipGroup
+          legend="Job type"
+          choices={JOB_TYPE_CHOICES}
+          selected={availability.jobTypes}
+          onToggle={(value) =>
+            setAvailability("jobTypes", toggleValue(availability.jobTypes, value))
+          }
+        />
+
+        <ChipGroup
+          legend="Shifts"
+          choices={SHIFT_CHOICES}
+          selected={availability.shifts}
+          onToggle={(value) =>
+            setAvailability("shifts", toggleValue(availability.shifts, value))
+          }
+        />
+
+        <fieldset className="builder-chip-group">
+          <legend>When you can start</legend>
+
+          <div className="builder-chips">
+            <button
+              type="button"
+              className="builder-chip"
+              aria-pressed={startsNow}
+              onClick={() => setAvailability("startDate", startsNow ? "" : "now")}
+            >
+              {startsNow && <Check size={14} aria-hidden="true" />}
+              Now
+            </button>
+
+            <input
+              type="date"
+              className="builder-chip-date"
+              aria-label="Or pick a start date"
+              value={startsNow ? "" : startDate}
+              onChange={(event) =>
+                setAvailability("startDate", event.target.value)
+              }
+            />
+          </div>
+        </fieldset>
+
+        <ChipGroup
+          legend="Languages for work"
+          choices={LANGUAGE_CHOICES}
+          selected={profile.languages}
+          onToggle={(value) =>
+            update("profile.languages", toggleValue(profile.languages, value))
+          }
+        />
+
+        <Field
+          label="Where you can work"
+          value={profile.workArea}
+          onChange={(value) => update("profile.workArea", value)}
+          placeholder="e.g. Peel and Toronto"
+          maxLength={120}
+        />
+
+        <ChipGroup
+          legend="Getting there"
+          choices={[
+            { value: "willing", label: "Willing to travel" },
+            { value: "ownCar", label: "Have my own car" },
+          ]}
+          selected={["willing", "ownCar"].filter((key) => travel[key])}
+          onToggle={setTravel}
+        />
+
+        <Field
+          label="Driver's licence"
+          value={profile.driversLicence}
+          onChange={(value) => update("profile.driversLicence", value)}
+          placeholder="e.g. G"
+          maxLength={40}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -2134,7 +2275,7 @@ function AboutSection({
             v
           )
         }
-        placeholder="About Me"
+        placeholder="About me"
       />
 
       <div className="builder-field">
@@ -2357,7 +2498,7 @@ function ExperienceSection({
                       value
                     )
                   }
-                  placeholder="e.g. Bengaluru, India"
+                  placeholder="e.g. Vancouver, BC"
                   maxLength={160}
                   help="Optional."
                 />
@@ -2603,7 +2744,7 @@ function EducationSection({
               placeholder="2020"
               inputMode="numeric"
               maxLength={4}
-              help="Four-digit year."
+              help="A full year, like 2020."
             />
 
             <Field
@@ -3291,7 +3432,7 @@ function ReviewSection({
     },
     {
       id: "hero",
-      title: "Hero",
+      title: "Headline",
       value: data.hero.headline || "Not added",
     },
     {

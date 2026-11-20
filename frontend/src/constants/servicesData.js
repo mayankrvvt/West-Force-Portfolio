@@ -1,47 +1,41 @@
+// Six services fill the 3 column grid evenly (3 + 3, 2 + 2 + 2, or one
+// column on phones). The private portfolio link is the product itself, so it
+// is covered by the hero and the portfolio section rather than listed here.
 export const services = [
   {
+    icon: "matching",
     title: "Employer matching",
     description:
-      "Connect your professional profile with opportunities that match your experience and career goals.",
+      "We introduce you to employers hiring for roles that fit your experience and goals.",
   },
   {
-    title: "1-on-1 career coaching",
+    icon: "coaching",
+    title: "Career coaching",
     description:
-      "Get personalized guidance to strengthen your applications, interviews and career direction.",
+      "Work with a WestForce coach on your applications, interviews and next steps.",
   },
   {
+    icon: "video",
     title: "Video resume coaching",
     description:
-      "Learn how to present yourself confidently through a professional video resume.",
+      "Get help planning, recording and reviewing your intro video until you are happy with it.",
   },
   {
+    icon: "assessment",
     title: "Skills assessments",
     description:
-      "Show employers what you can actually do with verified skills assessment results.",
+      "Take a TestGorilla assessment and add the results to your portfolio.",
   },
   {
-    title: "Credential guidance",
+    icon: "verification",
+    title: "Document check",
     description:
-      "Understand Canadian credential requirements and how your qualifications transfer.",
+      "Have your documents checked so they are complete before an employer opens them.",
   },
   {
-    title: "Relocation support",
+    icon: "aftercare",
+    title: "Support after you start",
     description:
-      "Get practical support as you prepare to relocate and build your career in Canada.",
-  },
-  {
-    title: "Document verification",
-    description:
-      "Keep your professional documents organized and ready for employer review.",
-  },
-  {
-    title: "Post-placement care",
-    description:
-      "Continue receiving support after placement as you settle into your new role.",
-  },
-  {
-    title: "Private portfolio link",
-    description:
-      "Share your complete professional profile through one secure, passcode-protected link.",
+      "Keep getting help from the WestForce team after you start your new job.",
   },
 ];

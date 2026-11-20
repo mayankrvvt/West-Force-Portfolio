@@ -11,8 +11,28 @@ import { auth } from "../../firebase/firebase";
 
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import AuthLayout from "../../components/layout/AuthLayout";
+import AuthLayout, { AuthAlert } from "../../components/layout/AuthLayout";
+import PasswordField from "./PasswordField";
 import { useApp } from "../../app/providers";
+import { DEMO_MODE, signInDemo } from "../../demo/demoMode";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSignIn({ email, password }) {
+  const errors = {};
+
+  if (!email) {
+    errors.email = "Enter your email address.";
+  } else if (!EMAIL_PATTERN.test(email)) {
+    errors.email = "Enter an email like name@example.com.";
+  }
+
+  if (!password) {
+    errors.password = "Enter your password.";
+  }
+
+  return errors;
+}
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -26,6 +46,7 @@ export default function SignIn() {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   /* -----------------------------------------
@@ -42,6 +63,10 @@ export default function SignIn() {
 
     if (error) {
       setError("");
+    }
+
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({ ...previous, [name]: "" }));
     }
   };
 
@@ -73,7 +98,7 @@ export default function SignIn() {
         return "Network error. Please check your internet connection.";
 
       case "auth/operation-not-allowed":
-        return "Email/password sign-in is not enabled in Firebase.";
+        return "Sign in with email is turned off right now. Please try again later.";
 
       case "auth/user-token-expired":
         return "Your session expired. Please sign in again.";
@@ -152,13 +177,13 @@ export default function SignIn() {
        Validate form
     ----------------------------------------- */
 
-    if (!email) {
-      setError("Please enter your email address.");
-      return;
-    }
+    const errors = validateSignIn({ email, password });
+    setFieldErrors(errors);
 
-    if (!password) {
-      setError("Please enter your password.");
+    const firstInvalid = Object.keys(errors)[0];
+
+    if (firstInvalid) {
+      document.getElementById(firstInvalid)?.focus();
       return;
     }
 
@@ -187,16 +212,6 @@ export default function SignIn() {
 
       const user = userCredential.user;
 
-      console.log(
-        "Firebase Sign In successful:",
-        user.uid
-      );
-
-      console.log(
-        "Signed in email:",
-        user.email
-      );
-
       /* -----------------------------------------
          Get Firebase ID token
 
@@ -211,10 +226,6 @@ export default function SignIn() {
           "Firebase authentication token could not be created."
         );
       }
-
-      console.log(
-        "Firebase ID token obtained successfully."
-      );
 
       /* -----------------------------------------
          Create / find user in MongoDB
@@ -236,14 +247,6 @@ export default function SignIn() {
             displayName: user.displayName || "",
             photoURL: user.photoURL || "",
           }),
-        }
-      );
-
-      console.log(
-        "POST /api/users response:",
-        {
-          status: response.status,
-          statusText: response.statusText,
         }
       );
 
@@ -296,11 +299,6 @@ export default function SignIn() {
       /* -----------------------------------------
          Verify successful backend response
       ----------------------------------------- */
-
-      console.log(
-        "MongoDB user:",
-        result?.user
-      );
 
       /* -----------------------------------------
          Navigate
@@ -369,14 +367,22 @@ export default function SignIn() {
     }
   };
 
+  /* Local-dev-only demo login (never in production builds). */
+  const continueAsDemo = () => {
+    signInDemo();
+    navigate(location.state?.from?.pathname || "/dashboard", {
+      replace: true,
+    });
+  };
+
   /* -----------------------------------------
      Render
   ----------------------------------------- */
 
   return (
     <AuthLayout
-      title="Sign in"
-      lede="Sign in to manage your portfolio."
+      title="Welcome back"
+      lede="Sign in to update your portfolio and share it with employers."
       footer={
         <p>
           New to WestForce?{" "}
@@ -385,18 +391,12 @@ export default function SignIn() {
       }
     >
       {location.state?.signupNotice && (
-        <p className="auth-notice" role="status">
-          {location.state.signupNotice}
-        </p>
+        <AuthAlert tone="success">{location.state.signupNotice}</AuthAlert>
       )}
 
-      {error && (
-        <p className="auth-error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <Input
           id="email"
           name="email"
@@ -406,19 +406,23 @@ export default function SignIn() {
           onChange={handleChange}
           placeholder="you@example.com"
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          error={fieldErrors.email}
           disabled={loading}
           required
         />
 
         <div className="auth-field-group">
-          <Input
+          <PasswordField
             id="password"
             name="password"
             label="Password"
-            type="password"
             value={formData.password}
             onChange={handleChange}
             autoComplete="current-password"
+            error={fieldErrors.password}
             disabled={loading}
             required
           />
@@ -431,12 +435,35 @@ export default function SignIn() {
         <Button
           type="submit"
           size="lg"
-          className="full-width"
+          className="full-width auth-submit"
           disabled={loading}
+          aria-busy={loading || undefined}
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+
+      {DEMO_MODE && (
+        <div className="auth-demo">
+          <p className="auth-divider">
+            <span>or</span>
+          </p>
+
+          <Button
+            variant="secondary"
+            size="lg"
+            className="full-width"
+            onClick={continueAsDemo}
+            disabled={loading}
+          >
+            Explore the demo account
+          </Button>
+
+          <p className="auth-demo-note">
+            Signs you in as Emma Tremblay, a sample job seeker. Changes stay on this device.
+          </p>
+        </div>
+      )}
     </AuthLayout>
   );
 }

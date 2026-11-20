@@ -64,6 +64,85 @@ export const saveBody = z.preprocess(
 
 export const resumeIdParams = objectIdParams("Invalid resume id.");
 
+/* ---------- Gemini output (build and enhance) ---------- */
+
+// Matches the Resume model, so what we return can be saved as is.
+// A number is accepted where text is expected (e.g. a year).
+const aiText = z.union([z.string(), z.number()]).nullish();
+const aiTextList = z.array(z.union([z.string(), z.number()])).nullish();
+const aiList = <T extends z.ZodType>(item: T) => z.array(item).nullish();
+
+const aiExperience = z.looseObject({
+  id: aiText,
+  company: aiText,
+  position: aiText,
+  location: aiText,
+  startDate: aiText,
+  endDate: aiText,
+  bullets: aiTextList,
+});
+
+const aiEducation = z.looseObject({
+  id: aiText,
+  institution: aiText,
+  degree: aiText,
+  field: aiText,
+  location: aiText,
+  startDate: aiText,
+  endDate: aiText,
+  description: aiText,
+});
+
+const aiProject = z.looseObject({
+  id: aiText,
+  name: aiText,
+  description: aiText,
+  technologies: aiTextList,
+  bullets: aiTextList,
+});
+
+const aiCertification = z.looseObject({
+  id: aiText,
+  name: aiText,
+  issuer: aiText,
+  year: aiText,
+});
+
+const hasText = (value: unknown) => typeof value === "string" && value.trim() !== "";
+
+/**
+ * What we accept from Gemini as a resume: a `content` object with the right
+ * types, and at least a name, summary, job or skill (an empty resume is a
+ * failed answer, not a draft).
+ */
+export const aiResume = z.looseObject({
+  content: z
+    .looseObject({
+      name: aiText,
+      title: aiText,
+      email: aiText,
+      phone: aiText,
+      location: aiText,
+      linkedin: aiText,
+      github: aiText,
+      website: aiText,
+      summary: aiText,
+      experience: aiList(aiExperience),
+      education: aiList(aiEducation),
+      skills: aiTextList,
+      projects: aiList(aiProject),
+      certifications: aiList(aiCertification),
+    })
+    .refine(
+      (content) =>
+        hasText(content.name) ||
+        hasText(content.summary) ||
+        Boolean(content.experience?.length) ||
+        Boolean(content.skills?.length),
+      { error: "The resume is empty." }
+    ),
+});
+
 export type BuildBody = z.output<typeof buildBody>;
 export type EnhanceBody = z.output<typeof enhanceBody>;
 export type SaveBody = z.output<typeof saveBody>;

@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test, vi } from "vitest";
 const { created, generateContent } = vi.hoisted(() => ({
   created: [],
   generateContent: vi.fn(async () => ({
-    text: JSON.stringify({ resume: { content: {} } }),
+    text: JSON.stringify({ resume: { content: { name: "Jane Doe" } } }),
   })),
 }));
 

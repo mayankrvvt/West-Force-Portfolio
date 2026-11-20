@@ -5,20 +5,25 @@ export default function Experience() {
     <OnboardingForm
       step="3 of 7"
       title="Work experience"
-      description="Add your professional experience."
+      description="Start with your most recent job. You can add more roles from your dashboard."
       next="/onboarding/education"
       fields={[
-        ["jobTitle", "Job title", "text"],
-        ["company", "Company", "text"],
+        ["jobTitle", "Job title", "text", { placeholder: "Personal support worker" }],
+        ["company", "Employer", "text", { placeholder: "Peel Region Long Term Care" }],
         [
           "period",
-          "Employment period",
+          "Dates",
           "text",
+          { placeholder: "Mar 2022 to present" },
         ],
         [
           "description",
-          "Description",
+          "What you did",
           "textarea",
+          {
+            placeholder: "Supported 12 residents each shift with daily care and mobility.",
+            hint: "Two or three lines is plenty. Numbers help.",
+          },
         ],
       ]}
     />

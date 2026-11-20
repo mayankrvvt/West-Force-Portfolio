@@ -2,10 +2,17 @@
    WESTFORCE AI CHATBOT
    ========================================================================== */
 
+/* Launcher size and offset are shared with the demo badge and the
+   dashboard's bottom padding (see index.css). */
+:root {
+  --chat-launcher-size: 48px;
+  --chat-launcher-offset: var(--space-5);
+}
+
 .westforce-chatbot {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: calc(var(--chat-launcher-offset) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--chat-launcher-offset) + env(safe-area-inset-bottom, 0px));
   z-index: 9999;
   font-family: inherit;
 }
@@ -18,8 +25,8 @@
 .westforce-chatbot-launcher {
   position: relative;
 
-  width: 58px;
-  height: 58px;
+  width: var(--chat-launcher-size);
+  height: var(--chat-launcher-size);
 
   border: 0;
   border-radius: 50%;
@@ -75,16 +82,17 @@
   position: absolute;
 
   right: 0;
-  bottom: 72px;
+  bottom: calc(var(--chat-launcher-size) + var(--space-3));
 
   width: min(390px, calc(100vw - 32px));
 
   height: min(
     620px,
-    calc(100vh - 120px)
+    calc(100dvh - 120px)
   );
 
-  min-height: 480px;
+  /* Never taller than the screen (phone landscape is about 375px) */
+  min-height: min(480px, calc(100dvh - 120px));
 
   overflow: hidden;
 
@@ -197,7 +205,7 @@
 
   margin-top: 4px;
 
-  font-size: 11px;
+  font-size: 12px;
 
   opacity: 0.72;
 }
@@ -298,7 +306,7 @@
 
   color: #555555;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.4;
 }
@@ -384,7 +392,7 @@
 
   color: #222222;
 
-  font-size: 13px;
+  font-size: 14px;
 
   line-height: 1.55;
 
@@ -486,9 +494,9 @@
 .westforce-chatbot-suggestions-label {
   margin-bottom: 2px;
 
-  color: #777777;
+  color: #666666;
 
-  font-size: 10px;
+  font-size: 12px;
 
   font-weight: 600;
 
@@ -530,7 +538,7 @@
 
   font: inherit;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.4;
 
@@ -567,6 +575,10 @@
    ERROR
    ========================================================================== */
 
+.westforce-chatbot-paused {
+  margin-top: 10px;
+}
+
 .westforce-chatbot-error {
   margin-top: 10px;
 
@@ -580,7 +592,7 @@
 
   border: 1px solid #ffd4d4;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.4;
 }
@@ -626,13 +638,12 @@
 
   border-radius: 12px;
 
-  outline: none;
-
   box-sizing: border-box;
 
   font: inherit;
 
-  font-size: 13px;
+  /* 16px stops iOS from zooming the page when the field takes focus */
+  font-size: 16px;
 
   line-height: 1.4;
 
@@ -646,7 +657,7 @@
 }
 
 .westforce-chatbot-input-area textarea::placeholder {
-  color: #999999;
+  color: #767676;
 }
 
 .westforce-chatbot-input-area textarea:focus {
@@ -713,9 +724,9 @@
 
   background: #ffffff;
 
-  color: #888888;
+  color: #666666;
 
-  font-size: 9px;
+  font-size: 12px;
 
   line-height: 1.4;
 }
@@ -726,38 +737,56 @@
    ========================================================================== */
 
 @media (max-width: 640px) {
-  .westforce-chatbot {
-    right: 14px;
-
-    bottom: 14px;
+  :root {
+    --chat-launcher-size: 44px;
+    --chat-launcher-offset: var(--space-4);
+    /* Space a page needs at its bottom so the last control clears the button */
+    --chat-clear: calc(
+      var(--chat-launcher-size) + var(--chat-launcher-offset) + var(--space-4)
+      + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   .westforce-chatbot-panel {
-    right: -2px;
+    right: 0;
 
-    bottom: 68px;
+    bottom: calc(var(--chat-launcher-size) + var(--space-3));
 
+    /* Stays inside the screen edges, including notches */
     width:
       min(
         390px,
-        calc(100vw - 28px)
+        calc(
+          100dvw - 2 * var(--chat-launcher-offset)
+          - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+        )
       );
 
     height:
       min(
         650px,
-        calc(100vh - 95px)
+        calc(
+          100dvh - var(--chat-launcher-size) - var(--chat-launcher-offset)
+          - var(--space-5) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+        )
       );
 
-    min-height: 430px;
+    min-height: 0;
 
     border-radius: 18px;
   }
 
-  .westforce-chatbot-launcher {
-    width: 54px;
+  /* Pages with their own bottom controls keep the last one clear of the button */
+  .ob-page .ob-main,
+  .onboarding-page,
+  .auth-page .auth-main,
+  .portfolio-builder-page .portfolio-builder-layout {
+    padding-bottom: var(--chat-clear);
+  }
 
-    height: 54px;
+  /* The sticky Save/Next bar ends before the button instead of sitting under it */
+  .portfolio-builder-page .builder-actions {
+    padding-right: calc(var(--chat-launcher-size) + var(--chat-launcher-offset) + var(--space-2));
   }
 
   .westforce-chatbot-header {
@@ -775,11 +804,11 @@
   .westforce-chatbot-bubble {
     max-width: 86%;
 
-    font-size: 12.5px;
+    font-size: 14px;
   }
 
   .westforce-chatbot-suggestions button {
-    font-size: 10.5px;
+    font-size: 13px;
 
     padding:
       9px
@@ -793,22 +822,26 @@
    ========================================================================== */
 
 @media (max-width: 380px) {
-  .westforce-chatbot {
-    right: 10px;
-
-    bottom: 10px;
+  :root {
+    --chat-launcher-offset: var(--space-3);
   }
 
   .westforce-chatbot-panel {
     right: 0;
 
     width:
-      calc(100vw - 20px);
+      calc(
+        100dvw - 2 * var(--chat-launcher-offset)
+        - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+      );
 
     height:
-      calc(100vh - 82px);
+      calc(
+        100dvh - var(--chat-launcher-size) - var(--chat-launcher-offset)
+        - var(--space-5) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+      );
 
-    min-height: 400px;
+    min-height: 0;
   }
 
   .westforce-chatbot-brand strong {
@@ -816,10 +849,40 @@
   }
 
   .westforce-chatbot-brand span {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .westforce-chatbot-bubble {
     max-width: 88%;
+  }
+}
+
+/* Touch screens: finger sized buttons and no hover nudges that stick */
+@media (pointer: coarse) {
+  .westforce-chatbot-header-actions button,
+  .westforce-chatbot-input-area button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .westforce-chatbot-suggestions button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+
+@media (hover: none) {
+  .westforce-chatbot-header-actions button:hover,
+  .westforce-chatbot-suggestions button:hover,
+  .westforce-chatbot-input-area button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .westforce-chatbot-header-actions button,
+  .westforce-chatbot-suggestions button,
+  .westforce-chatbot-input-area button {
+    transition: none;
   }
 }

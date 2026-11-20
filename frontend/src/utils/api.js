@@ -1,5 +1,18 @@
-import { auth } from "../firebase/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { DEMO_MODE, getDemoSessionUser } from "../demo/demoMode";
+
+// Firebase loads in its own chunk, so it stays out of the main bundle.
+// Remember it once loaded, so public requests can add a token without
+// waiting for (or starting) the Firebase load. useAuth loads it through here.
+let loadedFirebase = null;
+export const loadFirebase = () =>
+  import("../firebase/firebase").then((firebase) => {
+    loadedFirebase = firebase;
+    return firebase;
+  });
+
+// Local-dev-only demo mode: answer from sample data, never Firebase or fetch.
+// DEMO_MODE is false in production builds, so this import is dropped there.
+const loadDemoApi = () => import("../demo/demoApi");
 
 /**
  * ======================================================
@@ -29,6 +42,28 @@ import { onAuthStateChanged } from "firebase/auth";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "";
+
+/**
+ * Fired on window when the server says the site is shut down
+ * (503 with code MAINTENANCE). The site status provider listens for it.
+ */
+export const MAINTENANCE_EVENT = "westforce:maintenance";
+
+/** Error with the server's message, plus .status, .code and .data. */
+function apiError(message, status, result) {
+  const error = new Error(message);
+  error.status = status;
+  error.code = result?.code || "";
+  error.data = result;
+
+  if (status === 503 && error.code === "MAINTENANCE") {
+    window.dispatchEvent(
+      new CustomEvent(MAINTENANCE_EVENT, { detail: { message } })
+    );
+  }
+
+  return error;
+}
 
 /**
  * ======================================================
@@ -74,7 +109,13 @@ function buildApiUrl(endpoint) {
  * ======================================================
  */
 
-export function waitForAuthUser() {
+export async function waitForAuthUser() {
+  if (DEMO_MODE) {
+    return getDemoSessionUser();
+  }
+
+  const { auth, onAuthStateChanged } = await loadFirebase();
+
   return new Promise(
     (resolve, reject) => {
       const unsubscribe =
@@ -101,6 +142,8 @@ export function waitForAuthUser() {
  */
 
 async function getAuthenticatedUser() {
+  const { auth } = await loadFirebase();
+
   if (
     typeof auth.authStateReady ===
     "function"
@@ -131,6 +174,10 @@ async function getAuthenticatedUser() {
 export async function getFirebaseIdToken(
   forceRefresh = false
 ) {
+  if (DEMO_MODE) {
+    return "demo-token";
+  }
+
   const user =
     await getAuthenticatedUser();
 
@@ -155,6 +202,10 @@ export async function getFirebaseIdToken(
  */
 
 export async function getAuthHeaders() {
+  if (DEMO_MODE) {
+    return { Authorization: "Bearer demo-token" };
+  }
+
   const token =
     await getFirebaseIdToken(false);
 
@@ -174,6 +225,10 @@ export async function apiRequest(
   endpoint,
   options = {}
 ) {
+  if (DEMO_MODE) {
+    return (await loadDemoApi()).demoRequest(endpoint, options);
+  }
+
   const url =
     buildApiUrl(endpoint);
 
@@ -286,20 +341,13 @@ export async function apiRequest(
    */
 
   if (!response.ok) {
-    const error =
-      new Error(
-        result?.message ||
-          result?.error ||
-          `API request failed (${response.status}).`
-      );
-
-    error.status =
-      response.status;
-
-    error.data =
-      result;
-
-    throw error;
+    throw apiError(
+      result?.message ||
+        result?.error ||
+        `API request failed (${response.status}).`,
+      response.status,
+      result
+    );
   }
 
   return result;
@@ -320,6 +368,10 @@ export async function uploadFile(
     throw new Error(
       "A file is required."
     );
+  }
+
+  if (DEMO_MODE) {
+    return (await loadDemoApi()).demoUpload(endpoint, file, options);
   }
 
   /**
@@ -476,20 +528,13 @@ export async function uploadFile(
    */
 
   if (!response.ok) {
-    const error =
-      new Error(
-        result?.message ||
-          result?.error ||
-          `File upload failed (${response.status}).`
-      );
-
-    error.status =
-      response.status;
-
-    error.data =
-      result;
-
-    throw error;
+    throw apiError(
+      result?.message ||
+        result?.error ||
+        `File upload failed (${response.status}).`,
+      response.status,
+      result
+    );
   }
 
   return result;
@@ -505,11 +550,33 @@ export async function publicApiRequest(
   endpoint,
   options = {}
 ) {
+  if (DEMO_MODE) {
+    return (await loadDemoApi()).demoRequest(endpoint, options);
+  }
+
+  // A signed-in admin must get past maintenance on public pages too, so send
+  // the token when there is a user. Guests never wait for Firebase.
+  let tokenHeaders = {};
+
+  if (loadedFirebase?.auth?.currentUser) {
+    try {
+      tokenHeaders =
+        await getAuthHeaders();
+    } catch {
+      tokenHeaders = {};
+    }
+  }
+
   const response =
     await fetch(
       buildApiUrl(endpoint),
       {
         ...options,
+
+        headers: {
+          ...(options.headers || {}),
+          ...tokenHeaders,
+        },
 
         credentials:
           "include",
@@ -541,20 +608,13 @@ export async function publicApiRequest(
   }
 
   if (!response.ok) {
-    const error =
-      new Error(
-        result?.message ||
-          result?.error ||
-          `API request failed (${response.status}).`
-      );
-
-    error.status =
-      response.status;
-
-    error.data =
-      result;
-
-    throw error;
+    throw apiError(
+      result?.message ||
+        result?.error ||
+        `API request failed (${response.status}).`,
+      response.status,
+      result
+    );
   }
 
   return result;

@@ -135,6 +135,18 @@ describe("/api/users", () => {
     });
   });
 
+  test("POST / stores the token email, never a different body email", async () => {
+    testUsers.set("token-carol", { uid: "uid-carol", email: "carol@example.com" });
+
+    const res = await as(
+      "token-carol",
+      request(app).post("/api/users").send({ email: "someone.else@example.com" })
+    );
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.email).toBe("carol@example.com");
+  });
+
   test("GET /me returns the user -> 200", async () => {
     const res = await as("token-alice", request(app).get("/api/users/me"));
 

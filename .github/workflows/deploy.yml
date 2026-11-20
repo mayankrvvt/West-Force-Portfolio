@@ -1,0 +1,76 @@
+name: Deploy
+
+# Runs after CI passes on a push to main. Vercel deploys the frontend by
+# itself from Git; this workflow starts the Render backend deploy and then
+# checks that both sites answer.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    # The wait loop alone can take 60 x (20 s curl + 10 s sleep) = 30 minutes.
+    timeout-minutes: 35
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL || 'https://west-force-portfolio.onrender.com' }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://west-force-portfolio.vercel.app' }}
+    steps:
+      - name: Start Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::RENDER_DEPLOY_HOOK_URL is not set, so the Render deploy was skipped."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" -o /dev/null
+          echo "Render deploy started."
+
+      - name: Wait for the new backend version
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          url="${API_BASE_URL%/}/api/health"
+          # Render can take several minutes to build and swap in the new commit.
+          # /api/health returns the deployed commit as `version`.
+          for attempt in $(seq 1 60); do
+            if body=$(curl -fsS --max-time 20 "$url"); then
+              version=$(echo "$body" | jq -r '.version // "unknown"')
+              if [ "$version" = "$EXPECTED_SHA" ]; then
+                echo "Backend is healthy and runs $EXPECTED_SHA (attempt $attempt)."
+                exit 0
+              fi
+              if [ "$version" = "unknown" ]; then
+                echo "::warning::Backend is healthy but does not report its version, so the commit was not checked."
+                exit 0
+              fi
+              echo "Backend still runs $version, waiting for $EXPECTED_SHA (attempt $attempt of 60)."
+            else
+              echo "Backend not ready yet (attempt $attempt of 60)."
+            fi
+            sleep 10
+          done
+          echo "::error::Backend at $url did not report version $EXPECTED_SHA in time."
+          exit 1
+
+      - name: Check the frontend
+        run: |
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -L "${SITE_URL%/}/")
+          echo "Frontend returned $status."
+          if [ "$status" != "200" ]; then
+            echo "::error::Frontend at $SITE_URL returned $status"
+            exit 1
+          fi

@@ -1,0 +1,40 @@
+# Canadian job collector, twice a week (backend: npm run jobs:collect).
+#
+# MongoDB Atlas must allow GitHub's IPs for this to connect (Atlas Network
+# Access, e.g. 0.0.0.0/0 with a strong password). If you would rather not open
+# Atlas, turn this workflow off and run the script from the server's own cron:
+#   0 11 * * 1,4  cd /path/to/backend && npm run jobs:collect
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   MONGODB_URI     required
+#   JOOBLE_API_KEY  optional; without it only Greenhouse and Lever are read
+name: Collect jobs
+
+on:
+  schedule:
+    # Twice a week (Monday and Thursday, 11:00 UTC, about 6 or 7 am in Toronto)
+    # to save Actions minutes. Jobs stay for 30 days, so this gap is fine.
+    - cron: "0 11 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run jobs:collect
+        env:
+          NODE_ENV: production
+          JOBS_COLLECTOR_ONLY: "true"
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}

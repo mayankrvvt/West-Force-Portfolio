@@ -13,7 +13,7 @@ import {
 } from "react-router-dom";
 
 import {
-  useEffect,
+  useId,
   useState,
 } from "react";
 
@@ -519,6 +519,7 @@ const addCertification = () => {
 
             <textarea
               className="resume-editor-textarea"
+              aria-label="Professional summary"
               value={
                 resume.content.summary
               }
@@ -626,6 +627,7 @@ const addCertification = () => {
 
             <textarea
               className="resume-editor-textarea"
+              aria-label="Skills, separated by commas"
               rows={5}
               value={
                 resume.content.skills.join(
@@ -814,14 +816,17 @@ function Field({
   value,
   onChange,
 }) {
+  const id = useId();
+
   return (
     <div className="resume-editor-field">
 
-      <label>
+      <label htmlFor={id}>
         {label}
       </label>
 
       <input
+        id={id}
         className="resume-editor-input"
         value={value || ""}
         onChange={(event) =>
@@ -871,6 +876,7 @@ function ExperienceEditor({
           type="button"
           onClick={onDelete}
           title="Delete experience"
+          aria-label={`Delete experience ${index + 1}`}
         >
           <Trash2 size={15} />
         </button>

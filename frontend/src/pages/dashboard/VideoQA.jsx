@@ -1,12 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Download,
+  Eye,
+  Film,
+  MessageSquareText,
   Play,
+  RotateCcw,
   Square,
+  Sun,
+  Timer,
   Video,
 } from "lucide-react";
+
+const TIPS = [
+  { icon: Eye, title: "Look at the camera", text: "Not at your own face on the screen." },
+  { icon: Timer, title: "Keep it to 30 to 90 seconds", text: "Long enough for one example, short enough to hold attention." },
+  { icon: MessageSquareText, title: "Answer, then give an example", text: "One clear sentence first, then a moment from a real job." },
+  { icon: Sun, title: "Face a window or lamp", text: "Light in front of you, a quiet room behind you." },
+];
+
+function formatClock(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
 
 const QUESTIONS = [
   "How would you describe yourself in three words?",
@@ -140,9 +162,11 @@ export default function VideoQA() {
   const [cameraReady, setCameraReady] = useState(false);
   const [recording, setRecording] = useState(false);
   const [startingRecording, setStartingRecording] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
   const [error, setError] = useState("");
   const [playbackError, setPlaybackError] = useState("");
   const [recordings, setRecordings] = useState({});
+  const [elapsed, setElapsed] = useState(0);
   const cameraRef = useRef(null);
   const videoPlaybackRef = useRef(null);
   const audioPlaybackRef = useRef(null);
@@ -194,6 +218,19 @@ export default function VideoQA() {
     setPlaybackError("");
   }, [activeRecording]);
 
+  // Shows how long the current take has run. Display only.
+  useEffect(() => {
+    if (!recording) return undefined;
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+    return () => {
+      clearInterval(timer);
+      setElapsed(0);
+    };
+  }, [recording]);
+
   const enableCamera = async () => {
     setError("");
 
@@ -202,6 +239,7 @@ export default function VideoQA() {
       return;
     }
 
+    setCameraStarting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -225,6 +263,8 @@ export default function VideoQA() {
     } catch (cameraError) {
       console.error("Unable to access camera and microphone:", cameraError);
       setError("Camera and microphone access was blocked. Allow access in your browser settings, then try again.");
+    } finally {
+      if (mountedRef.current) setCameraStarting(false);
     }
   };
 
@@ -371,27 +411,45 @@ export default function VideoQA() {
     }
   };
 
+  const answeredCount = Object.keys(recordings).length;
+  const takes = QUESTIONS.map((_, index) => index).filter((index) => recordings[index]);
+  const isFirst = selectedQuestion === 0;
+  const isLast = selectedQuestion === QUESTIONS.length - 1;
+  const stageState = recording ? "recording" : activeRecording ? "review" : cameraReady ? "live" : "off";
+  const statusText = recording
+    ? "Recording your answer"
+    : activeRecording
+      ? "Take saved. Watch it back, download it or record again."
+      : cameraReady
+        ? "Camera is on. Press Start recording when you are ready."
+        : cameraStarting
+          ? "Starting your camera"
+          : "Camera is off";
+
   return (
-    <div className="dashboard-product">
+    <div className="dashboard-product video-qa-page">
       <header className="product-page-header">
         <div>
           <h1>Video Q&amp;A</h1>
-          <p>Practice common interview questions by recording your answers. Review or download each take when you are done.</p>
+          <p>Practise common interview questions on camera. Watch each take back and download the ones you like.</p>
         </div>
       </header>
 
-      <div className="product-notice">
-        <CircleHelp size={16} />
-        <span>Your recordings stay in this browser session. Download any take you want to keep before leaving this page.</span>
-      </div>
-
-      {error && <div className="product-error" role="alert">{error}</div>}
+      {error && <div className="product-error" role="alert"><AlertCircle size={16} aria-hidden="true" /><span>{error}</span></div>}
 
       <div className="video-qa-layout">
-        <section className="product-card video-qa-questions" aria-label="Interview questions">
-          <div className="product-card-header">
-            <h2>Choose a question</h2>
-            <p>{Object.keys(recordings).length} of {QUESTIONS.length} answered</p>
+        <aside className="product-card video-qa-rail" aria-label="Interview questions">
+          <div className="video-qa-rail-head">
+            <h2>Questions</h2>
+            <span className="video-qa-rail-count">{answeredCount} of {QUESTIONS.length} answered</span>
+          </div>
+          <div className="video-qa-meter" role="progressbar" aria-valuemin={0} aria-valuemax={QUESTIONS.length} aria-valuenow={answeredCount} aria-label="Questions answered">
+            {QUESTIONS.map((question, index) => (
+              <span
+                key={question}
+                className={`video-qa-meter-step ${recordings[index] ? "answered" : ""} ${selectedQuestion === index ? "current" : ""}`}
+              />
+            ))}
           </div>
 
           <ol className="video-qa-question-list">
@@ -405,24 +463,46 @@ export default function VideoQA() {
                   aria-current={selectedQuestion === index ? "step" : undefined}
                 >
                   <span className="video-qa-question-number">
-                    {recordings[index] ? <Check size={15} /> : String(index + 1).padStart(2, "0")}
+                    {recordings[index] ? <Check size={13} strokeWidth={2.5} aria-label="Answered" /> : index + 1}
                   </span>
-                  <span>{question}</span>
+                  <span className="video-qa-question-text">{question}</span>
                 </button>
               </li>
             ))}
           </ol>
-        </section>
+        </aside>
 
-        <section className="product-card video-qa-recorder">
-          <div className="product-card-header">
-            <div>
-              <h2>Question {String(selectedQuestion + 1).padStart(2, "0")}</h2>
-              <p>{QUESTIONS[selectedQuestion]}</p>
+        <section className="product-card video-qa-stage" aria-labelledby="video-qa-question-title">
+          <div className="video-qa-stage-head">
+            <div className="video-qa-stage-title" key={selectedQuestion}>
+              <span className="video-qa-step">Question {selectedQuestion + 1} of {QUESTIONS.length}</span>
+              <h2 id="video-qa-question-title">{QUESTIONS[selectedQuestion]}</h2>
+            </div>
+            <div className="video-qa-stepper">
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setSelectedQuestion((index) => Math.max(0, index - 1))}
+                disabled={recording || isFirst}
+                aria-label="Previous question"
+                title="Previous question"
+              >
+                <ChevronLeft size={17} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setSelectedQuestion((index) => Math.min(QUESTIONS.length - 1, index + 1))}
+                disabled={recording || isLast}
+                aria-label="Next question"
+                title="Next question"
+              >
+                <ChevronRight size={17} aria-hidden="true" />
+              </button>
             </div>
           </div>
 
-          <div className="video-qa-preview">
+          <div className={`video-qa-preview is-${stageState}`}>
             {activeRecording ? (
               <video
                 key={activeRecording.url}
@@ -446,12 +526,13 @@ export default function VideoQA() {
               <video ref={cameraRef} autoPlay muted playsInline />
             ) : (
               <div className="video-qa-camera-placeholder">
-                <Video size={30} />
-                <strong>Your camera preview will appear here</strong>
-                <span>Allow camera and microphone access to get started.</span>
+                <span className="video-qa-camera-icon"><Video size={22} aria-hidden="true" /></span>
+                <strong>{cameraStarting ? "Starting your camera…" : "Your camera is off"}</strong>
+                <span>{cameraStarting ? "If your browser asks, allow camera and microphone access." : "Turn it on to see yourself. Nothing is recorded until you press Start recording."}</span>
               </div>
             )}
-            {recording && <span className="video-qa-recording-indicator">Recording</span>}
+            {!activeRecording && <span className="video-qa-frame" aria-hidden="true" />}
+            {recording && <span className="video-qa-recording-indicator" role="timer">Recording {formatClock(elapsed)}</span>}
           </div>
 
           {activeRecording?.audioUrl && (
@@ -477,36 +558,111 @@ export default function VideoQA() {
 
           {playbackError && <p className="product-error" role="alert">{playbackError}</p>}
 
-          <div className="video-qa-actions">
-            {activeRecording ? (
-              <>
-                <a
-                  className="product-button primary"
-                  href={activeRecording.url}
-                  download={`westforce-answer-${selectedQuestion + 1}.${activeRecording.blob.type.includes("mp4") ? "mp4" : "webm"}`}
-                >
-                  <Download size={15} /> Download answer
-                </a>
-                <button type="button" className="product-button" onClick={removeRecording}>
-                  Record again
+          <div className="video-qa-controls">
+            <p className={`video-qa-status is-${stageState}`} aria-live="polite">{statusText}</p>
+            <div className="video-qa-actions">
+              {activeRecording ? (
+                <>
+                  <button type="button" className="product-button" onClick={removeRecording}>
+                    <RotateCcw size={16} aria-hidden="true" /> Record again
+                  </button>
+                  <a
+                    className="product-button primary"
+                    href={activeRecording.url}
+                    download={downloadName(selectedQuestion, activeRecording)}
+                  >
+                    <Download size={16} aria-hidden="true" /> Download answer
+                  </a>
+                </>
+              ) : recording ? (
+                <button type="button" className="product-button primary video-qa-stop" onClick={stopRecording}>
+                  <Square size={14} fill="currentColor" aria-hidden="true" /> Stop recording
                 </button>
-              </>
-            ) : recording ? (
-              <button type="button" className="product-button primary" onClick={stopRecording}>
-                <Square size={14} /> Stop recording
-              </button>
-            ) : cameraReady ? (
-              <button type="button" className="product-button primary" onClick={startRecording} disabled={startingRecording}>
-                <Play size={15} /> {startingRecording ? "Preparing recording..." : "Start recording"}
-              </button>
-            ) : (
-              <button type="button" className="product-button primary" onClick={enableCamera}>
-                <Video size={15} /> Enable camera &amp; microphone
-              </button>
-            )}
+              ) : cameraReady ? (
+                <button type="button" className="product-button primary" onClick={startRecording} disabled={startingRecording}>
+                  <Play size={16} aria-hidden="true" /> {startingRecording ? "Preparing…" : "Start recording"}
+                </button>
+              ) : (
+                <button type="button" className="product-button primary" onClick={enableCamera} disabled={cameraStarting}>
+                  <Video size={16} aria-hidden="true" /> {cameraStarting ? "Starting camera…" : "Turn on camera and microphone"}
+                </button>
+              )}
+            </div>
           </div>
         </section>
+
+        <div className="video-qa-side">
+          <section className="product-card video-qa-takes" aria-labelledby="video-qa-takes-title">
+            <div className="video-qa-side-head">
+              <h2 id="video-qa-takes-title">Your takes</h2>
+              <span className="application-count">{answeredCount}</span>
+            </div>
+            {takes.length ? (
+              <ul className="video-qa-take-list">
+                {takes.map((index) => (
+                  <li className={`video-qa-take ${selectedQuestion === index ? "current" : ""}`} key={index}>
+                    <span className="video-qa-take-number" aria-hidden="true">{index + 1}</span>
+                    <span className="video-qa-take-copy">
+                      <strong>Question {index + 1}</strong>
+                      <span>{QUESTIONS[index]}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => setSelectedQuestion(index)}
+                      disabled={recording || selectedQuestion === index}
+                      aria-label={`Watch your answer to question ${index + 1}`}
+                      title="Watch"
+                    >
+                      <Play size={15} aria-hidden="true" />
+                    </button>
+                    <a
+                      className="icon-button"
+                      href={recordings[index].url}
+                      download={downloadName(index, recordings[index])}
+                      aria-label={`Download your answer to question ${index + 1}`}
+                      title="Download"
+                    >
+                      <Download size={15} aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="video-qa-takes-empty">
+                <Film size={16} aria-hidden="true" />
+                <span>No takes yet. Each answer you record shows up here.</span>
+              </p>
+            )}
+          </section>
+
+          <section className="product-card video-qa-tips" aria-labelledby="video-qa-tips-title">
+            <h2 id="video-qa-tips-title">Tips for a good take</h2>
+            <ul className="video-qa-tip-list">
+              {TIPS.map((tip) => {
+                const Icon = tip.icon;
+                return (
+                  <li key={tip.title}>
+                    <span className="video-qa-tip-icon"><Icon size={15} aria-hidden="true" /></span>
+                    <span className="video-qa-tip-copy">
+                      <strong>{tip.title}</strong>
+                      <span>{tip.text}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="video-qa-session-note">
+              <CircleHelp size={14} aria-hidden="true" />
+              <span>Takes stay in this browser session only. Download any you want to keep before you leave this page.</span>
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   );
+}
+
+function downloadName(index, take) {
+  return `westforce-answer-${index + 1}.${take.blob.type.includes("mp4") ? "mp4" : "webm"}`;
 }

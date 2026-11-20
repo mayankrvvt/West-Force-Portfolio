@@ -7,6 +7,7 @@ import { errorHandler, notFound } from "./lib/errors";
 import { httpLogger } from "./lib/logger";
 import { ok } from "./lib/respond";
 import { apiLimiter } from "./middleware/rateLimit";
+import { maintenanceGate, requireFeature } from "./middleware/siteGuards";
 import { handleStripeWebhook } from "./modules/payments/controller";
 import paymentRoutes from "./modules/payments/routes";
 import userRoutes from "./modules/users/routes";
@@ -15,11 +16,16 @@ import chatRoutes from "./modules/chat/routes";
 import documentRoutes from "./modules/documents/routes";
 import portfolioRoutes from "./modules/portfolios/routes";
 import resumeRoutes from "./modules/resumes/routes";
+import tailorRoutes from "./modules/resumes/tailor.routes";
+import insightsRoutes from "./modules/insights/routes";
 import uploadRoutes from "./modules/uploads/routes";
 import applicationRoutes from "./modules/applications/routes";
 import atsRoutes from "./modules/ats/routes";
 import dashboardRoutes from "./modules/dashboard/routes";
 import jobRoutes from "./modules/jobs/routes";
+import adminRoutes from "./modules/admin/routes";
+import siteRoutes from "./modules/site/routes";
+import authRoutes from "./modules/auth/routes";
 
 /**
  * Vercel preview deployments, e.g.
@@ -37,12 +43,19 @@ export function configuredOrigins(clientUrl: string = config.CLIENT_URL): string
     .filter(Boolean);
 }
 
+const DEV_ORIGINS = ["http://localhost:5173", "http://localhost:5174"];
+
+/** Origins allowed by CORS. Localhost is for local dev only, never production. */
+export function corsAllowedOrigins(
+  nodeEnv: string | undefined = config.NODE_ENV,
+  clientUrl: string = config.CLIENT_URL
+): string[] {
+  const devOrigins = nodeEnv === "production" ? [] : DEV_ORIGINS;
+  return [...new Set([...devOrigins, ...configuredOrigins(clientUrl)])];
+}
+
 function corsOptions(): CorsOptions {
-  const allowedOrigins = new Set([
-    "http://localhost:5173",
-    "http://localhost:5174",
-    ...configuredOrigins(),
-  ]);
+  const allowedOrigins = new Set(corsAllowedOrigins());
 
   return {
     origin(origin, callback) {
@@ -102,18 +115,24 @@ export function createApp(): Express {
 
   app.use("/api", apiLimiter);
 
+  // Maintenance switch: 503 for /api except health, site status, admin
+  // routes, the webhook (registered above) and admins' own requests.
+  app.use("/api", maintenanceGate);
+
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/", (_req, res) => {
     res.json({ message: "WestForce API is running.", port: config.PORT });
   });
 
-  // Liveness: always 200 while the process runs.
+  // Liveness: always 200 while the process runs. `version` is the deployed
+  // git commit (Render sets RENDER_GIT_COMMIT), so deploys can check it.
   app.get("/api/health", (_req, res) => {
     ok(res, {
       status: "OK",
       message: "WestForce backend is healthy.",
       db: dbState(),
+      version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown",
     });
   });
 
@@ -137,14 +156,19 @@ export function createApp(): Express {
     });
   });
 
+  app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/portfolios", portfolioRoutes);
   app.use("/api/portfolios", documentRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/chat", chatRoutes);
+  app.use("/api/insights", insightsRoutes);
+  app.use("/api/resumes", tailorRoutes);
   app.use("/api/resumes", resumeRoutes);
-  app.use("/api/jobs", jobRoutes);
+  app.use("/api/jobs", requireFeature("jobs"), jobRoutes);
+  app.use("/api/admin", adminRoutes);
+  app.use("/api/site", siteRoutes);
   app.use("/api/applications", applicationRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/ats", atsRoutes);

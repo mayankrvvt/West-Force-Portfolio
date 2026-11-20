@@ -7,7 +7,10 @@ import useAuth from "../../hooks/useAuth";
 import useEntitlement from "../../hooks/useEntitlement";
 import { createCheckoutSession } from "../../services/stripe";
 import { useApp } from "../../app/providers";
+import { PAUSED_TEXT, useFeature } from "../../hooks/useSiteStatus";
+import FeaturePaused from "../site/FeaturePaused";
 import { auth } from "../../firebase/firebase";
+import { apiRequest } from "../../utils/api";
 import "../../styles/payment-modal.css";
 
 const EMPTY_GROUP_EMAILS = ["", "", "", ""];
@@ -29,6 +32,7 @@ export default function PaymentModal() {
     paymentModal,
     closePaymentModal,
   } = useApp();
+  const paymentsOn = useFeature("payments");
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [memberEmails, setMemberEmails] = useState(EMPTY_GROUP_EMAILS);
@@ -153,16 +157,25 @@ export default function PaymentModal() {
     }
 
     try {
-      await sendEmailVerification(currentUser);
+      // Our server sends the branded email when mail is live; until then it
+      // answers fallback "firebase" and Firebase's own email is sent from here.
+      const result = await apiRequest("/api/auth/send-verification", { method: "POST" });
+
+      if (result?.fallback === "firebase") {
+        await sendEmailVerification(currentUser);
+      }
+
       setVerificationMessage(
-        "Verification email sent. Verify the address, then sign out and back in to claim a group seat."
+        result?.alreadyVerified
+          ? "Your email is already verified. Sign out and back in to claim a group seat."
+          : "Verification email sent. Verify the address, then sign out and back in to claim a group seat."
       );
       setError("");
     } catch (verificationError) {
-      console.error("Could not send email verification:", verificationError);
       setError(
-        verificationError.message ||
-        "Unable to send a verification email. Please try again."
+        verificationError.status && verificationError.message
+          ? verificationError.message
+          : "Unable to send a verification email. Please try again."
       );
     }
   };
@@ -254,11 +267,13 @@ export default function PaymentModal() {
                 <button
                   type="button"
                   onClick={() => selectPlan(plan)}
-                  disabled={Boolean(loadingPlan)}
+                  disabled={Boolean(loadingPlan) || !paymentsOn}
                 >
                   {loadingPlan === plan.key
                     ? "Opening Stripe..."
-                    : plan.key === "solo"
+                    : !paymentsOn
+                      ? PAUSED_TEXT.payments
+                      : plan.key === "solo"
                       ? "Choose Solo"
                       : "Choose Group of 5"}
                 </button>
@@ -286,11 +301,13 @@ export default function PaymentModal() {
                 type="button"
                 className="payment-button-primary"
                 onClick={() => beginCheckout(selectedPlan)}
-                disabled={Boolean(loadingPlan)}
+                disabled={Boolean(loadingPlan) || !paymentsOn}
               >
                 {loadingPlan
                   ? "Opening Stripe..."
-                  : "Continue to secure checkout"}
+                  : paymentsOn
+                    ? "Continue to secure checkout"
+                    : PAUSED_TEXT.payments}
               </button>
             </div>
           </div>
@@ -350,15 +367,19 @@ export default function PaymentModal() {
                 type="button"
                 className="payment-button-primary"
                 onClick={() => beginCheckout(selectedPlan)}
-                disabled={Boolean(loadingPlan)}
+                disabled={Boolean(loadingPlan) || !paymentsOn}
               >
                 {loadingPlan
                   ? "Opening Stripe..."
-                  : "Continue to secure checkout"}
+                  : paymentsOn
+                    ? "Continue to secure checkout"
+                    : PAUSED_TEXT.payments}
               </button>
             </div>
           </div>
         )}
+
+        <FeaturePaused feature="payments" />
 
         {error && selectedPlan?.key !== "group5" && (
           <p className="payment-modal-error" role="alert">

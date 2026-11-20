@@ -1,46 +1,51 @@
 export const portfolioFeatures = [
   {
     icon: "document",
-    title: "ATS resume",
+    title: "Resume",
     description:
-      "Canadian-style PDF resume, ready for applicant tracking systems.",
+      "A resume in the format Canadian employers expect, built to get through applicant tracking systems.",
+    detail: "PDF you can update any time",
   },
   {
     icon: "video",
-    title: "Video resume",
+    title: "Intro video",
     description:
-      "A 2-minute introduction so employers see your personality.",
+      "A short introduction on camera, so employers hear how you speak before they call you.",
+    detail: "Coaching included",
   },
   {
     icon: "chart",
     title: "Skills report",
     description:
-      "Your TestGorilla assessment results, verified and shareable.",
+      "Your TestGorilla assessment results, shown next to your work history.",
+    detail: "From a real assessment",
   },
   {
     icon: "certificate",
     title: "Certificates",
     description:
-      "IELTS, PSW, training and professional certifications.",
+      "PSW, first aid and other training certificates, kept together and easy to open.",
+    detail: "Behind your PIN",
   },
 ];
+
 export const howItWorks = [
   {
     number: "1",
-    title: "Sign up and upload",
+    title: "Create your account and upload",
     description:
-      "Create an account and upload your documents in minutes.",
+      "Start with your resume. Add your video, certificates and skills report when they are ready.",
   },
   {
     number: "2",
-    title: "Set a passcode",
+    title: "Choose your PIN",
     description:
-      "Your portfolio link is protected. Only employers you give the passcode to can open it.",
+      "Your documents stay locked. Only employers you give the PIN to can open them.",
   },
   {
     number: "3",
-    title: "Share with employers",
+    title: "Send your link",
     description:
-      "Send one link instead of dozens of email attachments.",
+      "Put one link in your applications, emails and texts in place of a pile of attachments.",
   },
 ];

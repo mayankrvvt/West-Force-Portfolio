@@ -2,6 +2,11 @@ import mongoose, { type HydratedDocument, type InferSchemaType } from "mongoose"
 
 const text = { type: String, default: "" };
 
+export const JOB_TYPES = ["full_time", "part_time", "casual"] as const;
+export const SHIFTS = ["days", "evenings", "nights", "weekends"] as const;
+// English now, French later. No other languages.
+export const LANGUAGES = ["en", "fr"] as const;
+
 const documentSchema = new mongoose.Schema(
   {
     name: { type: String, default: "", trim: true },
@@ -41,6 +46,20 @@ const portfolioSchema = new mongoose.Schema(
       phone: text,
       imageUrl: text,
       availableForWork: { type: Boolean, default: true },
+      // Hire facts shown in the portfolio header. All optional.
+      availability: {
+        jobTypes: [{ type: String, enum: JOB_TYPES }],
+        shifts: [{ type: String, enum: SHIFTS }],
+        // "now", a "YYYY-MM-DD" date, or "" when not given.
+        startDate: text,
+      },
+      workArea: text,
+      travel: {
+        willing: { type: Boolean, default: false },
+        ownCar: { type: Boolean, default: false },
+      },
+      languages: [{ type: String, enum: LANGUAGES }],
+      driversLicence: text,
     },
 
     hero: {

@@ -102,6 +102,29 @@ function pickEditable(body: PortfolioBody): Plain {
   return picked;
 }
 
+function isPlainObject(value: unknown): value is Plain {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Set only the profile fields that were sent, so a partial update (for
+ * example the dashboard Profile page) keeps imageUrl, availableForWork and
+ * the rest. Sending "" still clears a field. Unknown keys are ignored.
+ */
+function mergeProfile(portfolio: PortfolioDocument, profile: Plain, prefix = "profile"): void {
+  for (const [key, value] of Object.entries(profile)) {
+    const path = `${prefix}.${key}`;
+    const pathType = Portfolio.schema.pathType(path);
+
+    if (pathType === "real") {
+      portfolio.set(path, value);
+    } else if (pathType === "nested" && isPlainObject(value)) {
+      // availability and travel merge one level down too
+      mergeProfile(portfolio, value, path);
+    }
+  }
+}
+
 export async function createPortfolio(
   firebaseUid: string,
   body: PortfolioBody
@@ -136,7 +159,11 @@ export async function updatePortfolio(
   const portfolio = await findOwnPortfolio(firebaseUid);
 
   for (const [field, value] of Object.entries(pickEditable(body))) {
-    portfolio.set(field, value);
+    if (field === "profile" && isPlainObject(value)) {
+      mergeProfile(portfolio, value);
+    } else {
+      portfolio.set(field, value);
+    }
   }
 
   if (body.documentProtection) {
@@ -189,31 +216,86 @@ function publicDocument(document: StoredDocument): Plain {
   };
 }
 
-/** The public page for a slug, or 404. File details are removed. */
+/** Only the listed keys that are set, from a stored object. */
+function pick(source: unknown, keys: readonly string[]): Plain {
+  const picked: Plain = {};
+
+  if (!isPlainObject(source)) return picked;
+
+  for (const key of keys) {
+    if (source[key] !== undefined) picked[key] = source[key];
+  }
+
+  return picked;
+}
+
+// What the public page reads. Anything else (userId, video and file ids,
+// timestamps, social links, skill levels) stays on the server.
+const PUBLIC_PROFILE = [
+  "name",
+  "title",
+  "location",
+  "email",
+  "phone",
+  "imageUrl",
+  "availableForWork",
+  "availability",
+  "workArea",
+  "travel",
+  "languages",
+  "driversLicence",
+] as const;
+const PUBLIC_HERO = ["greeting", "headline", "description"] as const;
+const PUBLIC_ABOUT = ["title", "description", "videoUrl"] as const;
+const PUBLIC_EXPERIENCE = [
+  "company",
+  "position",
+  "title",
+  "duration",
+  "year",
+  "startDate",
+  "endDate",
+  "isCurrent",
+  "location",
+  "description",
+] as const;
+const PUBLIC_EDUCATION = ["institution", "degree", "fieldOfStudy", "year", "description"] as const;
+
+function publicSkill(skill: unknown): unknown {
+  return typeof skill === "string" ? skill : pick(skill, ["name"]);
+}
+
+const listOf = (value: unknown) => (Array.isArray(value) ? (value as unknown[]) : []);
+
+/** The public page for a slug, or 404. Only whitelisted fields are returned. */
 export async function publicPortfolio(slug: string): Promise<Plain> {
   const portfolio = await findPublished(slug);
 
   if (!portfolio) throw new AppError(404, "Published portfolio not found.");
 
-  const result = portfolio.toObject() as Plain;
-  const documents = result.documents;
+  const stored = portfolio.toObject() as Plain;
 
-  result.documents = Array.isArray(documents)
-    ? (documents as StoredDocument[]).map(publicDocument)
-    : [];
-
-  if (portfolio.resume?.fileUrl) {
-    result.resume = {
-      name: portfolio.resume.name,
-      fileUrl: `/api/portfolios/${encodeURIComponent(slug)}/resume`,
-    };
-  }
-
-  // Viewers need the PIN length to show 4 or 6 boxes.
-  result.documentProtection = {
-    enabled: Boolean(portfolio.documentProtection?.enabled),
-    pinLength: visiblePinLength(portfolio.documentProtection),
+  return {
+    slug: portfolio.slug,
+    status: portfolio.status,
+    profile: pick(stored.profile, PUBLIC_PROFILE),
+    hero: pick(stored.hero, PUBLIC_HERO),
+    about: pick(stored.about, PUBLIC_ABOUT),
+    experience: listOf(stored.experience).map((item) => pick(item, PUBLIC_EXPERIENCE)),
+    education: listOf(stored.education).map((item) => pick(item, PUBLIC_EDUCATION)),
+    skills: listOf(stored.skills).map(publicSkill),
+    documents: (listOf(stored.documents) as StoredDocument[]).map(publicDocument),
+    // The file itself is served by GET /:slug/resume, never its storage URL.
+    resume: portfolio.resume?.fileUrl
+      ? {
+          name: portfolio.resume.name,
+          fileUrl: `/api/portfolios/${encodeURIComponent(slug)}/resume`,
+        }
+      : null,
+    // Viewers need the PIN length to show 4 or 6 boxes.
+    documentProtection: {
+      enabled: Boolean(portfolio.documentProtection?.enabled),
+      pinLength: visiblePinLength(portfolio.documentProtection),
+    },
   };
-
-  return result;
 }

@@ -1,10 +1,21 @@
+import { useRef } from "react";
 import { FileText, Video, BarChart3, Award } from "lucide-react";
 
 import { portfolioFeatures } from "../../constants/siteData";
+import useRevealOnce from "./useRevealOnce";
 
-const featureIcons = [FileText, Video, BarChart3, Award];
+const featureIcons = {
+  document: FileText,
+  video: Video,
+  chart: BarChart3,
+  certificate: Award,
+};
 
+// Cards rise 12px and fade in, 60ms apart, once (public.css).
 export default function PortfolioFeatures() {
+  const listRef = useRef(null);
+  useRevealOnce(listRef);
+
   return (
     <section
       id="portfolio"
@@ -13,31 +24,31 @@ export default function PortfolioFeatures() {
     >
       <div className="container">
         <div className="home-section-head">
+          <p className="home-kicker">Your portfolio</p>
+
           <h2 id="portfolio-title">
-            What employers see when they open your link
+            The four things employers ask for, in one place
           </h2>
 
           <p>
-            Give employers a complete picture of your
-            experience, skills and potential without
-            sending multiple files.
+            Stop attaching the same files to every application. Each part
+            of your portfolio has its own section, and you can update it
+            whenever something changes.
           </p>
         </div>
 
-        <ul className="feature-list">
+        <ul ref={listRef} className="feature-list">
           {portfolioFeatures.map((feature, index) => {
-            const Icon = featureIcons[index];
+            const Icon = featureIcons[feature.icon];
 
             return (
-              <li key={feature.title}>
-                <Icon
-                  className="feature-list-icon"
-                  size={22}
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
+              <li key={feature.title} style={{ "--i": index }}>
+                <span className="feature-list-icon" aria-hidden="true">
+                  <Icon size={20} strokeWidth={1.75} />
+                </span>
                 <h3>{feature.title}</h3>
                 <p>{feature.description}</p>
+                <span className="feature-list-detail">{feature.detail}</span>
               </li>
             );
           })}

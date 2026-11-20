@@ -1,3 +1,4 @@
+import { isTransientStatus, withAiRetry } from "../../lib/aiRetry";
 import { DEFAULT_TIMEOUT_MS } from "../../lib/clients/gemini";
 import { config } from "../../lib/config";
 import { MAX_HISTORY_MESSAGES, MAX_MESSAGE_LENGTH } from "./schema";
@@ -57,10 +58,18 @@ export type GeminiReply =
   | { ok: false; reason: "empty"; data: unknown };
 
 /**
- * Call the Gemini REST API once. Throws on network errors and on timeout
- * (a DOMException named "TimeoutError" after DEFAULT_TIMEOUT_MS).
+ * Call the Gemini REST API, once more after a short wait on a 429, 5xx,
+ * network error or timeout (see withAiRetry). Throws on network errors and on
+ * timeout (a DOMException named "TimeoutError" after DEFAULT_TIMEOUT_MS).
  */
-export async function generateReply(contents: GeminiContent[], apiKey: string): Promise<GeminiReply> {
+export function generateReply(contents: GeminiContent[], apiKey: string): Promise<GeminiReply> {
+  return withAiRetry(() => requestReply(contents, apiKey), {
+    retryResult: (reply) => !reply.ok && reply.reason === "http" && isTransientStatus(reply.status),
+  });
+}
+
+/** One Gemini REST call. */
+async function requestReply(contents: GeminiContent[], apiKey: string): Promise<GeminiReply> {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     config.GEMINI_CHAT_MODEL
   )}:generateContent`;

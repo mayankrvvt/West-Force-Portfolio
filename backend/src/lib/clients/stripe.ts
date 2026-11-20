@@ -34,6 +34,11 @@ export function getStripe(): Stripe {
     throw notConfigured("STRIPE_MODE must be set to demo or live.");
   }
 
+  // Second guard: startup already refuses demo mode in production (lib/config).
+  if (env.NODE_ENV === "production" && mode !== "live") {
+    throw notConfigured("Production checkout requires STRIPE_MODE=live.");
+  }
+
   if (!secretKey.startsWith(expectedPrefix)) {
     logger.error(
       { mode, keyPrefix: secretKey.slice(0, 8), keyLength: secretKey.length },

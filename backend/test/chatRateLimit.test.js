@@ -59,9 +59,10 @@ describe("chat Gemini call", () => {
   });
 
   test("returns 504 when Gemini times out", async () => {
-    fetchMock.mockRejectedValueOnce(
-      new DOMException("The operation was aborted due to timeout", "TimeoutError")
-    );
+    // Timeouts are not retried, so one failed try is final.
+    const timeout = () =>
+      new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    fetchMock.mockRejectedValueOnce(timeout());
 
     const res = await chat("198.51.100.22");
 

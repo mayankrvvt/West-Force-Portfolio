@@ -11,6 +11,12 @@ import {
 import { useApp } from "../../app/providers";
 import { auth } from "../../firebase/firebase";
 import { apiRequest } from "../../utils/api";
+import { DEMO_MODE, getDemoSessionUser } from "../../demo/demoMode";
+import FeaturePaused from "../site/FeaturePaused";
+import { useFeature } from "../../hooks/useSiteStatus";
+
+// In demo mode there is no Firebase session, so use the demo user instead.
+const currentUser = () => (DEMO_MODE ? getDemoSessionUser() : auth.currentUser);
 import "../../styles/chatbot.css";
 
 /*
@@ -182,6 +188,7 @@ function getLocalResponse(message) {
 
 export default function WestForceChatbot() {
   const { openPaymentModal } = useApp();
+  const aiOn = useFeature("ai");
   const [open, setOpen] = useState(false);
 
   const [input, setInput] = useState("");
@@ -241,11 +248,11 @@ export default function WestForceChatbot() {
       messageOverride ?? input
     ).trim();
 
-    if (!message || loading) {
+    if (!message || loading || !aiOn) {
       return;
     }
 
-    if (auth.currentUser) {
+    if (currentUser()) {
       try {
         const entitlement = await apiRequest("/api/payments/me");
 
@@ -358,9 +365,9 @@ export default function WestForceChatbot() {
 
         headers: {
           "Content-Type": "application/json",
-          ...(auth.currentUser
+          ...(currentUser()
             ? {
-                Authorization: `Bearer ${await auth.currentUser.getIdToken()}`,
+                Authorization: `Bearer ${await currentUser().getIdToken()}`,
               }
             : {}),
         },
@@ -645,7 +652,7 @@ export default function WestForceChatbot() {
                               suggestion
                             )
                           }
-                          disabled={loading}
+                          disabled={loading || !aiOn}
                         >
                           {suggestion}
                         </button>
@@ -669,6 +676,8 @@ export default function WestForceChatbot() {
                 {error}
               </div>
             )}
+
+            <FeaturePaused feature="ai" className="westforce-chatbot-paused" />
           </div>
 
           {/*
@@ -703,7 +712,8 @@ export default function WestForceChatbot() {
               type="submit"
               disabled={
                 !input.trim() ||
-                loading
+                loading ||
+                !aiOn
               }
               aria-label="Send message"
               title="Send message"

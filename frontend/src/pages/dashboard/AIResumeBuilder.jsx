@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  AlertCircle,
   Check,
+  ChevronRight,
   FileText,
+  RotateCcw,
   Sparkles,
   UploadCloud,
   WandSparkles,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
+
+import FeaturePaused from "../../components/site/FeaturePaused";
+import { useFeature } from "../../hooks/useSiteStatus";
 
 import {
   apiRequest,
@@ -22,6 +28,7 @@ import {
 
 export default function AIResumeBuilder() {
   const navigate = useNavigate();
+  const aiOn = useFeature("ai");
 
   const fileInputRef = useRef(null);
 
@@ -57,6 +64,22 @@ export default function AIResumeBuilder() {
 
   const [result, setResult] = useState(null);
 
+  // Daily cap reached (429 RESUME_*_DAILY_LIMIT): that button stays off.
+  const [limited, setLimited] = useState({ build: false, enhance: false });
+
+  // The AI sent back a bad shape (502 AI_BAD_RESPONSE): offer "Try again".
+  const [retryAction, setRetryAction] = useState(null);
+
+  const noteAiFailure = (err, kind) => {
+    const code = err?.data?.code || "";
+
+    if (err?.status === 429 && /^RESUME_[A-Z]+_DAILY_LIMIT$/.test(code)) {
+      setLimited((current) => ({ ...current, [kind]: true }));
+    } else if (err?.status === 502 && code === "AI_BAD_RESPONSE") {
+      setRetryAction(kind);
+    }
+  };
+
   // =====================================================
   // LOAD USER PORTFOLIO
   // =====================================================
@@ -77,11 +100,6 @@ export default function AIResumeBuilder() {
           );
         }
 
-        console.log(
-          "Firebase user authenticated:",
-          user.uid
-        );
-
         // Now request the portfolio with the authenticated token.
         const response = await apiRequest(
           "/api/portfolios/me"
@@ -99,11 +117,6 @@ export default function AIResumeBuilder() {
             "No portfolio was found for your account."
           );
         }
-
-        console.log(
-          "Portfolio loaded successfully:",
-          portfolioData
-        );
 
         setPortfolio(portfolioData);
       } catch (err) {
@@ -228,9 +241,7 @@ export default function AIResumeBuilder() {
 
       setResult(null);
 
-      console.log(
-        "Starting AI Resume Builder..."
-      );
+      setRetryAction(null);
 
       const response =
         await buildResume({
@@ -242,11 +253,6 @@ export default function AIResumeBuilder() {
 
           experienceLevel,
         });
-
-      console.log(
-        "AI Resume Builder response:",
-        response
-      );
 
       if (!response?.resume) {
         throw new Error(
@@ -268,6 +274,8 @@ export default function AIResumeBuilder() {
         "AI Resume Builder error:",
         err
       );
+
+      noteAiFailure(err, "build");
 
       setError(
         err.message ||
@@ -314,14 +322,7 @@ export default function AIResumeBuilder() {
 
       setResult(null);
 
-      console.log(
-        "Starting AI Resume Enhancement..."
-      );
-
-      console.log(
-        "Resume file:",
-        file.name
-      );
+      setRetryAction(null);
 
       // -------------------------------------------------
       // IMPORTANT:
@@ -347,11 +348,6 @@ export default function AIResumeBuilder() {
           country,
         });
 
-      console.log(
-        "AI Resume Enhancement response:",
-        response
-      );
-
       if (!response?.resume) {
         throw new Error(
           "Gemini did not return an enhanced resume."
@@ -364,6 +360,8 @@ export default function AIResumeBuilder() {
         "AI Resume Enhancement error:",
         err
       );
+
+      noteAiFailure(err, "enhance");
 
       setError(
         err.message ||
@@ -452,8 +450,24 @@ export default function AIResumeBuilder() {
       ================================================= */}
 
       {error && (
-        <div className="product-error">
-          {error}
+        <div className="product-error" role="alert">
+          <AlertCircle size={16} aria-hidden="true" />
+          <span>{error}</span>
+          {retryAction && (
+            <button
+              type="button"
+              className="product-button compact"
+              disabled={loading}
+              onClick={
+                retryAction === "build"
+                  ? handleBuild
+                  : handleEnhance
+              }
+            >
+              <RotateCcw size={14} aria-hidden="true" />
+              Try again
+            </button>
+          )}
         </div>
       )}
 
@@ -464,86 +478,55 @@ export default function AIResumeBuilder() {
       {mode === "choose" && (
         <>
 
-          <div className="resume-builder-choice-grid">
-
-            {/* ===========================================
-                BUILD FROM PROFILE
-            =========================================== */}
+          <div className="resume-builder-choice-grid" role="group" aria-label="How do you want to start?">
 
             <button
               type="button"
               className="resume-mode-card"
-              onClick={
-                openBuildMode
-              }
+              onClick={openBuildMode}
             >
-
-              <div className="resume-mode-icon">
-                <Sparkles size={24} />
-              </div>
-
-              <div>
-
-                <h2>
-                  Build a resume
-                </h2>
-
-                <p>
-                  Generate a professional
-                  resume using the information
-                  already saved in your
-                  WestForce portfolio.
-                </p>
-
-              </div>
-
+              <span className="resume-mode-icon" aria-hidden="true">
+                <Sparkles size={22} />
+              </span>
+              <span className="resume-mode-copy">
+                <span className="resume-mode-hint">Best if you have no resume yet</span>
+                <strong className="resume-mode-title">Build a new resume</strong>
+                <span className="resume-mode-desc">We write a first draft from the details saved in your WestForce profile.</span>
+                <span className="resume-mode-points">
+                  <span><Check size={14} aria-hidden="true" />Uses your profile, nothing to upload</span>
+                  <span><Check size={14} aria-hidden="true" />Ready to edit in a few minutes</span>
+                </span>
+              </span>
+              <ChevronRight className="resume-mode-arrow" size={18} aria-hidden="true" />
             </button>
 
-            {/* ===========================================
-                ENHANCE EXISTING RESUME
-            =========================================== */}
-
             <button
               type="button"
               className="resume-mode-card"
-              onClick={
-                openEnhanceMode
-              }
+              onClick={openEnhanceMode}
             >
-
-              <div className="resume-mode-icon">
-                <WandSparkles size={24} />
-              </div>
-
-              <div>
-
-                <h2>
-                  Enhance my resume
-                </h2>
-
-                <p>
-                  Upload an existing resume
-                  and choose which sections
-                  you want AI to improve.
-                </p>
-
-              </div>
-
+              <span className="resume-mode-icon" aria-hidden="true">
+                <WandSparkles size={22} />
+              </span>
+              <span className="resume-mode-copy">
+                <span className="resume-mode-hint">Best if you already have one</span>
+                <strong className="resume-mode-title">Improve my resume</strong>
+                <span className="resume-mode-desc">Upload your resume and pick the sections you want rewritten.</span>
+                <span className="resume-mode-points">
+                  <span><Check size={14} aria-hidden="true" />PDF, DOCX or TXT</span>
+                  <span><Check size={14} aria-hidden="true" />See your ATS score before and after</span>
+                </span>
+              </span>
+              <ChevronRight className="resume-mode-arrow" size={18} aria-hidden="true" />
             </button>
 
           </div>
 
           <div className="product-notice">
-
-            <Sparkles size={15} />
-
+            <Sparkles size={15} aria-hidden="true" />
             <span>
-              Your resume content remains
-              under your control. AI suggestions
-              can be reviewed and edited before
-              you download the final version.
+              You stay in control. Review and edit every suggestion before you download your resume.
             </span>
-
           </div>
 
         </>
@@ -594,11 +577,12 @@ export default function AIResumeBuilder() {
 
               <div className="product-field">
 
-                <label>
+                <label htmlFor="builder-target-role">
                   Target role
                 </label>
 
                 <select
+                  id="builder-target-role"
                   className="product-input"
                   value={targetRole}
                   onChange={(event) =>
@@ -648,11 +632,12 @@ export default function AIResumeBuilder() {
 
               <div className="product-field">
 
-                <label>
+                <label htmlFor="builder-country">
                   Country
                 </label>
 
                 <select
+                  id="builder-country"
                   className="product-input"
                   value={country}
                   onChange={(event) =>
@@ -686,11 +671,12 @@ export default function AIResumeBuilder() {
 
               <div className="product-field">
 
-                <label>
+                <label htmlFor="builder-experience-level">
                   Experience level
                 </label>
 
                 <select
+                  id="builder-experience-level"
                   className="product-input"
                   value={
                     experienceLevel
@@ -771,7 +757,9 @@ export default function AIResumeBuilder() {
               className="product-button primary"
               disabled={
                 loading ||
-                !portfolio
+                !portfolio ||
+                limited.build ||
+                !aiOn
               }
               onClick={
                 handleBuild
@@ -785,6 +773,8 @@ export default function AIResumeBuilder() {
                 : "Build Resume with AI"}
 
             </button>
+
+            <FeaturePaused feature="ai" />
 
           </div>
 
@@ -1043,7 +1033,9 @@ export default function AIResumeBuilder() {
               disabled={
                 loading ||
                 !file ||
-                !selected.length
+                !selected.length ||
+                limited.enhance ||
+                !aiOn
               }
               onClick={
                 handleEnhance
@@ -1057,6 +1049,8 @@ export default function AIResumeBuilder() {
                 : "Enhance Resume with AI"}
 
             </button>
+
+            <FeaturePaused feature="ai" />
 
             {/* ===========================================
                 OPEN EDITOR
@@ -1199,16 +1193,19 @@ function EnhancementResult({
   result,
   onEdit,
 }) {
+  // The enhance route returns { resume: { ...resume, atsAnalysis, changes } }.
+  const analysis =
+    result?.atsAnalysis ||
+    result?.resume?.atsAnalysis;
+
   const scoreBefore =
     result?.scoreBefore ??
-    result?.atsAnalysis
-      ?.scoreBefore ??
+    analysis?.scoreBefore ??
     "—";
 
   const scoreAfter =
     result?.scoreAfter ??
-    result?.atsAnalysis
-      ?.scoreAfter ??
+    analysis?.scoreAfter ??
     "—";
 
   const summary =
@@ -1218,6 +1215,7 @@ function EnhancementResult({
   const improvements =
     result?.improvements ||
     result?.changes ||
+    result?.resume?.changes ||
     [];
 
   return (

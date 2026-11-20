@@ -12,11 +12,11 @@
 .payment-modal {
   position: relative;
   width: min(760px, 100%);
-  max-height: min(92vh, 900px);
+  max-height: min(92dvh, 900px);
   overflow-y: auto;
   padding: 36px;
   border: 1px solid #dce7f1;
-  border-radius: 22px;
+  border-radius: var(--radius-object);
   background: #fff;
   box-shadow: 0 28px 90px rgba(5, 19, 35, 0.32);
   color: #17344e;
@@ -26,8 +26,8 @@
   position: absolute;
   top: 14px;
   right: 17px;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 50%;
   background: #f1f6fa;
@@ -61,7 +61,7 @@
   min-height: 250px;
   padding: 24px;
   border: 1px solid #dce7f1;
-  border-radius: 16px;
+  border-radius: var(--radius-object);
   background: #fbfdff;
 }
 
@@ -112,7 +112,7 @@
   min-height: 44px;
   margin-top: auto;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: #087fbe;
   color: #fff;
   font-weight: 700;
@@ -208,7 +208,7 @@
   min-height: 42px;
   padding: 10px 12px;
   border: 1px solid #d7e2eb;
-  border-radius: 9px;
+  border-radius: var(--radius-control);
   background: #fff;
   color: #17344e;
   font: inherit;
@@ -243,7 +243,7 @@
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid #d7e2eb;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: #fff;
   color: #405a70;
   font-weight: 700;
@@ -262,8 +262,18 @@
 }
 
 @media (max-width: 620px) {
+  .payment-modal-backdrop {
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+
   .payment-modal {
+    max-height: calc(100dvh - 24px);
     padding: 28px 20px;
+  }
+
+  /* Title clears the close button */
+  .payment-modal h2 {
+    padding-right: 48px;
   }
 
   .payment-plan-grid {

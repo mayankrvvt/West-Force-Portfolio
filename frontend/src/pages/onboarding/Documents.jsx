@@ -1,4 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../../styles/onboarding.css";
+import {
+  OnboardingActions,
+  OnboardingShell,
+} from "../../components/common/OnboardingForm";
 import {
   Award,
   BookOpen,
@@ -6,9 +12,7 @@ import {
   CheckCircle2,
   FileText,
   GraduationCap,
-  Languages,
   Lock,
-  Plane,
   Upload,
   X,
   Eye,
@@ -19,56 +23,36 @@ import {
 const documentTypes = [
   {
     id: "school",
-    title: "10th–12th Certificate",
+    title: "High school diploma",
     description:
-      "Upload your 10th and 12th certificates or marksheets.",
+      "Your Ontario Secondary School Diploma or the diploma from your province.",
     icon: GraduationCap,
   },
   {
     id: "degree",
-    title: "Bachelor Degree Certificate",
+    title: "College or university credential",
     description:
-      "Upload your bachelor's degree certificate and supporting documents.",
+      "A diploma, degree or certificate program you completed.",
     icon: Award,
   },
   {
-    id: "wes",
-    title: "WES Report",
-    description:
-      "Upload your WES educational credential assessment report.",
-    icon: FileText,
-  },
-  {
     id: "experience",
-    title: "Work Experience",
+    title: "Employment letters",
     description:
-      "Upload experience letters, employment certificates or reference documents.",
+      "Letters from past employers or references that confirm your work.",
     icon: BriefcaseBusiness,
   },
   {
     id: "training",
-    title: "Training Documents",
+    title: "Training and certificates",
     description:
-      "Upload your training certificates and professional development documents.",
+      "CPR, first aid, WHMIS, safety tickets or other short courses.",
     icon: BookOpen,
-  },
-  {
-    id: "passport",
-    title: "Passport",
-    description:
-      "Upload a clear copy of your valid passport.",
-    icon: Plane,
-  },
-  {
-    id: "ielts",
-    title: "IELTS",
-    description:
-      "Upload your IELTS test report form or language test certificate.",
-    icon: Languages,
   },
 ];
 
 export default function Documents() {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState({});
 
   // ---------------------------------------
@@ -86,6 +70,7 @@ export default function Documents() {
     useState(false);
 
   const [pinError, setPinError] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   // ---------------------------------------
   // UPLOAD
@@ -99,11 +84,12 @@ export default function Documents() {
     // 10 MB limit
     if (file.size > 10 * 1024 * 1024) {
       setPinError("");
-      alert("Document must be smaller than 10 MB.");
+      setUploadError("That file is larger than 10 MB. Choose a smaller file and try again.");
       event.target.value = "";
       return;
     }
 
+    setUploadError("");
     setDocuments((previous) => ({
       ...previous,
       [id]: file,
@@ -200,23 +186,22 @@ export default function Documents() {
     Object.keys(documents).length;
 
   return (
-    <div className="documents-page">
+    <OnboardingShell
+      step={2}
+      wide
+      title="Your documents"
+      description="Add the documents employers usually ask for. Skip any you do not have yet; you can add them from your dashboard."
+    >
+    <div className="documents-page ob-documents">
 
       {/* =====================================
           PAGE HEADER
       ====================================== */}
 
       <div className="documents-page-header">
-        <div>
-
-          <h1>Your documents</h1>
-
-          <p>
-            Upload and manage the documents required
-            for your professional portfolio and
-            employer applications.
-          </p>
-        </div>
+        <p className="ob-documents-note">
+          PDF, JPG or PNG, up to 10 MB each.
+        </p>
 
         <div className="documents-counter">
           <strong>
@@ -266,7 +251,7 @@ export default function Documents() {
                       Uploaded
                     </>
                   ) : (
-                    "Required"
+                    "Not added"
                   )}
                 </span>
               </div>
@@ -560,6 +545,12 @@ export default function Documents() {
           SECURITY MESSAGE
       ====================================== */}
 
+      {uploadError && (
+        <div className="documents-pin-error" role="alert">
+          {uploadError}
+        </div>
+      )}
+
       <div className="documents-security">
         <div className="documents-security-icon">
           <ShieldCheck size={21} />
@@ -571,13 +562,17 @@ export default function Documents() {
           </h3>
 
           <p>
-            Your documents will be securely
-            associated with your professional
-            portfolio and can be used for
-            employer verification.
+            Turn on a PIN above and only people
+            you share it with can open them.
           </p>
         </div>
       </div>
     </div>
+
+      <OnboardingActions
+        next="/onboarding/experience"
+        onContinue={() => navigate("/onboarding/experience")}
+      />
+    </OnboardingShell>
   );
 }

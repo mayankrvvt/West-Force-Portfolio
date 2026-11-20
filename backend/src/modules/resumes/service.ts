@@ -101,14 +101,27 @@ export async function extractResumeText(
 
 /* ---------- AI ---------- */
 
-/** The AI service may return the resume itself or wrap it. */
+/**
+ * The AI service may return the resume itself or wrap it. The enhance reply
+ * also carries `atsAnalysis` and `changes` next to the resume; those are kept
+ * on the returned resume so the client still gets them.
+ */
 function unwrapResume(result: unknown, missing: string): unknown {
-  const wrapped = result as { resume?: unknown; data?: unknown } | null | undefined;
+  const wrapped = result as
+    | { resume?: unknown; data?: unknown; atsAnalysis?: unknown; changes?: unknown }
+    | null
+    | undefined;
   const resume = wrapped?.resume || wrapped?.data || result;
 
   if (!resume) throw new Error(missing);
 
-  return resume;
+  if (resume === result || typeof resume !== "object" || Array.isArray(resume)) return resume;
+
+  const extras: Record<string, unknown> = {};
+  if (wrapped?.atsAnalysis !== undefined) extras.atsAnalysis = wrapped.atsAnalysis;
+  if (wrapped?.changes !== undefined) extras.changes = wrapped.changes;
+
+  return Object.keys(extras).length ? { ...resume, ...extras } : resume;
 }
 
 export async function buildResume(firebaseUid: string, body: BuildBody): Promise<unknown> {
@@ -160,6 +173,18 @@ async function ownerOf(firebaseUid: string) {
 export async function listResumes(firebaseUid: string): Promise<ResumeDocument[]> {
   const { filter } = await ownerOf(firebaseUid);
   return Resume.find(filter).sort({ createdAt: -1 });
+}
+
+/**
+ * The most recently updated resume's role, headline and skills (for "jobs for you"), or null.
+ * Tailored copies are left out: tailoring for one job shouldn't change which jobs are suggested.
+ */
+export async function latestResumeForMatching(firebaseUid: string) {
+  const { filter } = await ownerOf(firebaseUid);
+  return Resume.findOne({ $and: [filter, { sourceResumeId: null }] })
+    .sort({ updatedAt: -1 })
+    .select("targetRole content.title content.skills")
+    .lean();
 }
 
 /** For the dashboard: how many resumes, the newest few (without content) and the latest ATS score. */

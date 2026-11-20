@@ -12,6 +12,7 @@
 
 .onboarding-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -128,6 +129,26 @@
 
 .skip-link:hover {
   color: var(--wf-navy);
+}
+
+@media (max-width: 760px) {
+  .onboarding-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .onboarding-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .onboarding-actions .btn {
+    width: 100%;
+  }
+
+  .skip-link {
+    text-align: center;
+  }
 }
 
 .file-upload {
@@ -288,7 +309,7 @@
 .documents-counter strong {
   color: var(--wf-navy);
   font-size: var(--text-2xl);
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -301,7 +322,7 @@
 
 .documents-page .documents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   gap: var(--space-4);
 }
 
@@ -540,6 +561,7 @@
 
 .portfolio-builder-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--wf-frost);
   color: var(--wf-ink);
 }
@@ -1158,13 +1180,16 @@
   background: var(--wf-frost);
 }
 
+/* Same quiet dashed box as the Applications "Nothing here yet" columns */
 .builder-empty-state {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: var(--space-2);
-  padding: var(--space-5);
+  padding: var(--space-5) var(--space-4);
   border: 1px dashed var(--wf-line-strong);
   border-radius: var(--radius-object);
+  color: var(--wf-ink-faint);
+  text-align: center;
 }
 
 .builder-empty-state svg {
@@ -1176,7 +1201,8 @@
 }
 
 .builder-empty-state p {
-  margin: 0 0 var(--space-2);
+  max-width: 44ch;
+  margin: var(--space-1) auto var(--space-2);
   color: var(--wf-ink-soft);
   font-size: var(--text-sm);
 }
@@ -1493,5 +1519,19 @@
   .builder-session-note {
     width: 100%;
     text-align: right;
+  }
+}
+
+/* Touch screens: icon buttons grow to finger size */
+@media (pointer: coarse) {
+  .document-remove-button {
+    width: 44px;
+    min-height: 44px;
+  }
+
+  .document-selected-file button,
+  .builder-icon-danger {
+    width: 44px;
+    height: 44px;
   }
 }

@@ -45,8 +45,8 @@ test("summary counts the user's own data and skips applied jobs", async () => {
 
   const Job = mongoose.model("Job");
   await Job.init(); // build the text index so the text-match path runs
-  const applied = await Job.create({ externalId: "d1", source: "adzuna", title: "React Developer" });
-  await Job.create({ externalId: "d2", source: "adzuna", title: "React Engineer" });
+  const applied = await Job.create({ externalId: "d1", source: "lever", title: "React Developer", location: "Toronto, ON" });
+  await Job.create({ externalId: "d2", source: "lever", title: "React Engineer", location: "Toronto, ON" });
 
   const Application = mongoose.model("Application");
   await Application.create([

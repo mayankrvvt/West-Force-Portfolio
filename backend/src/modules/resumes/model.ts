@@ -70,6 +70,14 @@ const resumeSchema = new mongoose.Schema(
     experienceLevel: { type: String, default: "Entry Level" },
     atsScore: { type: Number, default: null },
 
+    // Set on a tailored copy: the resume it was made from and the job it targets.
+    sourceResumeId: { type: mongoose.Schema.Types.ObjectId, ref: "Resume", default: null },
+    tailoredFor: {
+      jobTitle: text,
+      company: text,
+      jobId: text,
+    },
+
     content: {
       name: text,
       title: text,

@@ -156,8 +156,9 @@ export default function PaymentSuccess() {
       title="Confirming your payment"
       lede="Stripe sent you back to WestForce. We are waiting for the payment confirmation."
     >
-      <div className="auth-progress" role="status">
-        <span className="auth-spinner" aria-hidden="true" />
+      <div className="auth-progress" role="status" aria-busy="true">
+        <span className="auth-skeleton" aria-hidden="true" />
+        <span className="auth-skeleton auth-skeleton-short" aria-hidden="true" />
         Checking payment status...
       </div>
 

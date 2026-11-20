@@ -168,6 +168,120 @@ describe("create, read, update, delete", () => {
     expect(res.body.portfolio.userId).toBe(created.body.portfolio.userId);
   });
 
+  test("PUT /me with part of the profile keeps the other profile fields", async () => {
+    const user = await newUser();
+    await as(
+      user.token,
+      request(app)
+        .post("/api/portfolios")
+        .send({
+          slug: user.slug,
+          profile: {
+            name: "Ann Lee",
+            title: "Nurse",
+            imageUrl: "https://res.cloudinary.com/x/ann.jpg",
+            availableForWork: true,
+          },
+        })
+    );
+
+    const res = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ profile: { phone: "416-555-0100" } })
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.portfolio.profile).toMatchObject({
+      name: "Ann Lee",
+      title: "Nurse",
+      imageUrl: "https://res.cloudinary.com/x/ann.jpg",
+      availableForWork: true,
+      phone: "416-555-0100",
+    });
+
+    const cleared = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ profile: { title: "", availableForWork: false } })
+    );
+
+    expect(cleared.body.portfolio.profile).toMatchObject({
+      name: "Ann Lee",
+      title: "",
+      imageUrl: "https://res.cloudinary.com/x/ann.jpg",
+      availableForWork: false,
+      phone: "416-555-0100",
+    });
+  });
+
+  test("PUT /me with one hire fact keeps the other hire facts", async () => {
+    const user = await newUser();
+    const hireFacts = {
+      availability: {
+        jobTypes: ["full_time"],
+        shifts: ["days", "evenings"],
+        startDate: "now",
+      },
+      workArea: "Peel and Toronto",
+      travel: { willing: true, ownCar: true },
+      languages: ["en", "fr"],
+      driversLicence: "G",
+    };
+
+    await as(
+      user.token,
+      request(app)
+        .post("/api/portfolios")
+        .send({ slug: user.slug, profile: { name: "Ann Lee", ...hireFacts } })
+    );
+
+    const area = await as(
+      user.token,
+      request(app).put("/api/portfolios/me").send({ profile: { workArea: "Toronto" } })
+    );
+
+    expect(area.status).toBe(200);
+    expect(area.body.portfolio.profile).toMatchObject({
+      ...hireFacts,
+      name: "Ann Lee",
+      workArea: "Toronto",
+    });
+
+    const shifts = await as(
+      user.token,
+      request(app)
+        .put("/api/portfolios/me")
+        .send({ profile: { availability: { shifts: ["nights"] } } })
+    );
+
+    expect(shifts.status).toBe(200);
+    expect(shifts.body.portfolio.profile.availability).toEqual({
+      jobTypes: ["full_time"],
+      shifts: ["nights"],
+      startDate: "now",
+    });
+    expect(shifts.body.portfolio.profile).toMatchObject({
+      workArea: "Toronto",
+      languages: ["en", "fr"],
+      driversLicence: "G",
+      travel: { willing: true, ownCar: true },
+    });
+  });
+
+  test("PUT /me rejects hire facts outside the allowed values", async () => {
+    const user = await newUser();
+    await as(user.token, request(app).post("/api/portfolios").send({ slug: user.slug }));
+
+    for (const profile of [
+      { languages: ["es"] },
+      { availability: { jobTypes: ["contract"] } },
+      { availability: { shifts: ["mornings"] } },
+      { availability: { startDate: "soon" } },
+    ]) {
+      const res = await as(user.token, request(app).put("/api/portfolios/me").send({ profile }));
+      expect(res.status).toBe(400);
+    }
+  });
+
   test("DELETE /me deletes, then 404", async () => {
     const user = await newUser();
     await as(user.token, request(app).post("/api/portfolios").send({ slug: user.slug }));
@@ -287,6 +401,68 @@ describe("public GET /:slug", () => {
     });
     expect(JSON.stringify(res.body)).not.toContain("pinHash");
     expect(JSON.stringify(res.body)).not.toContain("secret-id");
+  });
+
+  test("published portfolio returns only the fields the page uses", async () => {
+    const user = await newUser({ paid: true });
+    await as(
+      user.token,
+      request(app)
+        .post("/api/portfolios")
+        .send({
+          slug: user.slug,
+          status: "published",
+          profile: {
+            name: "Ann Lee",
+            title: "Nurse",
+            workArea: "Peel",
+            languages: ["en"],
+            driversLicence: "G",
+          },
+          about: {
+            description: "Hi",
+            videoUrl: "https://res.cloudinary.com/x/v.mp4",
+            videoPublicId: "video-secret-id",
+            videoStatus: "uploaded",
+          },
+          experience: [{ company: "Care Co", position: "PSW", internalNote: "private-note" }],
+          skills: [{ name: "Care", level: 80 }],
+          socialLinks: { linkedin: "https://linkedin.com/in/ann" },
+          resume: { name: "cv.pdf", fileUrl: "https://res.cloudinary.com/x/cv.pdf", publicId: "cv-secret-id" },
+        })
+    );
+
+    const res = await request(app).get(`/api/portfolios/${user.slug}`);
+    const body = res.body.portfolio;
+    const text = JSON.stringify(res.body);
+
+    expect(res.status).toBe(200);
+
+    for (const field of ["_id", "__v", "userId", "createdAt", "updatedAt", "publishedAt", "template", "socialLinks"]) {
+      expect(body).not.toHaveProperty(field);
+    }
+
+    expect(body.about).not.toHaveProperty("videoPublicId");
+    expect(body.about).not.toHaveProperty("videoStatus");
+    expect(text).not.toContain("video-secret-id");
+    expect(text).not.toContain("cv-secret-id");
+    expect(text).not.toContain("private-note");
+    expect(text).not.toContain("cloudinary.com/x/cv.pdf");
+
+    expect(body.profile).toMatchObject({
+      name: "Ann Lee",
+      title: "Nurse",
+      workArea: "Peel",
+      languages: ["en"],
+      driversLicence: "G",
+    });
+    expect(body.about).toEqual({
+      title: "About Me",
+      description: "Hi",
+      videoUrl: "https://res.cloudinary.com/x/v.mp4",
+    });
+    expect(body.experience).toEqual([{ company: "Care Co", position: "PSW" }]);
+    expect(body.skills).toEqual([{ name: "Care" }]);
   });
 });
 

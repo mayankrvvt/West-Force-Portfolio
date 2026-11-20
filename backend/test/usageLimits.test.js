@@ -110,6 +110,36 @@ describe("ATS daily limit middleware", () => {
     expect(count).toBe(1);
   });
 
+  test("a limit of 0 says the feature is turned off", async () => {
+    const { EventEmitter } = await import("node:events");
+    const { dailyUsageLimit } = await import("../src/middleware/dailyLimit");
+    const middleware = dailyUsageLimit({
+      name: "off-feature",
+      limit: () => 0,
+      code: "OFF_LIMIT",
+      message: (limit) => `You have used all ${limit} runs for today.`,
+    });
+    let sent;
+    const req = { user: { uid: "off-user" }, id: "r1", log: { warn() {} } };
+    const res = Object.assign(new EventEmitter(), {
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(body) {
+        sent = body;
+        return this;
+      },
+    });
+    const next = vi.fn();
+
+    await middleware(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(429);
+    expect(sent).toMatchObject({ code: "OFF_LIMIT", message: "This feature is turned off right now." });
+  });
+
   test("a failed check is given back", async () => {
     const count = await runCheck("ats-fail", (res) => {
       res.statusCode = 500;

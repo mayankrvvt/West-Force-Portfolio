@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   LayoutDashboard,
   BriefcaseBusiness,
   Sparkles,
   ScanSearch,
+  FilePenLine,
   Files,
   FileCheck2,
   Award,
@@ -13,6 +14,7 @@ import {
   Search,
   User,
   Settings,
+  ShieldCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -27,11 +29,11 @@ import {
 } from "react-router-dom";
 
 import useAuth from "../../hooks/useAuth";
-
-import { signOut } from "firebase/auth";
-import { auth } from "../../firebase/firebase";
+import useIsAdmin from "../../hooks/useIsAdmin";
 
 import { apiRequest } from "../../utils/api";
+import { DEMO_MODE, signOutDemo } from "../../demo/demoMode";
+import DemoBadge from "../../demo/DemoBadge";
 import "../../styles/dashboard-product.css";
 
 
@@ -48,6 +50,7 @@ const navigation = [
     items: [
       { name: "AI resume builder", path: "/dashboard/resume-builder", icon: Sparkles },
       { name: "ATS resume checker", path: "/dashboard/ats-checker", icon: ScanSearch },
+      { name: "Tailor resume", path: "/dashboard/tailor-resume", icon: FilePenLine },
       { name: "My resumes", path: "/dashboard/resumes", icon: FileCheck2 },
     ],
   },
@@ -70,12 +73,25 @@ const navigation = [
   },
 ];
 
+// Shown only to admins, once the check says so.
+const adminNavigation = [
+  ...navigation,
+  {
+    label: "Admin",
+    items: [
+      { name: "Admin", path: "/admin/jobs", match: "/admin/", icon: ShieldCheck },
+    ],
+  },
+];
+
 
 const pageTitles = {
   "/dashboard": "Dashboard",
   "/dashboard/portfolio": "My portfolio",
   "/dashboard/resume-builder": "AI resume builder",
+  "/dashboard/resume-editor": "Resume editor",
   "/dashboard/ats-checker": "ATS resume checker",
+  "/dashboard/tailor-resume": "Tailor resume",
   "/dashboard/resumes": "My resumes",
   "/dashboard/documents": "Documents",
   "/dashboard/certificates": "Certificates",
@@ -84,16 +100,30 @@ const pageTitles = {
   "/dashboard/jobs": "Find jobs",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
+  "/admin/jobs": "Manage jobs",
+  "/admin/admins": "Admins",
+  "/admin/settings": "Site settings",
+  "/admin/activity": "Activity",
 };
 
 
 function SidebarContent({
   collapsed,
   onNavigate,
+  account,
+  sections,
 }) {
+  const { pathname } = useLocation();
+
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (DEMO_MODE) {
+        await signOutDemo();
+      } else {
+        // Loaded on demand so Firebase stays out of the main bundle.
+        const { auth, signOut } = await import("../../firebase/firebase");
+        await signOut(auth);
+      }
 
       onNavigate?.();
     } catch (error) {
@@ -119,10 +149,12 @@ function SidebarContent({
           <img
             src="/favicon.png"
             alt="WestForce"
+            width="28"
+            height="28"
           />
 
           {!collapsed && (
-            <span>
+            <span className="dashboard-brand-name" aria-hidden="true">
               WestForce
             </span>
           )}
@@ -135,7 +167,7 @@ function SidebarContent({
 
       <nav className="dashboard-sidebar-nav" aria-label="Dashboard">
 
-        {navigation.map((section) => (
+        {sections.map((section) => (
           <div
             className="dashboard-nav-section"
             key={section.label}
@@ -163,12 +195,18 @@ function SidebarContent({
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     `dashboard-nav-link ${
-                      isActive
+                      isActive ||
+                      (item.match && pathname.startsWith(item.match))
                         ? "active"
                         : ""
                     }`
                   }
                   title={
+                    collapsed
+                      ? item.name
+                      : undefined
+                  }
+                  aria-label={
                     collapsed
                       ? item.name
                       : undefined
@@ -201,6 +239,35 @@ function SidebarContent({
 
       <div className="dashboard-sidebar-bottom">
 
+        <NavLink
+          to="/dashboard/profile"
+          onClick={onNavigate}
+          className="dashboard-account"
+          title={
+            collapsed
+              ? `${account.fullName}, open profile`
+              : undefined
+          }
+          aria-label={
+            collapsed
+              ? `${account.fullName}, open profile`
+              : undefined
+          }
+        >
+
+          <span className="dashboard-avatar" aria-hidden="true">
+            {account.initials}
+          </span>
+
+          {!collapsed && (
+            <span className="dashboard-account-copy">
+              <strong>{account.fullName}</strong>
+              <span>{account.email}</span>
+            </span>
+          )}
+
+        </NavLink>
+
         <button
           type="button"
           className="dashboard-logout"
@@ -210,11 +277,17 @@ function SidebarContent({
               ? "Sign out"
               : undefined
           }
+          aria-label={
+            collapsed
+              ? "Sign out"
+              : undefined
+          }
         >
 
           <LogOut
-            size={19}
+            size={18}
             strokeWidth={1.8}
+            aria-hidden="true"
           />
 
           {!collapsed && (
@@ -238,12 +311,55 @@ export default function DashboardLayout() {
 
   const { user } = useAuth();
 
+  // Never blocks the nav: the Admin link just appears once the check passes.
+  const { isAdmin } = useIsAdmin();
+  const sections = isAdmin ? adminNavigation : navigation;
+
 
   const [collapsed, setCollapsed] =
     useState(false);
 
   const [mobileOpen, setMobileOpen] =
     useState(false);
+
+  const menuButtonRef = useRef(null);
+  const drawerCloseRef = useRef(null);
+
+
+  // Close the drawer whenever the route changes (back button, links in pages)
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+
+  // While the drawer is open: lock page scroll, close on Escape,
+  // move focus into the drawer and give it back to the menu button after.
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      return undefined;
+    }
+
+    const menuButton = menuButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    drawerCloseRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      menuButton?.focus();
+    };
+  }, [mobileOpen]);
 
 
   // Portfolio information from MongoDB
@@ -346,7 +462,7 @@ export default function DashboardLayout() {
   const email =
     portfolio?.profile?.email ||
     user?.email ||
-    "demo@westforce.com";
+    "";
 
 
   /*
@@ -369,6 +485,13 @@ export default function DashboardLayout() {
       )
       .join("")
       .toUpperCase();
+
+
+  const account = {
+    fullName,
+    email,
+    initials: initials || "DU",
+  };
 
 
   const closeMobile = () => {
@@ -401,6 +524,8 @@ export default function DashboardLayout() {
         <SidebarContent
           collapsed={collapsed}
           onNavigate={() => {}}
+          account={account}
+          sections={sections}
         />
 
 
@@ -454,6 +579,9 @@ export default function DashboardLayout() {
             ? "mobile-sidebar-open"
             : ""
         }`}
+        id="dashboard-mobile-drawer"
+        aria-label="Navigation"
+        inert={!mobileOpen}
       >
 
         <SidebarContent
@@ -461,6 +589,8 @@ export default function DashboardLayout() {
           onNavigate={
             handleMobileNavigation
           }
+          account={account}
+          sections={sections}
         />
 
 
@@ -468,6 +598,7 @@ export default function DashboardLayout() {
 
           <button
             type="button"
+            ref={drawerCloseRef}
             onClick={closeMobile}
             aria-label="Close navigation"
           >
@@ -496,10 +627,13 @@ export default function DashboardLayout() {
             <button
               type="button"
               className="dashboard-mobile-menu"
+              ref={menuButtonRef}
               onClick={() =>
                 setMobileOpen(true)
               }
               aria-label="Open navigation"
+              aria-expanded={mobileOpen}
+              aria-controls="dashboard-mobile-drawer"
             >
 
               <Menu size={20} />
@@ -507,13 +641,35 @@ export default function DashboardLayout() {
             </button>
 
 
-            <div>
+            <nav
+              className="dashboard-breadcrumb"
+              aria-label="Breadcrumb"
+            >
 
-              <p className="dashboard-header-title">
-                {pageTitle}
-              </p>
+              {location.pathname === "/dashboard" ? (
+                <span aria-current="page">
+                  Dashboard
+                </span>
+              ) : (
+                <>
+                  <NavLink to="/dashboard">
+                    Dashboard
+                  </NavLink>
 
-            </div>
+                  <ChevronRight
+                    size={14}
+                    aria-hidden="true"
+                  />
+
+                  <span aria-current="page">
+                    {pageTitle}
+                  </span>
+                </>
+              )}
+
+            </nav>
+
+            {DEMO_MODE && <DemoBadge inline />}
 
           </div>
 

@@ -4,8 +4,39 @@ import { X } from "lucide-react";
 const TUTORIAL_VIDEO_URL =
   import.meta.env.VITE_TUTORIAL_VIDEO_URL || "/how-to-use.mp4";
 
+// The poster is a frame of the bundled video, so skip it for a custom URL.
+const TUTORIAL_POSTER = import.meta.env.VITE_TUTORIAL_VIDEO_URL
+  ? undefined
+  : "/how-to-use-poster.jpg";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 // Tutorial opens after the user has scrolled 28% of the page.
 const SCROLL_TRIGGER = 0.28;
+
+// The tutorial opens once per browser, however it is closed.
+const SEEN_KEY = "wf-scroll-tutorial-seen";
+
+function hasSeenTutorial() {
+  try {
+    return window.localStorage.getItem(SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberTutorialSeen() {
+  try {
+    window.localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    // Storage can be blocked; the tutorial may show again next visit.
+  }
+}
 
 function isYouTubeUrl(url) {
   return /youtube\.com|youtu\.be/.test(url);
@@ -35,7 +66,10 @@ function getYouTubeEmbedUrl(url) {
 
 export default function ScrollTutorial() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasTriggered, setHasTriggered] = useState(false);
+  const [hasTriggered, setHasTriggered] = useState(hasSeenTutorial);
+
+  // The video file only loads once the player is near the viewport.
+  const [videoSrc, setVideoSrc] = useState(null);
 
   const videoRef = useRef(null);
 
@@ -56,6 +90,7 @@ export default function ScrollTutorial() {
       if (progress >= SCROLL_TRIGGER) {
         setHasTriggered(true);
         setIsOpen(true);
+        rememberTutorialSeen();
       }
     };
 
@@ -99,13 +134,48 @@ export default function ScrollTutorial() {
   }, [isOpen]);
 
   /*
-   * Automatically start the video.
+   * Set the video source only when the player is near the viewport.
    */
   useEffect(() => {
     if (
       !isOpen ||
+      videoSrc ||
       !videoRef.current ||
       isYouTubeUrl(TUTORIAL_VIDEO_URL)
+    ) {
+      return undefined;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      setVideoSrc(TUTORIAL_VIDEO_URL);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVideoSrc(TUTORIAL_VIDEO_URL);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(videoRef.current);
+
+    return () => observer.disconnect();
+  }, [isOpen, videoSrc]);
+
+  /*
+   * Start the video once it has a source, unless the user
+   * prefers reduced motion. Controls are always shown.
+   */
+  useEffect(() => {
+    if (
+      !isOpen ||
+      !videoSrc ||
+      !videoRef.current ||
+      prefersReducedMotion()
     ) {
       return;
     }
@@ -120,7 +190,7 @@ export default function ScrollTutorial() {
        * Video controls are still available.
        */
     });
-  }, [isOpen]);
+  }, [isOpen, videoSrc]);
 
   const closeTutorial = () => {
     if (
@@ -190,12 +260,14 @@ export default function ScrollTutorial() {
             <video
               ref={videoRef}
               className="scroll-tutorial-video"
-              src={TUTORIAL_VIDEO_URL}
+              src={videoSrc || undefined}
+              poster={TUTORIAL_POSTER}
+              width="1280"
+              height="720"
               controls
-              autoPlay
               muted
               playsInline
-              preload="auto"
+              preload="none"
             />
           )}
 

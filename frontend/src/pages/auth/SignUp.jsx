@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import AuthLayout from "../../components/layout/AuthLayout";
+import AuthLayout, { AuthAlert } from "../../components/layout/AuthLayout";
+import PasswordField from "./PasswordField";
 
 import {
   createUserWithEmailAndPassword,
@@ -14,6 +15,7 @@ import {
 
 import { auth } from "../../firebase/firebase";
 import { db } from "../../firebase/firestore";
+import { PAUSED_TEXT, useFeature } from "../../hooks/useSiteStatus";
 
 import {
   doc,
@@ -21,8 +23,37 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const FIELD_ORDER = ["fullName", "email", "password", "confirmPassword"];
+
+/* One message per field, shown under that field. */
+function validateSignUpField(name, values) {
+  switch (name) {
+    case "fullName":
+      return values.fullName.trim() ? "" : "Enter your full name.";
+
+    case "email": {
+      const email = values.email.trim();
+      if (!email) return "Enter your email address.";
+      return EMAIL_PATTERN.test(email) ? "" : "Enter an email like name@example.com.";
+    }
+
+    case "password":
+      if (!values.password) return "Choose a password.";
+      return values.password.length >= 8 ? "" : "Use at least 8 characters.";
+
+    case "confirmPassword":
+      if (!values.confirmPassword) return "Type your password again.";
+      return values.confirmPassword === values.password ? "" : "Passwords do not match.";
+
+    default:
+      return "";
+  }
+}
+
 export default function SignUp() {
   const navigate = useNavigate();
+  const signupsOn = useFeature("signups");
 
 
   const [formData, setFormData] = useState({
@@ -33,6 +64,7 @@ export default function SignUp() {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   /* -----------------------------------------
@@ -50,6 +82,31 @@ export default function SignUp() {
     if (error) {
       setError("");
     }
+
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({ ...previous, [name]: "" }));
+    }
+
+    // A "Passwords do not match" on the confirm field is about both fields.
+    if (name === "password" && fieldErrors.confirmPassword) {
+      setFieldErrors((previous) => ({ ...previous, confirmPassword: "" }));
+    }
+  };
+
+  /*
+   * Check a field when the person leaves it, but only once they typed
+   * something. The password has its own live length check, so it waits
+   * for submit (leaving it to press show/hide should not raise an error).
+   */
+  const handleBlur = (event) => {
+    const { name } = event.target;
+
+    if (!formData[name] || name === "password") return;
+
+    setFieldErrors((previous) => ({
+      ...previous,
+      [name]: validateSignUpField(name, formData),
+    }));
   };
 
   /* -----------------------------------------
@@ -68,7 +125,7 @@ export default function SignUp() {
         return "Password is too weak. Please use at least 8 characters.";
 
       case "auth/operation-not-allowed":
-        return "Email/password authentication is not enabled in Firebase.";
+        return "Sign up with email is turned off right now. Please try again later.";
 
       case "auth/network-request-failed":
         return "Network error. Please check your internet connection.";
@@ -93,33 +150,25 @@ export default function SignUp() {
 
     setError("");
 
+    if (!signupsOn) return;
+
     const fullName = formData.fullName.trim();
     const email = formData.email.trim();
     const password = formData.password;
-    const confirmPassword = formData.confirmPassword;
 
-    if (!fullName) {
-      setError("Please enter your full name.");
-      return;
-    }
+    const errors = {};
 
-    if (!email) {
-      setError("Please enter your email address.");
-      return;
-    }
+    FIELD_ORDER.forEach((name) => {
+      const message = validateSignUpField(name, formData);
+      if (message) errors[name] = message;
+    });
 
-    if (!password) {
-      setError("Please enter a password.");
-      return;
-    }
+    setFieldErrors(errors);
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
+    const firstInvalid = FIELD_ORDER.find((name) => errors[name]);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+    if (firstInvalid) {
+      document.getElementById(firstInvalid)?.focus();
       return;
     }
 
@@ -150,11 +199,6 @@ export default function SignUp() {
 
       const user = userCredential.user;
       accountCreated = true;
-
-      console.log(
-        "Firebase user created:",
-        user.uid
-      );
 
       /* -----------------------------------------
          3. Save user's name in Firebase Auth
@@ -227,10 +271,6 @@ export default function SignUp() {
 
       await signOut(auth);
 
-      console.log(
-        "Signup completed successfully."
-      );
-
       /* -----------------------------------------
          7. Redirect to Sign In
       ----------------------------------------- */
@@ -291,7 +331,7 @@ export default function SignUp() {
   return (
     <AuthLayout
       title="Create your account"
-      lede="Start your portfolio. You can add documents after you sign up."
+      lede="It takes a minute. You can add your resume and documents after you sign up."
       footer={
         <p>
           Already have an account?{" "}
@@ -299,13 +339,16 @@ export default function SignUp() {
         </p>
       }
     >
-      {error && (
-        <p className="auth-error" role="alert">
-          {error}
-        </p>
+      {!signupsOn && (
+        <AuthAlert tone="info">
+          {PAUSED_TEXT.signups}. Please check back soon. If you already have an account, you can still sign in.
+        </AuthAlert>
       )}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <fieldset className="auth-fieldset" disabled={!signupsOn}>
         <Input
           id="fullName"
           name="fullName"
@@ -313,7 +356,9 @@ export default function SignUp() {
           type="text"
           value={formData.fullName}
           onChange={handleChange}
+          onBlur={handleBlur}
           autoComplete="name"
+          error={fieldErrors.fullName}
           disabled={loading}
         />
 
@@ -324,42 +369,51 @@ export default function SignUp() {
           type="email"
           value={formData.email}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="you@example.com"
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          error={fieldErrors.email}
           disabled={loading}
         />
 
-        <Input
+        <PasswordField
           id="password"
           name="password"
           label="Password"
-          hint="At least 8 characters."
-          type="password"
+          rule={8}
           value={formData.password}
           onChange={handleChange}
+          onBlur={handleBlur}
           autoComplete="new-password"
+          error={fieldErrors.password}
           disabled={loading}
         />
 
-        <Input
+        <PasswordField
           id="confirmPassword"
           name="confirmPassword"
           label="Confirm password"
-          type="password"
           value={formData.confirmPassword}
           onChange={handleChange}
+          onBlur={handleBlur}
           autoComplete="new-password"
+          error={fieldErrors.confirmPassword}
           disabled={loading}
         />
 
         <Button
           type="submit"
           size="lg"
-          className="full-width"
+          className="full-width auth-submit"
           disabled={loading}
+          aria-busy={loading || undefined}
         >
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? "Creating your account…" : "Create account"}
         </Button>
+        </fieldset>
       </form>
     </AuthLayout>
   );

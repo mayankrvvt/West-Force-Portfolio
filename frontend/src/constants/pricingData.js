@@ -1,10 +1,11 @@
+// price is per person in CAD. Totals: Solo $999, Group of 5 $3,495.
 export const plans = [
   {
     key: "solo",
 
     name: "Solo",
 
-    subtitle: "One professional portfolio",
+    subtitle: "One portfolio, for you",
 
     price: 999,
 
@@ -13,12 +14,12 @@ export const plans = [
     featured: false,
 
     features: [
-      "ATS-ready Canadian resume",
+      "Resume ready for applicant tracking systems",
       "Video resume coaching",
       "TestGorilla skills report",
-      "Certificates & credentials hub",
-      "Passcode-protected share link",
-      "1-on-1 WestForce coach",
+      "Certificates and credentials in one place",
+      "Private link with PIN protected documents",
+      "One to one sessions with a WestForce coach",
     ],
   },
 
@@ -27,7 +28,7 @@ export const plans = [
 
     name: "Group of 5",
 
-    subtitle: "Best for friends & family",
+    subtitle: "For friends, family or colleagues",
 
     price: 699,
 
@@ -37,10 +38,10 @@ export const plans = [
 
     features: [
       "Everything in Solo",
-      "5 individual portfolios",
+      "5 separate portfolios, each with its own link and PIN",
       "Shared coaching sessions",
       "Priority employer matching",
-      "Save 300 CAD per person",
+      "Save $300 CAD per person",
     ],
   },
 ];

@@ -22,6 +22,11 @@ vi.mock("../src/middleware/auth", () => {
 vi.mock("../src/middleware/requirePaid", () => ({
   requirePaidUser: (req, res, next) => next(),
 }));
+// No MongoDB here, so skip the daily caps (tested in resumeAiGuards.test.js).
+vi.mock("../src/modules/resumes/limits", () => ({
+  resumeBuildDailyLimit: (req, res, next) => next(),
+  resumeEnhanceDailyLimit: (req, res, next) => next(),
+}));
 vi.mock("mammoth", () => ({
   extractRawText: async () => ({ value: "Jane Doe, Developer" }),
 }));

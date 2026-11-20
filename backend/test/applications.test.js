@@ -34,10 +34,10 @@ const as = (token, req) => req.set("Authorization", `Bearer ${token}`);
 async function cachedJob() {
   return mongoose.model("Job").create({
     externalId: `ext-${Date.now()}-${Math.random()}`,
-    source: "adzuna",
+    source: "lever",
     title: "Backend Engineer",
     company: "Globex",
-    location: "Pune",
+    location: "Calgary",
     url: "https://example.com/job",
   });
 }
@@ -108,6 +108,30 @@ describe("applications", () => {
       jobId: String(new mongoose.Types.ObjectId()),
     });
     expect(res.status).toBe(404);
+  });
+
+  test("saving an old adzuna job or a job outside Canada gives 404", async () => {
+    const { token } = await signedInUser();
+    // insertOne skips the schema enum, like old rows left from Adzuna.
+    const jobs = mongoose.model("Job").collection;
+    const adzuna = await jobs.insertOne({
+      externalId: `adz-${Date.now()}`,
+      source: "adzuna",
+      title: "Old Adzuna Job",
+      location: "Toronto, ON",
+    });
+    const abroad = await mongoose.model("Job").create({
+      externalId: `abroad-${Date.now()}`,
+      source: "lever",
+      title: "Abroad Job",
+      location: "London, UK",
+    });
+
+    for (const id of [adzuna.insertedId, abroad._id]) {
+      const res = await as(token, request(app).post("/api/applications")).send({ jobId: String(id) });
+      expect(res.status).toBe(404);
+    }
+    expect(await mongoose.model("Application").countDocuments({ jobId: adzuna.insertedId })).toBe(0);
   });
 
   test("validation: missing fields, bad status, bad url", async () => {

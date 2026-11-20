@@ -19,7 +19,7 @@
 
 .portfolio-viewer-wrapper {
   min-width: 0;
-  height: calc(100vh - 190px);
+  height: calc(100dvh - 190px);
   min-height: 480px;
   overflow: hidden;
   border: 1px solid var(--wf-line);
@@ -34,60 +34,13 @@
   container-type: inline-size;
 }
 
-/* Inside the preview the portfolio sidebar sticks to the scroll box */
+/*
+ * Inside the preview the portfolio top bar sticks to this scroll box.
+ * The portfolio sizes itself with container queries, so narrow previews
+ * get the phone layout without extra rules here.
+ */
 .portfolio-viewer .public-portfolio {
   min-height: 100%;
-}
-
-.portfolio-viewer .portfolio-sidebar {
-  height: calc(100vh - 192px);
-  min-height: 478px;
-}
-
-/* Narrow preview: same top-bar layout as the public page on phones */
-@container (max-width: 760px) {
-  .portfolio-viewer .public-portfolio {
-    grid-template-columns: 1fr;
-  }
-
-  .portfolio-viewer .portfolio-sidebar {
-    height: auto;
-    min-height: 0;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-4);
-    border-right: 0;
-    border-bottom: 1px solid var(--wf-line);
-  }
-
-  .portfolio-viewer .portfolio-sidebar-name,
-  .portfolio-viewer .portfolio-sidebar-footer {
-    display: none;
-  }
-
-  .portfolio-viewer .portfolio-navigation {
-    display: flex;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .portfolio-viewer .portfolio-nav-item {
-    width: auto;
-    flex-shrink: 0;
-    border-left: 0;
-    border-bottom: 3px solid transparent;
-    white-space: nowrap;
-  }
-
-  .portfolio-viewer .portfolio-nav-item.active {
-    border-bottom-color: var(--wf-lake);
-    background: transparent;
-  }
-
-  .portfolio-viewer .portfolio-main {
-    padding: var(--space-6) var(--space-4);
-  }
 }
 
 /* ---------- Tools column ---------- */
@@ -142,8 +95,7 @@
   line-height: var(--leading-snug);
 }
 
-.toolbar-button,
-.toolbar-coming-soon {
+.toolbar-button {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -167,8 +119,7 @@
   cursor: not-allowed;
 }
 
-.toolbar-button > span,
-.toolbar-coming-soon > span {
+.toolbar-button > span {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -181,22 +132,19 @@
   font-weight: 700;
 }
 
-.toolbar-button > div,
-.toolbar-coming-soon > div {
+.toolbar-button > div {
   display: grid;
   gap: 2px;
   min-width: 0;
 }
 
-.toolbar-button strong,
-.toolbar-coming-soon strong {
+.toolbar-button strong {
   color: var(--wf-navy);
   font-size: var(--text-sm);
   font-weight: 600;
 }
 
-.toolbar-button small,
-.toolbar-coming-soon small {
+.toolbar-button small {
   color: var(--wf-ink-faint);
   font-size: var(--text-xs);
 }
@@ -220,11 +168,6 @@
 
 .toolbar-collapsed-divider {
   width: 32px;
-}
-
-.toolbar-coming-soon {
-  border-style: dashed;
-  background: transparent;
 }
 
 .toolbar-collapsed-icons {
@@ -253,12 +196,6 @@
   cursor: not-allowed;
 }
 
-.toolbar-ai-icon,
-.toolbar-job-icon {
-  font-size: var(--text-xs);
-  font-weight: 700;
-}
-
 /* ---------- Small screens: tools move under the preview ---------- */
 
 @media (max-width: 1024px) {
@@ -267,18 +204,19 @@
     grid-template-columns: 1fr;
   }
 
+  /* Phone landscape is about 375px tall, so the minimum follows the screen */
   .portfolio-viewer-wrapper {
-    height: 70vh;
-    min-height: 420px;
+    height: 70dvh;
+    min-height: min(420px, 80dvh);
   }
 
   .portfolio-viewer .portfolio-sidebar {
-    height: calc(70vh - 2px);
-    min-height: 418px;
+    height: calc(70dvh - 2px);
+    min-height: calc(min(420px, 80dvh) - 2px);
   }
 
   .dashboard-toolbar:not(.collapsed) {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   }
 
   .dashboard-toolbar:not(.collapsed) > .toolbar-collapse-button,
@@ -289,6 +227,14 @@
 
   .toolbar-collapsed-icons {
     grid-auto-flow: column;
+  }
+}
+
+@media (pointer: coarse) {
+  .toolbar-collapse-button,
+  .toolbar-collapsed-icons button {
+    width: 44px;
+    height: 44px;
   }
 }
 

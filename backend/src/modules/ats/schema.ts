@@ -17,6 +17,17 @@ export const atsCheckBody = z.preprocess(
         .max(MAX_RESUME_TEXT, { error: "Resume text is too long." })
         .optional(),
       resumeId: z.string({ error: "Resume id must be text." }).trim().optional(),
+      jobTitle: z
+        .string({ error: "Job title must be text." })
+        .trim()
+        .max(200, { error: "Job title is too long." })
+        .optional(),
+      // The employer's name, left out of the job keywords.
+      company: z
+        .string({ error: "Company must be text." })
+        .trim()
+        .max(200, { error: "Company is too long." })
+        .optional(),
       jobDescription: z
         .string({ error: "Job description is required." })
         .trim()
@@ -63,24 +74,31 @@ const textList = (maxItems: number, maxLength: number) =>
     });
 
 /**
- * What we accept from Gemini. The score must be a number (or numeric string)
- * and is clamped to 0-100; every other field falls back to empty.
+ * What we accept from Gemini: advice only. The score is worked out by code
+ * (scoring.ts), so any "score" the AI sends is dropped here.
  */
-export const atsGeminiResult = z.object({
-  score: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() ? Number(value) : value),
-    z
-      .number()
-      .refine(Number.isFinite)
-      .transform((value) => Math.min(100, Math.max(0, Math.round(value))))
-  ),
-  matchedKeywords: textList(40, 80),
-  missingKeywords: textList(40, 80),
-  suggestions: textList(10, 500),
+export const atsAdvice = z.object({
+  suggestions: textList(8, 500),
   summary: z
     .string()
     .catch("")
     .transform((value) => value.trim().slice(0, 2000)),
 });
 
-export type AtsResult = z.output<typeof atsGeminiResult>;
+export type AtsAdvice = z.output<typeof atsAdvice>;
+
+/** GET /api/ats/history?resumeId&limit */
+export const atsHistoryQuery = z.preprocess(
+  orEmpty,
+  z.object({
+    resumeId: z.string({ error: "Resume id must be text." }).trim().optional(),
+    limit: z.coerce
+      .number({ error: "Limit must be a number." })
+      .int({ error: "Limit must be a whole number." })
+      .min(1, { error: "Limit must be at least 1." })
+      .max(50, { error: "Limit can be at most 50." })
+      .default(20),
+  })
+);
+
+export type AtsHistoryQuery = z.output<typeof atsHistoryQuery>;

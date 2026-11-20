@@ -3,7 +3,9 @@ import multer from "multer";
 import { AppError, asyncHandler } from "../../lib/errors";
 import { authenticateUser } from "../../middleware/auth";
 import { requirePaidUser } from "../../middleware/requirePaid";
+import { requireFeature } from "../../middleware/siteGuards";
 import { build, enhance, extractText, getOneResume, getResumes, remove, save } from "./controller";
+import { resumeBuildDailyLimit, resumeEnhanceDailyLimit } from "./limits";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -68,8 +70,10 @@ const router = Router();
 router.post("/extract-text", authenticateUser, atsUpload, asyncHandler(extractText));
 router.get("/", ...paid, asyncHandler(getResumes));
 router.get("/:id", ...paid, asyncHandler(getOneResume));
-router.post("/build", ...paid, asyncHandler(build));
-router.post("/enhance", ...paid, enhanceUpload, asyncHandler(enhance));
+// AI calls cost money: daily caps per user, given back when the call fails.
+// The "ai" switch is checked first, before sign in, uploads or caps.
+router.post("/build", requireFeature("ai"), ...paid, resumeBuildDailyLimit, asyncHandler(build));
+router.post("/enhance", requireFeature("ai"), ...paid, enhanceUpload, resumeEnhanceDailyLimit, asyncHandler(enhance));
 router.post("/", ...paid, asyncHandler(save));
 router.delete("/:id", ...paid, asyncHandler(remove));
 

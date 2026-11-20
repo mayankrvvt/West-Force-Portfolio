@@ -42,6 +42,7 @@ export async function updateApplicationStatus(id, status) {
   return result.application;
 }
 
-export async function deleteApplication(id) {
-  await apiRequest(`/api/applications/${encodeURIComponent(id)}`, { method: "DELETE" });
+/** Pass { keepalive: true } when the page is closing so the browser still sends it. */
+export async function deleteApplication(id, { keepalive = false } = {}) {
+  await apiRequest(`/api/applications/${encodeURIComponent(id)}`, { method: "DELETE", ...(keepalive && { keepalive: true }) });
 }

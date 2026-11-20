@@ -1,16 +1,32 @@
 import { Link } from "react-router-dom";
 
-import AuthLayout from "../../components/layout/AuthLayout";
+import "../../styles/portfolio.css";
 
-export default function PortfolioNotFound() {
+/* Shared "not found" look for missing pages and unpublished portfolios. */
+export default function PortfolioNotFound({
+  title = "Page not found",
+  message = "This portfolio or page does not exist. Check the link you were sent, or ask the candidate for a new one.",
+  detail = "",
+}) {
   return (
-    <AuthLayout
-      title="Page not found"
-      lede="This portfolio or page does not exist. Check the link you were sent, or ask the candidate for a new one."
-    >
-      <Link to="/" className="btn btn-primary full-width">
+    <main className="portfolio-error">
+      <img
+        src="/favicon.png"
+        alt="WestForce"
+        className="portfolio-error-logo"
+        width="40"
+        height="40"
+      />
+
+      <h1>{title}</h1>
+
+      <p>{message}</p>
+
+      {detail && <p className="portfolio-error-detail">{detail}</p>}
+
+      <Link to="/" className="btn btn-primary">
         Go to the home page
       </Link>
-    </AuthLayout>
+    </main>
   );
 }

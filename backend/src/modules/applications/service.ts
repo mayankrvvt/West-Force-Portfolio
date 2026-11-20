@@ -1,7 +1,7 @@
 import type { Types } from "mongoose";
 import { AppError } from "../../lib/errors";
 import { isObjectId } from "../../lib/validate";
-import Job from "../jobs/model";
+import { getJob } from "../jobs/service";
 import { findOwner } from "../portfolios/service";
 import Application, { type ApplicationDocument, type ApplicationStatus } from "./model";
 import type { CreateApplicationBody, UpdateApplicationBody } from "./schema";
@@ -55,9 +55,8 @@ export async function createApplication(
     return { application, created: true };
   }
 
-  const job = isObjectId(rawJobId) ? await Job.findById(rawJobId) : null;
-
-  if (!job) throw new AppError(404, "Job not found.");
+  // Only listed jobs (collected source, in Canada); anything else is a 404.
+  const job = await getJob(rawJobId);
 
   const existing = await Application.findOne({ ownerId: owner._id, jobId: job._id });
 

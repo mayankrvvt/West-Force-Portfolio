@@ -45,9 +45,10 @@ describe("anonymous chat per-IP daily cap", () => {
 
   test("a failed Gemini call refunds the per-IP slot", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    fetchMock.mockRejectedValueOnce(
-      new DOMException("The operation was aborted due to timeout", "TimeoutError")
-    );
+    // Timeouts are not retried, so one failed try is final.
+    const timeout = () =>
+      new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    fetchMock.mockRejectedValueOnce(timeout());
 
     expect((await chat("203.0.113.90")).status).toBe(504);
     expect((await chat("203.0.113.90")).status).toBe(200);

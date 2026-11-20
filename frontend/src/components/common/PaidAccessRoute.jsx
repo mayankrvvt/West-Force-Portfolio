@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 
 import { useApp } from "../../app/providers";
 import useEntitlement from "../../hooks/useEntitlement";
+import { PAUSED_TEXT, useFeature } from "../../hooks/useSiteStatus";
 
 export default function PaidAccessRoute() {
   const {
@@ -12,9 +13,10 @@ export default function PaidAccessRoute() {
     emailVerificationRequired,
   } = useEntitlement();
   const { openPaymentModal } = useApp();
+  const paymentsOn = useFeature("payments");
 
   useEffect(() => {
-    if (!loading && !error && !isPaid) {
+    if (!loading && !error && !isPaid && paymentsOn) {
       openPaymentModal(
         emailVerificationRequired
           ? "Verify your email address to claim your group plan seat."
@@ -27,6 +29,7 @@ export default function PaidAccessRoute() {
     isPaid,
     emailVerificationRequired,
     openPaymentModal,
+    paymentsOn,
   ]);
 
   if (loading) {
@@ -72,8 +75,9 @@ export default function PaidAccessRoute() {
             onClick={() =>
               openPaymentModal("Choose a plan to unlock this service.")
             }
+            disabled={!paymentsOn}
           >
-            View plans
+            {paymentsOn ? "View plans" : PAUSED_TEXT.payments}
           </button>
         </div>
       </div>

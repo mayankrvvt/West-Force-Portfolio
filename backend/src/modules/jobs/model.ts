@@ -2,11 +2,24 @@ import mongoose, { type HydratedDocument, type InferSchemaType } from "mongoose"
 
 const text = { type: String, default: "" };
 
-/** A job from an outside source (Adzuna), cached so repeat views cost no quota. */
+/** Sources the daily collector fills (see collect.ts). */
+export const COLLECTED_SOURCES = ["greenhouse", "lever", "jooble"] as const;
+export type CollectedSource = (typeof COLLECTED_SOURCES)[number];
+
+/** Jobs the admin adds by hand at /admin/jobs. The collector never deletes them. */
+export const MANUAL_SOURCE = "manual" as const;
+
+/** Every source a job may come from and be listed with. */
+export const LISTED_SOURCES = [...COLLECTED_SOURCES, MANUAL_SOURCE] as const;
+
+/**
+ * A job the daily collector stored from a collected source, or one the admin
+ * added by hand (source "manual"). Hidden or expired jobs are not listed.
+ */
 const jobSchema = new mongoose.Schema(
   {
     externalId: { type: String, required: true },
-    source: { type: String, enum: ["adzuna"], required: true },
+    source: { type: String, enum: LISTED_SOURCES, required: true },
     title: { type: String, required: true, trim: true },
     company: text,
     location: text,
@@ -17,6 +30,9 @@ const jobSchema = new mongoose.Schema(
     url: text,
     postedAt: { type: Date, default: null },
     tags: { type: [String], default: [] },
+    hidden: { type: Boolean, default: false },
+    // null means it never expires.
+    expiresAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -32,21 +48,5 @@ export type JobAttrs = InferSchemaType<typeof jobSchema>;
 export type JobDocument = HydratedDocument<JobAttrs>;
 
 export const Job = mongoose.model("Job", jobSchema);
-
-/**
- * One cached search result page: which jobs a query/page returned. Mongo's
- * TTL monitor removes it after expiresAt (reads also check expiresAt, since
- * the monitor only runs about once a minute).
- */
-const jobSearchSchema = new mongoose.Schema({
-  key: { type: String, required: true, unique: true },
-  jobIds: { type: [mongoose.Schema.Types.ObjectId], ref: "Job", default: [] },
-  total: { type: Number, default: 0 },
-  expiresAt: { type: Date, required: true },
-});
-
-jobSearchSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
-export const JobSearch = mongoose.model("JobSearch", jobSearchSchema);
 
 export default Job;

@@ -2,6 +2,10 @@ import { initializeApp } from "firebase/app";
 
 import { getAuth } from "firebase/auth";
 
+// Re-exported so code in the main chunk can load auth with one dynamic
+// import: `const { auth, onAuthStateChanged } = await import(".../firebase")`.
+export { onAuthStateChanged, signOut } from "firebase/auth";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBauTv1D0-VgvfCo6T3rP1Vwp3_LmBPhIY",
 

@@ -41,6 +41,11 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+.vrg-hero-inner {
+  display: grid;
+  justify-items: start;
+}
+
 .vrg-hero h1 {
   margin-bottom: var(--space-4);
   font-size: var(--text-4xl);

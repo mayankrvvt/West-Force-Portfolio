@@ -1,0 +1,302 @@
+/*
+ * Tailor resume page (/dashboard/tailor-resume). Builds on the classes in
+ * dashboard-product.css (product-card, product-field, application-count,
+ * application-empty) and only adds what the diff view needs.
+ */
+
+.tailor-page {
+  padding-bottom: var(--space-8);
+}
+
+.tailor-setup .product-field > span:first-child {
+  color: var(--wf-navy);
+}
+
+.tailor-job-text {
+  min-height: 180px;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.tailor-hint {
+  margin: 0;
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.tailor-error {
+  flex-wrap: wrap;
+}
+
+.tailor-error .product-button {
+  margin-left: auto;
+}
+
+/* ---------- result ---------- */
+
+.tailor-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: var(--space-4);
+  align-items: start;
+  animation: tailor-reveal var(--duration-move) var(--ease-out);
+}
+
+@keyframes tailor-reveal {
+  from { opacity: 0; transform: translateY(var(--space-2)); }
+  to { opacity: 1; transform: none; }
+}
+
+.tailor-main {
+  min-width: 0;
+}
+
+.tailor-side {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tailor-empty {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--wf-line-strong);
+  border-radius: var(--radius-object);
+  color: var(--wf-ink-soft);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* ---------- side by side diff ---------- */
+
+.tailor-diff {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailor-diff-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+}
+
+.tailor-diff-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.tailor-diff-head strong {
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.tailor-diff-head span {
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+}
+
+.tailor-diff-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.tailor-diff-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--wf-frost);
+}
+
+.tailor-diff-side.before {
+  background: var(--wf-frost);
+}
+
+.tailor-diff-side.after {
+  background: var(--wf-info-bg);
+}
+
+.tailor-diff-side-label {
+  color: var(--wf-ink-faint);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.tailor-diff-side p {
+  margin: 0;
+  color: var(--wf-ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.tailor-word-added {
+  padding: 0 2px;
+  border-radius: 2px;
+  background: rgba(47, 111, 159, 0.18);
+  box-shadow: inset 0 -2px 0 var(--wf-lake);
+  color: var(--wf-navy);
+}
+
+.tailor-word-removed {
+  color: var(--wf-ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--wf-line-strong);
+}
+
+/* ---------- keywords ---------- */
+
+.tailor-keywords {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.tailor-keywords-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tailor-keywords-head strong {
+  flex: 1;
+  color: var(--wf-navy);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.tailor-keywords .application-count {
+  background: var(--wf-frost);
+}
+
+.tailor-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--wf-ink-faint);
+}
+
+.tailor-dot.added { background: var(--wf-lake); }
+.tailor-dot.skipped { background: var(--wf-warning); }
+
+.tailor-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailor-chip {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--wf-info-bg);
+  color: var(--wf-navy);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.tailor-skipped-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailor-skipped-list li {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2);
+  border-left: 3px solid var(--wf-warning);
+  border-radius: var(--radius-control);
+  background: var(--wf-warning-bg);
+}
+
+.tailor-skipped-list strong {
+  color: var(--wf-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.tailor-skipped-list span {
+  color: var(--wf-ink-soft);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+/* ---------- save bar ---------- */
+
+.tailor-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+}
+
+.tailor-save-bar > p {
+  flex: 1;
+  min-width: 200px;
+}
+
+.tailor-saved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  color: var(--wf-success);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.tailor-save-error {
+  color: var(--wf-danger);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 900px) {
+  .tailor-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tailor-diff-sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tailor-save-bar .product-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tailor-result {
+    animation: none;
+  }
+}

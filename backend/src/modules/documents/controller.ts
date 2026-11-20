@@ -7,6 +7,7 @@ import { AppError, failWith } from "../../lib/errors";
 import { ok } from "../../lib/respond";
 import { parse } from "../../lib/validate";
 import { currentUser } from "../../middleware/auth";
+import { trackInBackground } from "../insights/controller";
 import { slugParams } from "../portfolios/schema";
 import { documentParams, myDocumentsQuery, protectionBody, unlockBody } from "./schema";
 import {
@@ -83,6 +84,8 @@ export async function unlock(req: Request, res: Response): Promise<void> {
         path: `/api/portfolios/${slug}`,
       });
       ok(res, { message: "Documents unlocked.", unlocked: true, expiresIn: ACCESS_DURATION_MS });
+      // Never blocks or breaks the unlock; errors are only logged.
+      trackInBackground(req, { slug, type: "unlock" });
   }
 }
 
@@ -135,6 +138,9 @@ export async function downloadDocument(req: Request, res: Response): Promise<voi
     storage: "Unable to download document from storage.",
     generic,
   });
+
+  // Only after the file was handed over; never breaks the download.
+  if (res.writableFinished || !res.destroyed) trackInBackground(req, { slug, type: "document", documentId });
 }
 
 export async function downloadResume(req: Request, res: Response): Promise<void> {

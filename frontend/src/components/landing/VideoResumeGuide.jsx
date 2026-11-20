@@ -153,7 +153,8 @@ export default function VideoResumeGuide() {
             className="vrg-demo-video"
             controls
             playsInline
-            preload="metadata"
+            preload="none"
+            poster="/demo-poster.jpg"
             aria-label="Example video resume"
           >
             <source src="/demo.mp4" type="video/mp4" />

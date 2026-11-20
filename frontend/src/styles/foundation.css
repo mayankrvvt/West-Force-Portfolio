@@ -10,7 +10,7 @@ body {
   font-family: var(--font-ui);
   color: var(--wf-ink);
   background: var(--wf-paper);
-  font-feature-settings: "ss01", "tnum" 0;
+  font-feature-settings: normal;
 }
 
 h1,
@@ -25,7 +25,7 @@ h4 {
 
 h1 {
   line-height: var(--leading-tight);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 h2,
@@ -47,6 +47,34 @@ a {
 ::selection {
   background: rgba(47, 111, 159, 0.22);
 }
+
+/*
+ * Named text styles (landing page type system). Sizes and line heights
+ * are Tailwind scale steps; use these instead of loose size + weight.
+ */
+.heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; }
+.heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; }
+.heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; }
+.heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; }
+.heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; }
+.heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
+.title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+.title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.title-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+.body-1 { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.body-2 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+.body-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+.body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.body-7 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+.caption-1 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.caption-3 { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
+.caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+.caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
 
 /* Long-form reading text (bio, experience) */
 .wf-read {
@@ -98,14 +126,20 @@ a {
   transform: none;
   background-image: none;
   transition:
-    background-color var(--duration) var(--ease-out),
-    border-color var(--duration) var(--ease-out),
-    color var(--duration) var(--ease-out);
+    background-color 300ms var(--ease-out),
+    border-color 300ms var(--ease-out),
+    color 300ms var(--ease-out),
+    transform 200ms var(--ease-out);
 }
 
-.btn:hover,
-.btn:active {
+.btn:hover {
   transform: none;
+  box-shadow: none;
+}
+
+/* Physical press feedback */
+.btn:active:not(:disabled, [aria-disabled="true"]) {
+  transform: scale(0.98);
   box-shadow: none;
 }
 
@@ -276,13 +310,19 @@ a {
 
 /* ---------- The seal: the one place maple red appears ---------- */
 
+/* Small text, so it uses the darker ink red; the leaf keeps flag red */
 .wf-seal {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--wf-maple);
+  color: var(--wf-maple-ink);
   font-weight: 600;
   font-size: var(--text-sm);
+}
+
+.wf-seal .maple-leaf {
+  flex: none;
+  color: var(--wf-maple);
 }
 
 /* ---------- Modal ---------- */
@@ -293,8 +333,10 @@ a {
   z-index: 1000;
   display: grid;
   place-items: center;
-  padding: var(--space-4);
+  padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4)
+    max(var(--space-4), env(safe-area-inset-bottom));
   background: rgba(8, 30, 51, 0.55);
+  overscroll-behavior: contain;
   backdrop-filter: none;
 }
 
@@ -321,8 +363,8 @@ a {
   right: var(--space-3);
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: var(--radius-control);
   background: transparent;
@@ -335,4 +377,49 @@ a {
 .modal-close:hover {
   background: var(--wf-frost);
   color: var(--wf-navy);
+}
+
+/* ---------- Session check (ProtectedRoute) ---------- */
+
+.session-loading {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+}
+
+/* ---------- Phones and touch (kept last so it wins) ---------- */
+
+/* Last line of defence against sideways scroll on narrow phones.
+   Wide things (tables, the Applications board) scroll in their own box. */
+html {
+  overflow-x: clip;
+}
+
+/* iOS zooms into any field under 16px. Page styles set smaller sizes on
+   many inputs, so this one rule wins on phones. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .modal {
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .modal-backdrop {
+    padding-inline: var(--space-3);
+  }
+}
+
+/* Finger sized targets on touch screens */
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 44px;
+  }
 }

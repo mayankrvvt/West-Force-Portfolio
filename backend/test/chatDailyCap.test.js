@@ -34,14 +34,15 @@ describe("anonymous chat daily cap", () => {
   test("Gemini error, timeout or empty reply refunds the daily slot", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    fetchMock.mockResolvedValueOnce(
-      new Response("{}", { status: 500 })
-    );
+    // 5xx is retried once, so both tries fail here. A timeout is not retried.
+    fetchMock
+      .mockResolvedValueOnce(new Response("{}", { status: 500 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 500 }));
     expect((await chat("203.0.113.70")).status).toBe(502);
 
-    fetchMock.mockRejectedValueOnce(
-      new DOMException("The operation was aborted due to timeout", "TimeoutError")
-    );
+    const timeout = () =>
+      new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    fetchMock.mockRejectedValueOnce(timeout());
     expect((await chat("203.0.113.71")).status).toBe(504);
 
     fetchMock.mockResolvedValueOnce(

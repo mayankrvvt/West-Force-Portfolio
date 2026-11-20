@@ -5,20 +5,22 @@ export default function Education() {
     <OnboardingForm
       step="4 of 7"
       title="Education"
-      description="Add your education and training."
+      description="Add your highest diploma, degree or certificate program."
       next="/onboarding/skills"
       fields={[
         [
           "qualification",
-          "Qualification",
+          "Program or credential",
           "text",
+          { placeholder: "Personal Support Worker certificate" },
         ],
         [
           "institution",
-          "Institution",
+          "School",
           "text",
+          { placeholder: "Sheridan College" },
         ],
-        ["year", "Year", "text"],
+        ["year", "Year completed", "text", { placeholder: "2021", hint: "Leave empty if you are still studying.", optional: true }],
       ]}
     />
   );

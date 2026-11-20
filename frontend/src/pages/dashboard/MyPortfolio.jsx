@@ -5,13 +5,16 @@ import {
   Edit3,
   ExternalLink,
   Globe2,
-  Plus,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { apiRequest } from "../../utils/api";
+import PageSkeleton from "../../components/dashboard/Skeleton";
+import PortfolioViewsCard from "../../components/dashboard/PortfolioViewsCard";
 import { useApp } from "../../app/providers";
 import useEntitlement from "../../hooks/useEntitlement";
 
@@ -231,9 +234,10 @@ export default function MyPortfolio() {
   if (loading) {
     return (
       <div className="dashboard-product">
-        <div className="empty-product">
-          Loading your portfolio…
-        </div>
+        <PageSkeleton
+          layout="preview"
+          label="Loading your portfolio"
+        />
       </div>
     );
   }
@@ -247,7 +251,7 @@ export default function MyPortfolio() {
     return (
       <div className="dashboard-product">
 
-        <div className="empty-product">
+        <div className="empty-product" role="alert">
 
           <h2>
             Unable to load portfolio
@@ -282,7 +286,7 @@ export default function MyPortfolio() {
         <div className="empty-product">
 
           <h2>
-            No portfolio found
+            Nothing here yet
           </h2>
 
           <p>
@@ -330,8 +334,11 @@ export default function MyPortfolio() {
 
         <div>
 
-          <h1>
-            My Portfolio
+          <h1 className="product-title-with-badge">
+            My portfolio
+            <span className={`status-badge ${portfolio.status === "published" ? "status-offer" : "status-saved"}`}>
+              {portfolio.status === "published" ? "Published" : "Draft"}
+            </span>
           </h1>
 
           <p>
@@ -353,7 +360,7 @@ export default function MyPortfolio() {
               )
             }
           >
-            <Edit3 size={15} />
+            <Edit3 size={16} aria-hidden="true" />
 
             Edit
           </button>
@@ -366,9 +373,9 @@ export default function MyPortfolio() {
               target="_blank"
               rel="noreferrer"
             >
-              <ExternalLink size={15} />
+              <ExternalLink size={16} aria-hidden="true" />
 
-              Open public
+              View public page
             </a>
           )}
 
@@ -384,7 +391,7 @@ export default function MyPortfolio() {
       {message && (
         <div className="product-notice">
 
-          <Globe2 size={15} />
+          <Globe2 size={16} aria-hidden="true" />
 
           <span>
             {message}
@@ -490,9 +497,8 @@ export default function MyPortfolio() {
                 </h3>
 
                 <p>
-                  Manage your public portfolio
-                  and keep your professional
-                  presence ready to share.
+                  Edit, publish, share or
+                  download your portfolio.
                 </p>
 
               </div>
@@ -625,84 +631,45 @@ export default function MyPortfolio() {
               </button>
 
 
-              {/* ADD SECTION */}
-
-              <button
-                type="button"
-                className="toolbar-button"
-                onClick={() =>
-                  window.alert(
-                    "Add Section is ready for the next builder module."
-                  )
-                }
-              >
-
-                <span>
-                  <Plus size={20} />
-                </span>
-
-                <div>
-
-                  <strong>
-                    Add section
-                  </strong>
-
-                  <small>
-                    Expand your portfolio
-                  </small>
-
-                </div>
-
-              </button>
-
-
               <div className="toolbar-divider" />
 
 
               {/* AI */}
 
-              <div className="toolbar-coming-soon">
-
+              <button
+                type="button"
+                className="toolbar-button"
+                onClick={() =>
+                  navigate("/dashboard/resume-builder")
+                }
+              >
                 <span>
-                  AI
+                  <Sparkles size={19} />
                 </span>
-
                 <div>
-
-                  <strong>
-                    AI resume tools
-                  </strong>
-
-                  <small>
-                    Available in sidebar
-                  </small>
-
+                  <strong>AI resume builder</strong>
+                  <small>Write or improve your resume</small>
                 </div>
-
-              </div>
+              </button>
 
 
               {/* JOBS */}
 
-              <div className="toolbar-coming-soon">
-
+              <button
+                type="button"
+                className="toolbar-button"
+                onClick={() =>
+                  navigate("/dashboard/applications")
+                }
+              >
                 <span>
-                  Job
+                  <BriefcaseBusiness size={19} />
                 </span>
-
                 <div>
-
-                  <strong>
-                    Job applications
-                  </strong>
-
-                  <small>
-                    Track from Applications
-                  </small>
-
+                  <strong>Job applications</strong>
+                  <small>Track where you have applied</small>
                 </div>
-
-              </div>
+              </button>
 
             </>
           )}
@@ -760,40 +727,30 @@ export default function MyPortfolio() {
               </button>
 
 
-              <button
-                type="button"
-                title="Add section"
-                aria-label="Add section"
-                onClick={() =>
-                  window.alert(
-                    "Add Section is ready for the next builder module."
-                  )
-                }
-              >
-                <Plus size={20} />
-              </button>
-
-
               <div className="toolbar-collapsed-divider" />
 
 
               <button
                 type="button"
-                className="toolbar-ai-icon"
-                title="AI resume tools"
-                aria-label="AI Resume Tools"
+                title="AI resume builder"
+                aria-label="Open the AI resume builder"
+                onClick={() =>
+                  navigate("/dashboard/resume-builder")
+                }
               >
-                AI
+                <Sparkles size={19} />
               </button>
 
 
               <button
                 type="button"
-                className="toolbar-job-icon"
                 title="Job applications"
-                aria-label="Job Applications"
+                aria-label="Open job applications"
+                onClick={() =>
+                  navigate("/dashboard/applications")
+                }
               >
-                JOB
+                <BriefcaseBusiness size={19} />
               </button>
 
             </div>
@@ -802,6 +759,12 @@ export default function MyPortfolio() {
         </aside>
 
       </div>
+
+      {/* =====================================================
+          PORTFOLIO VIEWS
+      ===================================================== */}
+
+      {portfolio && <PortfolioViewsCard />}
 
     </div>
   );

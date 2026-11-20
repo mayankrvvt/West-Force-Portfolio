@@ -1,38 +1,49 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Play, X } from "lucide-react";
 import SectionTitle from "./SectionTitle.jsx";
 
-export default function AboutSection({ data }) {
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
+const DEFAULT_VIDEO_TITLE = "Video introduction";
+const DEFAULT_VIDEO_TEXT = "A short introduction in my own words.";
+
+/*
+ * The player can be opened from outside (the hero "Watch intro" button) by
+ * passing isVideoOpen and onVideoOpenChange; without them it keeps its own state.
+ */
+export default function AboutSection({
+  data,
+  isVideoOpen: openFromParent,
+  onVideoOpenChange,
+}) {
+  const [openHere, setOpenHere] = useState(false);
+  const isControlled = typeof onVideoOpenChange === "function";
+  const isVideoOpen = isControlled ? Boolean(openFromParent) : openHere;
+  const setIsVideoOpen = isControlled ? onVideoOpenChange : setOpenHere;
   const [videoDimensions, setVideoDimensions] = useState(null);
   const videoCardRef = useRef(null);
   const previewVideoRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const playButtonRef = useRef(null);
 
   const video =
     data?.video ||
     (data?.videoUrl
       ? {
           url: data.videoUrl,
-          title: "Video Introduction",
-          description:
-            "Get to know me, my experience, and what I bring to the table.",
+          title: DEFAULT_VIDEO_TITLE,
+          description: DEFAULT_VIDEO_TEXT,
         }
       : null);
 
-  const hasVideo =
-    Boolean(
-      video?.url &&
-        video.url.trim() &&
-        !video.url.trim().startsWith("pending:")
-    );
-  const videoAspectRatio = videoDimensions
-    ? videoDimensions.width / videoDimensions.height
-    : 16 / 9;
-  const maxCardWidth = videoAspectRatio < 1 ? 340 : 720;
-  const cardWidth = Math.min(
-    maxCardWidth,
-    videoAspectRatio * 560
+  const hasVideo = Boolean(
+    video?.url &&
+      video.url.trim() &&
+      !video.url.trim().startsWith("pending:")
   );
+
+  const isPortrait = videoDimensions
+    ? videoDimensions.width < videoDimensions.height
+    : false;
 
   const handleVideoMetadata = (event) => {
     const { videoWidth, videoHeight } = event.currentTarget;
@@ -45,6 +56,7 @@ export default function AboutSection({ data }) {
     }
   };
 
+  // Play the muted preview only while it is on screen
   useEffect(() => {
     setVideoDimensions(null);
 
@@ -56,6 +68,14 @@ export default function AboutSection({ data }) {
     }
 
     if (!("IntersectionObserver" in window)) {
+      return undefined;
+    }
+
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (reduceMotion) {
       return undefined;
     }
 
@@ -80,10 +100,37 @@ export default function AboutSection({ data }) {
     };
   }, [hasVideo, video?.url]);
 
+  // Escape closes the player; focus moves into it and back again
+  useEffect(() => {
+    if (!isVideoOpen) return undefined;
+
+    // Focus goes back to whichever button opened the player
+    const opener = document.activeElement;
+    const playButton = playButtonRef.current;
+    closeButtonRef.current?.focus();
+    previewVideoRef.current?.pause();
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsVideoOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      const target =
+        opener instanceof HTMLElement && opener !== document.body
+          ? opener
+          : playButton;
+      target?.focus();
+    };
+  }, [isVideoOpen, setIsVideoOpen]);
+
   const openVideo = () => {
     if (!hasVideo) return;
 
-    previewVideoRef.current?.pause();
     setIsVideoOpen(true);
   };
 
@@ -91,117 +138,115 @@ export default function AboutSection({ data }) {
     setIsVideoOpen(false);
   };
 
+  const videoTitle = video?.title || DEFAULT_VIDEO_TITLE;
+
   return (
     <>
       <section
         id="about"
-        className="portfolio-section"
+        className={`portfolio-section about-section ${
+          hasVideo ? "has-video" : ""
+        }`}
       >
-        <SectionTitle title={data?.title || "About Me"} />
+        <SectionTitle title={data?.title || "About me"} />
 
-        {/* VIDEO INTRODUCTION */}
-        <figure className="about-video">
-          <div
-            ref={videoCardRef}
-            className={`about-video-card ${
-              hasVideo ? "is-clickable" : ""
-            }`}
-            style={{
-              "--video-card-width": `${cardWidth}px`,
-              "--video-aspect-ratio": videoDimensions
-                ? `${videoDimensions.width} / ${videoDimensions.height}`
-                : "16 / 9",
-            }}
-          >
-            {hasVideo && (
-              <video
-                ref={previewVideoRef}
-                className="about-video-preview"
-                src={video.url}
-                muted
-                playsInline
-                preload="metadata"
-                onLoadedMetadata={handleVideoMetadata}
-                poster={video?.poster || undefined}
-                aria-hidden="true"
-              />
-            )}
-
-            <button
-              type="button"
-              className="video-play-button"
-              aria-label="Play video introduction with sound"
-              onClick={openVideo}
-              disabled={!hasVideo}
+        <div className="portfolio-section-body about-layout">
+          {hasVideo && (
+            <figure
+              className={`about-video ${isPortrait ? "is-portrait" : ""}`}
             >
-              <Play size={22} aria-hidden="true" />
-            </button>
+              <div
+                ref={videoCardRef}
+                className="about-video-card"
+                onClick={openVideo}
+                style={{
+                  "--video-aspect-ratio": videoDimensions
+                    ? `${videoDimensions.width} / ${videoDimensions.height}`
+                    : "16 / 9",
+                }}
+              >
+                <video
+                  ref={previewVideoRef}
+                  className="about-video-preview"
+                  src={video.url}
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  onLoadedMetadata={handleVideoMetadata}
+                  poster={video?.poster || undefined}
+                  aria-hidden="true"
+                />
 
-            {!hasVideo && (
-              <p className="about-video-empty">
-                No video introduction yet.
-              </p>
-            )}
-          </div>
+                <button
+                  ref={playButtonRef}
+                  type="button"
+                  className="video-play-button"
+                  aria-label={`Play ${videoTitle.toLowerCase()} with sound`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openVideo();
+                  }}
+                >
+                  <span className="video-play-icon" aria-hidden="true">
+                    <Play size={20} />
+                  </span>
+                  Watch with sound
+                </button>
+              </div>
 
-          <figcaption>
-            <strong>
-              {video?.title || "Video Introduction"}
-            </strong>
-            <span>
-              {video?.description ||
-                "Get to know me, my experience, and what I bring to the table."}
-            </span>
-          </figcaption>
-        </figure>
+              <figcaption>
+                <strong>{videoTitle}</strong>
+                <span>{video?.description || DEFAULT_VIDEO_TEXT}</span>
+              </figcaption>
+            </figure>
+          )}
 
-        {data?.description && (
-          <p className="about-description wf-read">
-            {data.description}
-          </p>
-        )}
+          {data?.description && (
+            <p className="about-description wf-read">
+              {data.description}
+            </p>
+          )}
+        </div>
       </section>
 
-      {/* VIDEO MODAL */}
-      {isVideoOpen && hasVideo && (
-        <div
-          className="video-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-label={
-            video?.title || "Video Introduction"
-          }
-          onClick={closeVideo}
-        >
+      {/* VIDEO PLAYER: rendered on body so it always covers the screen */}
+      {isVideoOpen &&
+        hasVideo &&
+        createPortal(
           <div
-            className="video-modal-inner"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            className="video-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={videoTitle}
+            onClick={closeVideo}
           >
-            <button
-              type="button"
-              className="video-modal-close"
-              onClick={closeVideo}
-              aria-label="Close video"
+            <div
+              className="video-modal-inner"
+              onClick={(event) => event.stopPropagation()}
             >
-              <X size={20} aria-hidden="true" />
-            </button>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className="video-modal-close"
+                onClick={closeVideo}
+                aria-label="Close video"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
 
-            <video
-              className="about-video-player"
-              src={video.url}
-              controls
-              autoPlay
-              playsInline
-              poster={
-                video?.poster ||
-                undefined
-              }
-            />
-          </div>
-        </div>
-      )}
+              <video
+                className="about-video-player"
+                src={video.url}
+                controls
+                autoPlay
+                playsInline
+                poster={video?.poster || undefined}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }

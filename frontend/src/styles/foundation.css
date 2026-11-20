@@ -1,0 +1,338 @@
+/*
+ * Foundation: base type, focus, motion and the shared controls.
+ * Loaded last from index.css so these rules are the single source of truth
+ * for buttons, inputs, badges and modals.
+ */
+
+/* ---------- Base type ---------- */
+
+body {
+  font-family: var(--font-ui);
+  color: var(--wf-ink);
+  background: var(--wf-paper);
+  font-feature-settings: "ss01", "tnum" 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--wf-navy);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+h1 {
+  line-height: var(--leading-tight);
+  font-weight: 800;
+}
+
+h2,
+h3 {
+  line-height: var(--leading-snug);
+  font-weight: 700;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--wf-lake);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+::selection {
+  background: rgba(47, 111, 159, 0.22);
+}
+
+/* Long-form reading text (bio, experience) */
+.wf-read {
+  font-family: var(--font-read);
+  font-size: var(--text-md);
+  line-height: var(--leading-read);
+  max-width: var(--measure);
+}
+
+/* ---------- Focus: always visible for keyboard users ---------- */
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--wf-lake);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+/* ---------- Motion: respect the visitor's setting ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: 600 var(--text-base) / 1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+  background-image: none;
+  transition:
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    color var(--duration) var(--ease-out);
+}
+
+.btn:hover,
+.btn:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary,
+.btn-hero {
+  background: var(--wf-navy);
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-hero:hover:not(:disabled) {
+  background: var(--wf-navy-soft);
+  color: #ffffff;
+}
+
+.btn-hero::before {
+  content: none;
+}
+
+.btn-secondary,
+.btn-hero-outline {
+  background: var(--wf-paper);
+  color: var(--wf-navy);
+  border-color: var(--wf-line-strong);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-hero-outline:hover:not(:disabled) {
+  background: var(--wf-frost);
+  border-color: var(--wf-navy);
+  color: var(--wf-navy);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--wf-navy);
+  padding: 0 var(--space-3);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--wf-frost);
+}
+
+.btn-danger {
+  background: var(--wf-paper);
+  color: var(--wf-danger);
+  border-color: currentColor;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--wf-danger-bg);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.btn-lg {
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+/* ---------- Form fields ---------- */
+
+.form-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.form-field > label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--wf-ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--wf-line-strong);
+  border-radius: var(--radius-control);
+  background: var(--wf-paper);
+  color: var(--wf-ink);
+  font: 400 var(--text-base) / 1.4 var(--font-ui);
+  box-shadow: none;
+  transition: border-color var(--duration) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--wf-ink-faint);
+}
+
+.input:hover {
+  border-color: var(--wf-ink-soft);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--wf-lake);
+  box-shadow: var(--focus-ring);
+}
+
+.input-error,
+.input[aria-invalid="true"] {
+  border-color: var(--wf-danger);
+}
+
+.form-hint {
+  font-size: var(--text-sm);
+  color: var(--wf-ink-soft);
+}
+
+.form-error {
+  font-size: var(--text-sm);
+  color: var(--wf-danger);
+}
+
+/* ---------- Badges: status words, not decoration ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-control);
+  font: 600 var(--text-xs) / 1.5 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--wf-frost);
+  color: var(--wf-ink-soft);
+  border: 1px solid var(--wf-line);
+}
+
+.badge-success {
+  background: var(--wf-success-bg);
+  color: var(--wf-success);
+  border-color: transparent;
+}
+
+.badge-danger {
+  background: var(--wf-danger-bg);
+  color: var(--wf-danger);
+  border-color: transparent;
+}
+
+.badge-warning {
+  background: var(--wf-warning-bg);
+  color: var(--wf-warning);
+  border-color: transparent;
+}
+
+.badge-info {
+  background: var(--wf-info-bg);
+  color: var(--wf-navy-soft);
+  border-color: transparent;
+}
+
+/* ---------- The seal: the one place maple red appears ---------- */
+
+.wf-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--wf-maple);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(8, 30, 51, 0.55);
+  backdrop-filter: none;
+}
+
+.modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow: auto;
+  padding: var(--space-6);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-object);
+  background: var(--wf-paper);
+  box-shadow: var(--shadow-float);
+}
+
+.modal > h2 {
+  margin: 0 var(--space-7) var(--space-4) 0;
+  font-size: var(--text-xl);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--wf-ink-soft);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: var(--wf-frost);
+  color: var(--wf-navy);
+}

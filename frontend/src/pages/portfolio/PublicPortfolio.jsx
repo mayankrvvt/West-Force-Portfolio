@@ -18,17 +18,9 @@ export default function PublicPortfolio() {
   if (loading) {
     return (
       <main className="public-portfolio">
-        <div className="portfolio-loading">
-          <div className="loading-spinner" />
-
-          <h2>
-            Loading portfolio...
-          </h2>
-
-          <p>
-            Please wait while we load
-            the portfolio.
-          </p>
+        <div className="portfolio-loading" role="status">
+          <div className="loading-spinner" aria-hidden="true" />
+          <h2>Loading portfolio…</h2>
         </div>
       </main>
     );
@@ -38,24 +30,15 @@ export default function PublicPortfolio() {
     return (
       <main className="public-portfolio">
         <div className="portfolio-error">
-          <span className="error-code">
-            404
-          </span>
-
-          <h1>
-            Portfolio Not Found
-          </h1>
+          <h1>We couldn't find this portfolio</h1>
 
           <p>
             {error ||
-              "The portfolio you're looking for does not exist."}
+              "The link may be mistyped, or the portfolio is no longer published."}
           </p>
 
-          <a
-            href="/"
-            className="primary-button"
-          >
-            Go Home →
+          <a href="/" className="btn btn-primary">
+            Go to the home page
           </a>
         </div>
       </main>

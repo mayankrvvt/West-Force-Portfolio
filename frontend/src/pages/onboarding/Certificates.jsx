@@ -6,7 +6,7 @@ export default function Certificates() {
       step="6 of 7"
       title="Certificates & credentials"
       description="Add your professional certificates and credentials."
-      next="/onboarding/review"
+      next="/onboarding/review-profile"
       fileUpload
     />
   );

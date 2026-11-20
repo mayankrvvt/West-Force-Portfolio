@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "./Button";
 import Input from "./Input";
 import ProgressBar from "./ProgressBar";
@@ -13,6 +13,7 @@ export default function OnboardingForm({
   fileUpload = false,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({});
   const [files, setFiles] = useState([]);
@@ -53,20 +54,18 @@ export default function OnboardingForm({
       <div className="onboarding-card">
         <div className="onboarding-header">
           <Link to="/" className="onboarding-brand">
-            <img src="/favicon.png" alt="WestForce" />
-            <span>WESTFORCE</span>
+            <img src="/favicon.png" alt="" />
+            <span>WestForce</span>
           </Link>
 
-          <span className="onboarding-step">
+          <p className="onboarding-step">
             Step {step}
-          </span>
+          </p>
         </div>
 
-        <ProgressBar value={progress} />
+        <ProgressBar value={progress} label={`Step ${step}`} />
 
         <div className="onboarding-title">
-          <p className="eyebrow">BUILD YOUR PROFILE</p>
-
           <h1>{title}</h1>
 
           <p>{description}</p>
@@ -146,12 +145,18 @@ export default function OnboardingForm({
 
           <div className="onboarding-actions">
             <Link to="/dashboard" className="skip-link">
-              Save & exit
+              Save and exit
             </Link>
 
-            <Button type="submit">
-              Continue
-            </Button>
+            <div className="onboarding-buttons">
+              <Button variant="secondary" onClick={() => (location.key !== "default" ? navigate(-1) : navigate("/dashboard"))}>
+                Back
+              </Button>
+
+              <Button type="submit">
+                Continue
+              </Button>
+            </div>
           </div>
         </form>
       </div>

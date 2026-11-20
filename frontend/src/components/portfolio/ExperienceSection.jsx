@@ -4,33 +4,28 @@ import SectionTitle from "./SectionTitle";
 export default function ExperienceSection({ data }) {
   return (
     <section id="experience" className="portfolio-section">
-      <SectionTitle
-        eyebrow="EXPERIENCE"
-        title="Professional Details"
-        description="My professional experience and career history."
-      />
+      <SectionTitle title="Experience" />
 
-      <div className="experience-list">
+      <div className="cv-list">
         {data.map((experience, index) => (
-          <article className="experience-card" key={index}>
-            <div className="experience-date">
-              <span>{experience.duration || `${experience.startDate || ""} — ${experience.endDate || ""}`}</span>
-            </div>
+          <article className="cv-entry" key={index}>
+            <p className="cv-entry-date">
+              {experience.duration || [experience.startDate, experience.endDate].filter(Boolean).join(" – ")}
+            </p>
 
-            <div className="experience-content">
+            <div className="cv-entry-body">
               <h3>{experience.position}</h3>
 
-              <h4>
+              <p className="cv-entry-org">
                 {experience.company}
-              </h4>
+                {experience.location && (
+                  <span className="cv-entry-place">{experience.location}</span>
+                )}
+              </p>
 
-              {experience.location && (
-                <span className="experience-location">
-                  📍 {experience.location}
-                </span>
+              {experience.description && (
+                <p className="wf-read">{experience.description}</p>
               )}
-
-              <p>{experience.description}</p>
             </div>
           </article>
         ))}

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Play, X } from "lucide-react";
 import SectionTitle from "./SectionTitle.jsx";
 
 export default function AboutSection({ data }) {
@@ -27,10 +28,10 @@ export default function AboutSection({ data }) {
   const videoAspectRatio = videoDimensions
     ? videoDimensions.width / videoDimensions.height
     : 16 / 9;
-  const maxCardWidth = videoAspectRatio < 1 ? 300 : 460;
+  const maxCardWidth = videoAspectRatio < 1 ? 340 : 720;
   const cardWidth = Math.min(
     maxCardWidth,
-    videoAspectRatio * 480
+    videoAspectRatio * 560
   );
 
   const handleVideoMetadata = (event) => {
@@ -96,115 +97,73 @@ export default function AboutSection({ data }) {
         id="about"
         className="portfolio-section"
       >
+        <SectionTitle title={data?.title || "About Me"} />
 
-        <SectionTitle
-          eyebrow="ABOUT"
-          title={data?.title || "About Me"}
-          description="A quick introduction and a closer look at my professional journey."
-        />
+        {/* VIDEO INTRODUCTION */}
+        <figure className="about-video">
+          <div
+            ref={videoCardRef}
+            className={`about-video-card ${
+              hasVideo ? "is-clickable" : ""
+            }`}
+            style={{
+              "--video-card-width": `${cardWidth}px`,
+              "--video-aspect-ratio": videoDimensions
+                ? `${videoDimensions.width} / ${videoDimensions.height}`
+                : "16 / 9",
+            }}
+          >
+            {hasVideo && (
+              <video
+                ref={previewVideoRef}
+                className="about-video-preview"
+                src={video.url}
+                muted
+                playsInline
+                preload="metadata"
+                onLoadedMetadata={handleVideoMetadata}
+                poster={video?.poster || undefined}
+                aria-hidden="true"
+              />
+            )}
 
-        <div className="about-grid">
-
-          {/* ABOUT TEXT */}
-          <div className="about-description">
-            <p>
-              {data?.description ||
-                "Experienced professional with a strong background in construction project management."}
-            </p>
-          </div>
-
-
-          {/* VIDEO INTRODUCTION */}
-          <div className="about-video-wrap">
-
-            <div
-              ref={videoCardRef}
-              className={`about-video-card ${
-                hasVideo ? "is-clickable" : ""
-              }`}
-              style={{
-                "--video-card-width": `${cardWidth}px`,
-                "--video-aspect-ratio": videoDimensions
-                  ? `${videoDimensions.width} / ${videoDimensions.height}`
-                  : "16 / 9",
-              }}
+            <button
+              type="button"
+              className="video-play-button"
+              aria-label="Play video introduction with sound"
+              onClick={openVideo}
+              disabled={!hasVideo}
             >
+              <Play size={22} aria-hidden="true" />
+            </button>
 
-              {/* BACKGROUND */}
-              <div
-                className="about-video-placeholder"
-                aria-hidden="true"
-              />
-
-              {hasVideo && (
-                <video
-                  ref={previewVideoRef}
-                  className="about-video-preview"
-                  src={video.url}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  onLoadedMetadata={handleVideoMetadata}
-                  poster={video?.poster || undefined}
-                  aria-hidden="true"
-                />
-              )}
-
-              {/* OVERLAY */}
-              <div
-                className="about-video-overlay"
-                aria-hidden="true"
-              />
-
-
-              {/* CONTENT */}
-              <div className="about-video-content">
-
-                <span className="video-eyebrow">
-                  INTRODUCTION
-                </span>
-
-                <strong>
-                  {video?.title || "Video Introduction"}
-                </strong>
-
-                <span className="video-description">
-                  {video?.description ||
-                    "Get to know me, my experience, and what I bring to the table."}
-                </span>
-
-              </div>
-
-
-              {/* PLAY BUTTON */}
-              <button
-                type="button"
-                className="video-play-button"
-                aria-label="Play video introduction with sound"
-                onClick={openVideo}
-                disabled={!hasVideo}
-              >
-                <span>▶</span>
-              </button>
-
-
-              {/* LABEL */}
-              <span className="video-corner-label">
-                {hasVideo ? "WATCH" : "VIDEO"}
-              </span>
-
-            </div>
-
+            {!hasVideo && (
+              <p className="about-video-empty">
+                No video introduction yet.
+              </p>
+            )}
           </div>
 
-        </div>
+          <figcaption>
+            <strong>
+              {video?.title || "Video Introduction"}
+            </strong>
+            <span>
+              {video?.description ||
+                "Get to know me, my experience, and what I bring to the table."}
+            </span>
+          </figcaption>
+        </figure>
 
+        {data?.description && (
+          <p className="about-description wf-read">
+            {data.description}
+          </p>
+        )}
       </section>
-
 
       {/* VIDEO MODAL */}
       {isVideoOpen && hasVideo && (
-
         <div
           className="video-modal"
           role="dialog"
@@ -214,21 +173,19 @@ export default function AboutSection({ data }) {
           }
           onClick={closeVideo}
         >
-
           <div
             className="video-modal-inner"
             onClick={(event) =>
               event.stopPropagation()
             }
           >
-
             <button
               type="button"
               className="video-modal-close"
               onClick={closeVideo}
               aria-label="Close video"
             >
-              ×
+              <X size={20} aria-hidden="true" />
             </button>
 
             <video
@@ -242,13 +199,9 @@ export default function AboutSection({ data }) {
                 undefined
               }
             />
-
           </div>
-
         </div>
-
       )}
-
     </>
   );
 }

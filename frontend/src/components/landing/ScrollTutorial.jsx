@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X, PlayCircle } from "lucide-react";
+import { X } from "lucide-react";
 
 const TUTORIAL_VIDEO_URL =
   import.meta.env.VITE_TUTORIAL_VIDEO_URL || "/how-to-use.mp4";
@@ -165,28 +165,14 @@ export default function ScrollTutorial() {
 
         {/* Heading */}
         <div className="scroll-tutorial-heading">
+          <h2 id="scroll-tutorial-title">
+            See how WestForce works
+          </h2>
 
-          <div
-            className="scroll-tutorial-icon"
-            aria-hidden="true"
-          >
-            <PlayCircle size={22} />
-          </div>
-
-          <div>
-            <span>WESTFORCE QUICK GUIDE</span>
-
-            <h2 id="scroll-tutorial-title">
-              Learn how to use WestForce
-            </h2>
-
-            <p>
-              Watch this short walkthrough to see how to
-              create your portfolio, upload your documents,
-              and use the platform.
-            </p>
-          </div>
-
+          <p>
+            A short walkthrough: create your portfolio, upload
+            your documents and share your link.
+          </p>
         </div>
 
         {/* Video */}
@@ -219,14 +205,15 @@ export default function ScrollTutorial() {
         <div className="scroll-tutorial-footer">
 
           <span>
-            Press Esc or click × to close
+            Press Esc to close.
           </span>
 
           <button
             type="button"
+            className="btn btn-secondary"
             onClick={closeTutorial}
           >
-            Continue exploring
+            Close video
           </button>
 
         </div>

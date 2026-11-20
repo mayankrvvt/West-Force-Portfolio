@@ -9,6 +9,8 @@ import {
 } from "react-router-dom";
 
 import useAuth from "../../hooks/useAuth";
+import AuthLayout from "../../components/layout/AuthLayout";
+import Button from "../../components/common/Button";
 import { apiRequest } from "../../utils/api";
 
 export default function PaymentSuccess() {
@@ -119,136 +121,51 @@ export default function PaymentSuccess() {
     sessionId,
   ]);
 
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        padding: "32px",
-        background:
-          "linear-gradient(135deg, #f7fbff, #eef6fb)",
-      }}
-    >
-      <section
-        style={{
-          width: "100%",
-          maxWidth: "560px",
-          padding: "48px 36px",
-          borderRadius: "20px",
-          background: "#ffffff",
-          boxShadow:
-            "0 20px 60px rgba(15, 59, 92, 0.12)",
-          textAlign: "center",
-        }}
+  if (paymentStatus === "paid") {
+    return (
+      <AuthLayout
+        title="Payment successful"
+        lede="Your WestForce Portfolio account has been upgraded."
       >
-        {paymentStatus === "paid" ? (
-          <>
-            <div
-              style={{
-                width: "64px",
-                height: "64px",
-                margin: "0 auto 20px",
-                display: "grid",
-                placeItems: "center",
-                borderRadius: "50%",
-                background: "#e8f8ef",
-                color: "#16834b",
-                fontSize: "30px",
-                fontWeight: 700,
-              }}
-            >
-              ✓
-            </div>
+        <p className="auth-notice" role="status">
+          Taking you to your dashboard...
+        </p>
+      </AuthLayout>
+    );
+  }
 
-            <h1>
-              Payment successful
-            </h1>
+  if (paymentStatus === "error") {
+    return (
+      <AuthLayout
+        title="We could not confirm your payment yet"
+        lede="Your payment may still be processing. Open your dashboard in a minute to check your plan."
+      >
+        <Button
+          size="lg"
+          className="full-width"
+          onClick={() => navigate("/dashboard")}
+        >
+          Go to dashboard
+        </Button>
+      </AuthLayout>
+    );
+  }
 
-            <p>
-              Your WestForce Portfolio
-              account has been upgraded.
-            </p>
+  return (
+    <AuthLayout
+      title="Confirming your payment"
+      lede="Stripe sent you back to WestForce. We are waiting for the payment confirmation."
+    >
+      <div className="auth-progress" role="status">
+        <span className="auth-spinner" aria-hidden="true" />
+        Checking payment status...
+      </div>
 
-            <p>
-              Redirecting you to your
-              dashboard...
-            </p>
-          </>
-        ) : paymentStatus === "error" ? (
-          <>
-            <h1>
-              We couldn't confirm the
-              payment yet
-            </h1>
-
-            <p>
-              Your payment may still be
-              processing. Please check
-              your dashboard in a moment.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/dashboard")
-              }
-            >
-              Go to dashboard
-            </button>
-          </>
-        ) : (
-          <>
-            <div
-              style={{
-                width: "52px",
-                height: "52px",
-                margin: "0 auto 20px",
-                borderRadius: "50%",
-                border:
-                  "4px solid #dbeaf4",
-                borderTopColor:
-                  "#087fbe",
-                animation:
-                  "westforce-spin 1s linear infinite",
-              }}
-            />
-
-            <h1>
-              Confirming your payment
-            </h1>
-
-            <p>
-              Stripe has redirected you
-              successfully. We're waiting
-              for the payment confirmation.
-            </p>
-
-            {sessionId && (
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "#71869d",
-                  wordBreak:
-                    "break-all",
-                }}
-              >
-                Session: {sessionId}
-              </p>
-            )}
-          </>
-        )}
-      </section>
-
-      <style>
-        {`
-          @keyframes westforce-spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}
-      </style>
-    </main>
+      {sessionId && (
+        <p className="auth-meta">
+          Reference: <span className="auth-code">{sessionId}</span>
+        </p>
+      )}
+    </AuthLayout>
   );
 }

@@ -182,6 +182,14 @@ function mapPortfolioData(portfolio) {
             item.year ||
             "",
 
+          startDate:
+            item.startDate ||
+            "",
+
+          endDate:
+            item.endDate ||
+            "",
+
           location:
             item.location ||
             "",
@@ -368,9 +376,9 @@ export default function DynamicPortfolioTemplate({
               "Candidate"}
           </p>
 
-          <span>
-            Powered by WestForce
-          </span>
+          <p>
+            Portfolio hosted by WestForce
+          </p>
 
         </footer>
 

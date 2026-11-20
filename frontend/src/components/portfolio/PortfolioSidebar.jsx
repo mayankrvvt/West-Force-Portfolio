@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 
 const menuItems = [
-  { id: "home", label: "Home", icon: "⌂" },
-  { id: "about", label: "About Me", icon: "◉" },
-  { id: "education", label: "Education Details", icon: "🎓" },
-  { id: "documents", label: "My Documents", icon: "▣" },
-  { id: "skills", label: "My Skills", icon: "◆" },
-  { id: "experience", label: "Professional Details", icon: "▤" },
-  { id: "resume", label: "Resume", icon: "▤" },
+  { id: "home", label: "Overview" },
+  { id: "about", label: "About" },
+  { id: "experience", label: "Experience" },
+  { id: "education", label: "Education" },
+  { id: "skills", label: "Skills" },
+  { id: "documents", label: "Documents" },
+  { id: "resume", label: "Resume" },
 ];
 
 export default function PortfolioSidebar({ profile }) {
@@ -111,48 +111,22 @@ export default function PortfolioSidebar({ profile }) {
 
   return (
     <aside className="portfolio-sidebar">
-      {/* BRAND */}
-      <div className="sidebar-brand">
-        <span className="brand-mark">W</span>
-        <span>WestForce</span>
-      </div>
-
-      {/* PROFILE */}
-      <div className="sidebar-profile">
-        <div className="profile-image-wrapper">
-          <span
-            className="profile-ring"
-            aria-hidden="true"
-          />
-
-          {profile?.image ? (
-            <img
-              src={profile.image}
-              alt={profile?.name || "Profile"}
-            />
-          ) : (
-            <div className="profile-placeholder">
-              {profile?.name?.charAt(0) || "M"}
-            </div>
-          )}
-        </div>
-
-        <h2>{profile?.name}</h2>
-
-        <p>{profile?.title}</p>
-
-        {profile?.available && (
-          <div className="availability">
-            <span></span>
-            Available for opportunities
-          </div>
+      <div className="portfolio-sidebar-top">
+        <img
+          className="portfolio-sidebar-logo"
+          src="/favicon.png"
+          alt="WestForce"
+          width="28"
+          height="28"
+        />
+        {profile?.name && (
+          <p className="portfolio-sidebar-name">{profile.name}</p>
         )}
       </div>
 
-      {/* NAVIGATION */}
       <nav
         className="portfolio-navigation"
-        aria-label="Portfolio navigation"
+        aria-label="Portfolio sections"
       >
         {menuItems.map((item) => {
           const isActive = activeSection === item.id;
@@ -165,27 +139,17 @@ export default function PortfolioSidebar({ profile }) {
               className={`portfolio-nav-item ${
                 isActive ? "active" : ""
               }`}
-              aria-current={isActive ? "page" : undefined}
+              aria-current={isActive ? "location" : undefined}
             >
-              <span className="nav-icon">
-                {item.icon}
-              </span>
-
-              <span>{item.label}</span>
-
-              <span className="nav-arrow">
-                →
-              </span>
+              {item.label}
             </button>
           );
         })}
       </nav>
 
-      {/* FOOTER */}
-      <div className="sidebar-footer">
-        <p>Professional portfolio</p>
-        <strong>WestForce</strong>
-      </div>
+      <p className="portfolio-sidebar-footer">
+        Portfolio hosted by WestForce
+      </p>
     </aside>
   );
 }

@@ -1,56 +1,20 @@
-import { useRef } from "react";
-import {
-  FileText,
-  Video,
-  BarChart3,
-  Award,
-} from "lucide-react";
+import { FileText, Video, BarChart3, Award } from "lucide-react";
 
 import { portfolioFeatures } from "../../constants/siteData";
 
-const featureIcons = [
-  FileText,
-  Video,
-  BarChart3,
-  Award,
-];
+const featureIcons = [FileText, Video, BarChart3, Award];
 
 export default function PortfolioFeatures() {
-  const sectionRef = useRef(null);
-
-  const handlePointerMove = (event) => {
-    const card = event.currentTarget;
-
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return;
-    }
-
-    const rect = card.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    card.style.setProperty("--mouse-x", `${x}px`);
-    card.style.setProperty("--mouse-y", `${y}px`);
-  };
-
   return (
     <section
-      ref={sectionRef}
-      id="portfolio-features"
-      className="portfolio-features-section"
+      id="portfolio"
+      className="home-section home-section-frost"
+      aria-labelledby="portfolio-title"
     >
       <div className="container">
-
-        <div className="section-heading portfolio-features-heading">
-          <p className="eyebrow">
-            YOUR PORTFOLIO
-          </p>
-
-          <h2>
-            Everything employers need, in one place.
+        <div className="home-section-head">
+          <h2 id="portfolio-title">
+            What employers see when they open your link
           </h2>
 
           <p>
@@ -60,53 +24,24 @@ export default function PortfolioFeatures() {
           </p>
         </div>
 
-        <div className="portfolio-features-grid">
+        <ul className="feature-list">
           {portfolioFeatures.map((feature, index) => {
             const Icon = featureIcons[index];
 
             return (
-              <article
-                key={feature.title}
-                className="portfolio-feature-card"
-                onPointerMove={handlePointerMove}
-              >
-                <div
-                  className="portfolio-feature-glow"
+              <li key={feature.title}>
+                <Icon
+                  className="feature-list-icon"
+                  size={22}
+                  strokeWidth={1.75}
                   aria-hidden="true"
                 />
-
-                <div className="portfolio-feature-icon">
-                  <Icon
-                    size={25}
-                    strokeWidth={2}
-                  />
-                </div>
-
-                <div className="portfolio-feature-content">
-                  <span className="portfolio-feature-number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <h3>
-                    {feature.title}
-                  </h3>
-
-                  <p>
-                    {feature.description}
-                  </p>
-                </div>
-
-                <span
-                  className="portfolio-feature-arrow"
-                  aria-hidden="true"
-                >
-                  ↗
-                </span>
-              </article>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </li>
             );
           })}
-        </div>
-
+        </ul>
       </div>
     </section>
   );

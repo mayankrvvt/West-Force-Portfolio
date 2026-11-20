@@ -37,24 +37,24 @@ import "../../styles/dashboard-product.css";
 
 const navigation = [
   {
-    label: "OVERVIEW",
+    label: "Overview",
     items: [
       { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-      { name: "My Portfolio", path: "/dashboard/portfolio", icon: BriefcaseBusiness },
+      { name: "My portfolio", path: "/dashboard/portfolio", icon: BriefcaseBusiness },
     ],
   },
   {
-    label: "BUILD & AI",
+    label: "Build and AI",
     items: [
-      { name: "AI Resume Builder", path: "/dashboard/resume-builder", icon: Sparkles },
-      { name: "ATS Resume Checker", path: "/dashboard/ats-checker", icon: ScanSearch },
-      { name: "My Resumes", path: "/dashboard/resumes", icon: FileCheck2 },
+      { name: "AI resume builder", path: "/dashboard/resume-builder", icon: Sparkles },
+      { name: "ATS resume checker", path: "/dashboard/ats-checker", icon: ScanSearch },
+      { name: "My resumes", path: "/dashboard/resumes", icon: FileCheck2 },
     ],
   },
   {
-    label: "CAREER",
+    label: "Career",
     items: [
-      { name: "Find Jobs", path: "/dashboard/jobs", icon: Search },
+      { name: "Find jobs", path: "/dashboard/jobs", icon: Search },
       { name: "Applications", path: "/dashboard/applications", icon: ClipboardList },
       { name: "Video Q&A", path: "/dashboard/video-qa", icon: Video },
       { name: "Documents", path: "/dashboard/documents", icon: Files },
@@ -62,7 +62,7 @@ const navigation = [
     ],
   },
   {
-    label: "ACCOUNT",
+    label: "Account",
     items: [
       { name: "Profile", path: "/dashboard/profile", icon: User },
       { name: "Settings", path: "/dashboard/settings", icon: Settings },
@@ -73,15 +73,15 @@ const navigation = [
 
 const pageTitles = {
   "/dashboard": "Dashboard",
-  "/dashboard/portfolio": "My Portfolio",
-  "/dashboard/resume-builder": "AI Resume Builder",
-  "/dashboard/ats-checker": "ATS Resume Checker",
-  "/dashboard/resumes": "My Resumes",
+  "/dashboard/portfolio": "My portfolio",
+  "/dashboard/resume-builder": "AI resume builder",
+  "/dashboard/ats-checker": "ATS resume checker",
+  "/dashboard/resumes": "My resumes",
   "/dashboard/documents": "Documents",
   "/dashboard/certificates": "Certificates",
   "/dashboard/applications": "Applications",
   "/dashboard/video-qa": "Video Q&A",
-  "/dashboard/jobs": "Find Jobs",
+  "/dashboard/jobs": "Find jobs",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };
@@ -124,7 +124,6 @@ function SidebarContent({
           {!collapsed && (
             <span>
               WestForce
-              <small>PORTFOLIO</small>
             </span>
           )}
         </NavLink>
@@ -134,7 +133,7 @@ function SidebarContent({
 
       {/* Navigation */}
 
-      <nav className="dashboard-sidebar-nav">
+      <nav className="dashboard-sidebar-nav" aria-label="Dashboard">
 
         {navigation.map((section) => (
           <div
@@ -177,8 +176,9 @@ function SidebarContent({
                 >
 
                   <Icon
-                    size={19}
+                    size={18}
                     strokeWidth={1.8}
+                    aria-hidden="true"
                   />
 
                   {!collapsed && (
@@ -509,13 +509,9 @@ export default function DashboardLayout() {
 
             <div>
 
-              <p className="dashboard-header-overline">
-                WESTFORCE PORTFOLIO
-              </p>
-
-              <h1>
+              <p className="dashboard-header-title">
                 {pageTitle}
-              </h1>
+              </p>
 
             </div>
 
@@ -544,7 +540,7 @@ export default function DashboardLayout() {
             </div>
 
 
-            <div className="dashboard-avatar">
+            <div className="dashboard-avatar" aria-hidden="true">
 
               {initials || "DU"}
 

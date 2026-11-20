@@ -208,11 +208,8 @@ export default function Documents() {
 
       <div className="documents-page-header">
         <div>
-          <p className="documents-eyebrow">
-            DOCUMENT CENTER
-          </p>
 
-          <h2>Your documents</h2>
+          <h1>Your documents</h1>
 
           <p>
             Upload and manage the documents required
@@ -226,7 +223,7 @@ export default function Documents() {
             {uploadedCount}/{documentTypes.length}
           </strong>
 
-          <span>Uploaded</span>
+          <span>uploaded</span>
         </div>
       </div>
 

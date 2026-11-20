@@ -1,27 +1,26 @@
 export default function ProgressBar({
-  value = 0
+  value = 0,
+  label = "Progress",
 }) {
-  const percentage = Math.max(
-    0,
-    Math.min(100, value)
+  const percentage = Math.round(
+    Math.max(0, Math.min(100, value))
   );
 
   return (
-    <div className="progress">
-
-      <div className="progress-track">
-        <div
-          className="progress-value"
-          style={{
-            width: `${percentage}%`
-          }}
-        />
-      </div>
-
-      <span>
-        {percentage}%
-      </span>
-
+    <div
+      className="progress-track"
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percentage}
+    >
+      <div
+        className="progress-value"
+        style={{
+          width: `${percentage}%`
+        }}
+      />
     </div>
   );
 }

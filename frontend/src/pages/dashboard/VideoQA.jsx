@@ -375,7 +375,6 @@ export default function VideoQA() {
     <div className="dashboard-product">
       <header className="product-page-header">
         <div>
-          <span className="product-eyebrow">PRACTICE & PREPARE</span>
           <h1>Video Q&amp;A</h1>
           <p>Practice common interview questions by recording your answers. Review or download each take when you are done.</p>
         </div>

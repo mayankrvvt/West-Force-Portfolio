@@ -192,7 +192,6 @@ export default function PaymentModal() {
           ×
         </button>
 
-        <p className="payment-modal-eyebrow">WESTFORCE MEMBERSHIP</p>
         <h2 id="payment-modal-title">
           {selectedPlan?.key === "group5"
             ? "Add your group members"
@@ -235,7 +234,9 @@ export default function PaymentModal() {
                 key={plan.key}
               >
                 {plan.featured && (
-                  <span className="payment-plan-badge">BEST VALUE</span>
+                  <span className="badge badge-info payment-plan-badge">
+                    Lowest price per person
+                  </span>
                 )}
                 <h3>{plan.name}</h3>
                 <p>{plan.subtitle}</p>

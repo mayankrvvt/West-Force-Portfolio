@@ -1,29 +1,22 @@
 import { Link } from "react-router-dom";
-import Button from "../common/Button";
 
 export default function CTA() {
   return (
-    <section className="section">
-      <div className="container cta">
+    <section className="home-section home-cta" aria-labelledby="cta-title">
+      <div className="container home-cta-inner">
         <div>
-          <p className="eyebrow">
-            START YOUR NEXT CHAPTER
-          </p>
-
-          <h2>
-            Ready to build your professional profile?
+          <h2 id="cta-title">
+            Ready to build your portfolio?
           </h2>
 
           <p>
-            Create your portfolio and bring your credentials
-            together.
+            Bring your resume, video and credentials together
+            in one link.
           </p>
         </div>
 
-        <Link to="/auth/sign-up">
-          <Button>
-            Create your portfolio
-          </Button>
+        <Link to="/auth/sign-up" className="btn btn-primary btn-lg">
+          Build your portfolio
         </Link>
       </div>
     </section>

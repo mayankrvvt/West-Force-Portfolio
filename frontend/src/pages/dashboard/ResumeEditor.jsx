@@ -360,13 +360,14 @@ const addCertification = () => {
           }
         >
           <ArrowLeft size={17} />
-          Resume Builder
+          Resume builder
         </button>
 
 
         <div className="resume-editor-title">
 
           <input
+            aria-label="Resume title"
             value={
               resume.title
             }
@@ -384,7 +385,7 @@ const addCertification = () => {
           />
 
           <span>
-            Editable Resume
+            Editable resume
           </span>
 
         </div>
@@ -419,7 +420,7 @@ const addCertification = () => {
 
             {saving
               ? "Saving..."
-              : "Save Resume"}
+              : "Save resume"}
           </button>
 
         </div>
@@ -441,7 +442,7 @@ const addCertification = () => {
         <section className="resume-editor-controls">
 
           <EditorSection
-            title="Personal Information"
+            title="Personal information"
           >
 
             <Field
@@ -513,7 +514,7 @@ const addCertification = () => {
 
 
           <EditorSection
-            title="Professional Summary"
+            title="Professional summary"
           >
 
             <textarea
@@ -577,7 +578,7 @@ const addCertification = () => {
                 addExperience
               }
             >
-              Add Experience
+              Add experience
             </AddButton>
 
           </EditorSection>
@@ -613,7 +614,7 @@ const addCertification = () => {
                 addEducation
               }
             >
-              Add Education
+              Add education
             </AddButton>
 
           </EditorSection>
@@ -679,7 +680,7 @@ const addCertification = () => {
                 addProject
               }
             >
-              Add Project
+              Add project
             </AddButton>
 
           </EditorSection>
@@ -743,7 +744,7 @@ const addCertification = () => {
             <AddButton
                 onClick={addCertification}
               >
-                Add Certification
+                Add certification
               </AddButton>
 
           </EditorSection>

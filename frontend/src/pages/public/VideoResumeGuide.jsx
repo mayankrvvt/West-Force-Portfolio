@@ -7,7 +7,7 @@ export default function VideoResumeGuide() {
     <>
       <Navbar />
 
-      <main className="page-top">
+      <main id="main" className="public-page">
         <VideoResumeGuideContent />
       </main>
 

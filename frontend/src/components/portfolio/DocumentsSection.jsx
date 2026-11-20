@@ -166,40 +166,44 @@ export default function DocumentsSection({
       id="documents"
       className="portfolio-section"
     >
-      <SectionTitle
-        eyebrow="DOCUMENTS"
-        title="My Documents"
-        description="Verified documents and professional credentials."
-      />
+      <SectionTitle title="Documents" />
+
+      {protectionEnabled && (
+        <p className="wf-seal portfolio-seal">
+          <img
+            src="/maple-leaf.png"
+            alt=""
+            width="16"
+            height="16"
+          />
+          Protected documents
+        </p>
+      )}
 
       {!hasDocuments ? (
         <div className="documents-empty">
-          <FileText size={28} />
-
-          <h3>
-            No documents available
-          </h3>
-
           <p>
-            There are currently no public
-            documents in this portfolio.
+            No documents have been shared in
+            this portfolio yet.
           </p>
         </div>
       ) : (
         <>
-          <div className="documents-grid">
+          <ul className="documents-grid">
             {data.map(
               (document, index) => (
-                <div
+                <li
                   className="document-card"
                   key={
                     document._id ||
                     index
                   }
                 >
-                  <div className="document-icon">
-                    <FileText size={22} />
-                  </div>
+                  <FileText
+                    className="document-icon"
+                    size={22}
+                    aria-hidden="true"
+                  />
 
                   <div className="document-content">
                     <h3>
@@ -207,13 +211,17 @@ export default function DocumentsSection({
                         "Document"}
                     </h3>
 
-                    <p>
-                      {document.type ||
-                        "Document"}
+                    <p className="document-meta">
+                      <span>
+                        {document.type ||
+                          "Document"}
+                      </span>
 
-                      {document.size
-                        ? ` · ${document.size}`
-                        : ""}
+                      {document.size && (
+                        <span>
+                          {document.size}
+                        </span>
+                      )}
                     </p>
                   </div>
 
@@ -222,127 +230,133 @@ export default function DocumentsSection({
                       href={getDocumentUrl(
                         document
                       )}
-                      className="document-button"
+                      className="btn btn-secondary btn-sm"
                       target="_blank"
                       rel="noreferrer"
                     >
                       View
+                      <span className="sr-only">
+                        {" "}
+                        {document.name ||
+                          "document"}
+                      </span>
                     </a>
                   ) : (
-                    <span className="document-button document-button-locked">
-                      <Lock size={14} />
+                    <span className="document-locked">
+                      <Lock
+                        size={14}
+                        aria-hidden="true"
+                      />
                       Locked
                     </span>
                   )}
-                </div>
+                </li>
               )
             )}
-          </div>
+          </ul>
 
           {protectionEnabled &&
             !unlocked && (
               <div className="document-pin-card">
-                <div className="document-pin-icon">
-                  <Lock size={22} />
-                </div>
+                <h3>
+                  Enter the PIN to open these
+                  documents
+                </h3>
 
-                <div className="document-pin-content">
-                  <span className="document-pin-eyebrow">
-                    PRIVATE DOCUMENTS
-                  </span>
+                <p>
+                  The candidate shares this PIN
+                  with employers. You can see the
+                  list above; the files open after
+                  you enter it.
+                </p>
 
-                  <h3>
-                    Enter the PIN to access
-                    documents
-                  </h3>
+                <form
+                  className="document-pin-form"
+                  onSubmit={
+                    unlockDocuments
+                  }
+                >
+                  <input
+                    className="input"
+                    type="password"
+                    value={pin}
+                    onChange={(event) => {
+                      const value =
+                        event.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, expectedLength || 6);
 
-                  <p>
-                    You can see the document
-                    information above, but the
-                    files themselves are protected.
-                  </p>
+                      setPin(value);
+                      setError("");
+                    }}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={expectedLength || 6}
+                    placeholder={expectedLength === 4 ? "••••" : "••••••"}
+                    aria-label={`${pinLabel} document PIN`}
+                  />
 
-                  <form
-                    className="document-pin-form"
-                    onSubmit={
-                      unlockDocuments
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={
+                      unlocking ||
+                      !(expectedLength
+                        ? pin.length === expectedLength
+                        : pin.length === 4 || pin.length === 6)
                     }
                   >
-                    <input
-                      type="password"
-                      value={pin}
-                      onChange={(event) => {
-                        const value =
-                          event.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, expectedLength || 6);
+                    {unlocking
+                      ? "Checking..."
+                      : "Unlock documents"}
+                  </button>
+                </form>
 
-                        setPin(value);
-                        setError("");
-                      }}
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={expectedLength || 6}
-                      placeholder={expectedLength === 4 ? "••••" : "••••••"}
-                      aria-label={`${pinLabel} document PIN`}
+                {error && (
+                  <p
+                    className="document-pin-message document-pin-error"
+                    role="alert"
+                  >
+                    <AlertCircle
+                      size={16}
+                      aria-hidden="true"
                     />
 
-                    <button
-                      type="submit"
-                      disabled={
-                        unlocking ||
-                        !(expectedLength
-                          ? pin.length === expectedLength
-                          : pin.length === 4 || pin.length === 6)
-                      }
-                    >
-                      {unlocking
-                        ? "Checking..."
-                        : "Unlock documents"}
-                    </button>
-                  </form>
+                    <span>
+                      {error}
+                    </span>
+                  </p>
+                )}
 
-                  {error && (
-                    <div
-                      className="document-pin-message document-pin-error"
-                      role="alert"
-                    >
-                      <AlertCircle
-                        size={16}
-                      />
+                {success && (
+                  <p className="document-pin-message document-pin-success">
+                    <CheckCircle2
+                      size={16}
+                      aria-hidden="true"
+                    />
 
-                      <span>
-                        {error}
-                      </span>
-                    </div>
-                  )}
-
-                  {success && (
-                    <div className="document-pin-message document-pin-success">
-                      <CheckCircle2
-                        size={16}
-                      />
-
-                      <span>
-                        {success}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    <span>
+                      {success}
+                    </span>
+                  </p>
+                )}
               </div>
             )}
 
           {protectionEnabled &&
             unlocked && (
-              <div className="document-unlocked-banner">
-                <CheckCircle2 size={18} />
+              <p className="document-unlocked-banner">
+                <CheckCircle2
+                  size={18}
+                  aria-hidden="true"
+                />
 
                 <span>
                   Documents unlocked. Access
-                  will automatically expire
-                  after 15 minutes.
+                  ends automatically after 15
+                  minutes.
                 </span>
-              </div>
+              </p>
             )}
         </>
       )}

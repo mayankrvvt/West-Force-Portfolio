@@ -1,19 +1,19 @@
 export const portfolioFeatures = [
   {
     icon: "document",
-    title: "ATS Resume",
+    title: "ATS resume",
     description:
       "Canadian-style PDF resume, ready for applicant tracking systems.",
   },
   {
     icon: "video",
-    title: "Video Resume",
+    title: "Video resume",
     description:
       "A 2-minute introduction so employers see your personality.",
   },
   {
     icon: "chart",
-    title: "Skills Report",
+    title: "Skills report",
     description:
       "Your TestGorilla assessment results, verified and shareable.",
   },
@@ -27,7 +27,7 @@ export const portfolioFeatures = [
 export const howItWorks = [
   {
     number: "1",
-    title: "Sign up & upload",
+    title: "Sign up and upload",
     description:
       "Create an account and upload your documents in minutes.",
   },
@@ -35,7 +35,7 @@ export const howItWorks = [
     number: "2",
     title: "Set a passcode",
     description:
-      "Your portfolio link is protected — only employers you share the passcode with can view it.",
+      "Your portfolio link is protected. Only employers you give the passcode to can open it.",
   },
   {
     number: "3",

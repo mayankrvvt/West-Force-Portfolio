@@ -11,10 +11,6 @@ export default function Welcome() {
           alt="WestForce"
         />
 
-        <p className="eyebrow">
-          WELCOME TO WESTFORCE
-        </p>
-
         <h1>
           Let's build your professional portfolio.
         </h1>

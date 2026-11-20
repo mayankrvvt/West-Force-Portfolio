@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
@@ -13,53 +14,27 @@ import CTA from "../../components/landing/CTA";
 
 import ScrollTutorial from "../../components/landing/ScrollTutorial";
 
-import useGsapReveal from "../../hooks/useGsapReveal";
-
 export default function Home() {
-  const pageRef = useRef(null);
+  const { hash, key } = useLocation();
 
-  useGsapReveal(pageRef);
+  // Router navigation does not scroll to a #hash on its own.
+  useEffect(() => {
+    if (!hash) return;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  }, [hash, key]);
 
   return (
     <>
       <Navbar />
 
-      <main
-        ref={pageRef}
-        className="home-page"
-      >
-        {/* Hero */}
+      <main id="main" className="home-page">
         <Hero />
-
-        {/* Employer Showcase */}
-        <section data-reveal="up">
-          <EmployerShowcase />
-        </section>
-
-        {/* Services */}
-        <section data-reveal="up">
-          <Services />
-        </section>
-
-        {/* Portfolio Features */}
-        <section data-reveal="up">
-          <PortfolioFeatures />
-        </section>
-
-        {/* How It Works */}
-        <section data-reveal="up">
-          <HowItWorks />
-        </section>
-
-        {/* Pricing */}
-        <section data-reveal="up">
-          <Pricing />
-        </section>
-
-        {/* Call To Action */}
-        <section data-reveal="up">
-          <CTA />
-        </section>
+        <PortfolioFeatures />
+        <HowItWorks />
+        <EmployerShowcase />
+        <Services />
+        <Pricing />
+        <CTA />
       </main>
 
       <Footer />

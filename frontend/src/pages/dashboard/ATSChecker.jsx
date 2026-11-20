@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   FileSearch,
   ScanSearch,
-  Sparkles,
 } from "lucide-react";
 import { apiRequest, uploadFile } from "../../utils/api";
 
@@ -118,9 +117,8 @@ export default function ATSChecker() {
     <div className="dashboard-product">
       <header className="product-page-header">
         <div>
-          <span className="product-eyebrow">BUILD & AI</span>
-          <h1>ATS Resume Checker</h1>
-          <p>Compare your uploaded resume with a job description and review keyword coverage and resume structure.</p>
+          <h1>ATS resume checker</h1>
+          <p>Compare your resume with a job description and see which keywords and sections are missing.</p>
         </div>
       </header>
 
@@ -145,7 +143,7 @@ export default function ATSChecker() {
                 <p>Upload a PDF, DOCX or plain-text resume before checking.</p>
               </div>
             </div>
-            <label className="product-upload-zone" style={{ minHeight: 170 }}>
+            <label className="product-upload-zone">
               <input
                 type="file"
                 accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -162,7 +160,7 @@ export default function ATSChecker() {
 
             {resumeText && (
               <>
-                <div className="product-field" style={{ marginTop: 16 }}>
+                <div className="product-field">
                   <label htmlFor="ats-resume-text">Extracted resume text</label>
                   <textarea
                     id="ats-resume-text"
@@ -174,7 +172,7 @@ export default function ATSChecker() {
                     }}
                   />
                 </div>
-                <div className="product-field" style={{ marginTop: 14 }}>
+                <div className="product-field">
                   <label>Skills found in the extracted text</label>
                   {skills.length ? (
                     <div className="keyword-grid">
@@ -207,7 +205,7 @@ export default function ATSChecker() {
               placeholder="Paste the job description here..."
               maxLength={20000}
             />
-            <div className="product-inline-actions" style={{ marginTop: 14 }}>
+            <div className="product-inline-actions">
               <button
                 className="product-button primary"
                 disabled={loading || uploading || !hasResume || !jobDescription.trim()}
@@ -250,38 +248,37 @@ function ATSResult({ result }) {
 
   return (
     <>
-      <div style={{ textAlign: "center" }}>
-        <span className="product-eyebrow">ATS ANALYSIS</span>
+      <div className="ats-score-summary">
         <div className="product-score-ring" style={{ "--score": `${result.score}%` }}>
           <span>{result.score}</span>
         </div>
-        <h2 style={{ margin: "0 0 5px", color: "#17344e" }}>ATS match score</h2>
-        <p style={{ margin: 0, color: "#8394a5", fontSize: 11 }}>
+        <h2>ATS match score</h2>
+        <p>
           {result.summary || "Based on this resume and the target job description."}
         </p>
       </div>
 
-      <section style={{ marginTop: 22 }}>
+      <section className="ats-result-section">
         <div className="product-card-header"><div><h3>Matched job keywords</h3></div></div>
         <div className="keyword-grid">
           {matched.length ? matched.map((word) => (
-            <span className="keyword-chip" key={word}><CheckCircle2 size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-          )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No job keywords matched yet.</span>}
+            <span className="keyword-chip" key={word}><CheckCircle2 size={12} aria-hidden="true" />{word}</span>
+          )) : <span className="ats-empty">No job keywords matched yet.</span>}
         </div>
       </section>
-      <section style={{ marginTop: 22 }}>
+      <section className="ats-result-section">
         <div className="product-card-header"><div><h3>Missing job keywords</h3></div></div>
         <div className="keyword-grid">
           {missing.length ? missing.map((word) => (
-            <span className="keyword-chip missing" key={word}><AlertCircle size={10} style={{ verticalAlign: "-2px", marginRight: 4 }} />{word}</span>
-          )) : <span style={{ color: "#8999aa", fontSize: 11 }}>No missing keywords found.</span>}
+            <span className="keyword-chip missing" key={word}><AlertCircle size={12} aria-hidden="true" />{word}</span>
+          )) : <span className="ats-empty">No missing keywords found.</span>}
         </div>
       </section>
 
       {suggestions.length > 0 && (
-        <section style={{ marginTop: 22 }}>
-          <div className="product-card-header"><div><h3><Sparkles size={15} style={{ verticalAlign: "-2px", marginRight: 5 }} />Suggestions</h3></div></div>
-          <ul style={{ display: "grid", gap: 9, paddingLeft: 17, color: "#74889b", fontSize: 11, lineHeight: 1.55 }}>
+        <section className="ats-result-section">
+          <div className="product-card-header"><div><h3>Suggestions</h3></div></div>
+          <ul className="ats-suggestions">
             {suggestions.map((item) => <li key={item}>{item}</li>)}
           </ul>
         </section>

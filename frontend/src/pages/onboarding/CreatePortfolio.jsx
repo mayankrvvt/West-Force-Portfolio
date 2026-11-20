@@ -4,8 +4,7 @@ import { apiRequest } from "../../utils/api";
 import { auth } from "../../firebase/firebase";
 
 import {
-  ArrowLeft,
-  ArrowRight,
+  ShieldCheck,
   Award,
   BriefcaseBusiness,
   Check,
@@ -132,70 +131,60 @@ const steps = [
 
 const sectionCopy = {
   profile: {
-    eyebrow: "01 · PROFILE",
     title: "Tell employers who you are",
     description:
       "Start with the professional information that will identify you across your portfolio.",
   },
 
   hero: {
-    eyebrow: "02 · HERO",
     title: "Make a strong first impression",
     description:
       "Create the headline and introduction visitors will see at the top of your portfolio.",
   },
 
   about: {
-    eyebrow: "03 · ABOUT",
     title: "Tell your professional story",
     description:
       "Add a concise biography and an optional introduction video.",
   },
 
   experience: {
-    eyebrow: "04 · EXPERIENCE",
     title: "Add your work experience",
     description:
       "Show employers where you have worked and what you accomplished there.",
   },
 
   education: {
-    eyebrow: "05 · EDUCATION",
     title: "Add your education",
     description:
       "Add schools, degrees, fields of study and completion years.",
   },
 
   skills: {
-    eyebrow: "06 · SKILLS",
     title: "Highlight your skills",
     description:
       "Choose the skills you want employers to notice first.",
   },
 
   documents: {
-    eyebrow: "07 · DOCUMENTS",
     title: "Add your credentials",
     description:
       "Upload certificates, awards, licences and other supporting documents.",
   },
 
   resume: {
-    eyebrow: "08 · RESUME",
     title: "Add your resume",
     description:
       "Attach the resume you want employers to access from your portfolio.",
   },
 
   social: {
-    eyebrow: "09 · SOCIAL LINKS",
     title: "Connect your professional profiles",
     description:
       "Add links that help employers learn more about your work.",
   },
 
   review: {
-    eyebrow: "10 · REVIEW",
     title: "Your portfolio is almost ready",
     description:
       "Review the information you entered before continuing to your dashboard.",
@@ -1491,11 +1480,10 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
               alt="WestForce"
             />
 
-            <span>WESTFORCE</span>
+            <span>WestForce</span>
           </Link>
 
-          <div className="portfolio-builder-save">
-            <span className="save-dot" />
+          <div className="portfolio-builder-save" role="status">
 
             {savedAt
               ? "Draft saved in this session"
@@ -1597,24 +1585,25 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
           <section className="portfolio-builder-content">
 
             <div className="builder-content-header">
-              <div>
-                <p className="builder-eyebrow">
-                  {sectionCopy[step.id].eyebrow}
-                </p>
+              <p className="builder-step-count">
+                Step {currentStep + 1} of {steps.length}
+              </p>
 
-                <h1>
-                  {sectionCopy[step.id].title}
-                </h1>
-
-                <p>
-                  {sectionCopy[step.id].description}
-                </p>
+              <div className="builder-step-bar" aria-hidden="true">
+                <span
+                  style={{
+                    width: `${((currentStep + 1) / steps.length) * 100}%`,
+                  }}
+                />
               </div>
 
-              <div className="builder-mobile-step">
-                Step {currentStep + 1} of{" "}
-                {steps.length}
-              </div>
+              <h1>
+                {sectionCopy[step.id].title}
+              </h1>
+
+              <p>
+                {sectionCopy[step.id].description}
+              </p>
             </div>
 
             {error && (
@@ -1733,11 +1722,10 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
 
               <button
                 type="button"
-                className="builder-back"
+                className="btn btn-secondary builder-back"
                 onClick={back}
                 disabled={currentStep === 0}
               >
-                <ArrowLeft size={17} />
                 Back
               </button>
 
@@ -1752,25 +1740,21 @@ const [savingPortfolio, setSavingPortfolio] = useState(false);
                 {isReview ? (
                   <button
                     type="button"
-                    className="builder-primary"
+                    className="btn btn-primary builder-primary"
                     onClick={finish}
                     disabled={savingPortfolio}
                   >
                     {savingPortfolio
                       ? "Saving portfolio..."
-                      : "Finish & open dashboard"}
-                    {!savingPortfolio && (
-                      <ArrowRight size={17} />
-                    )}
+                      : "Finish and open dashboard"}
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="builder-primary"
+                    className="btn btn-primary builder-primary"
                     onClick={next}
                   >
-                    Save & continue
-                    <ArrowRight size={17} />
+                    Continue
                   </button>
                 )}
 
@@ -2179,8 +2163,8 @@ function AboutSection({
             </p>
 
             {uploadingFile === "video-uploading" && (
-              <div className="builder-progress-card" style={{ marginTop: 10, padding: 12, width: "100%" }}>
-                <div className="builder-progress-heading" style={{ marginBottom: 8 }}>
+              <div className="builder-progress-card builder-upload-progress" role="status">
+                <div className="builder-progress-heading">
                   <span>Uploading</span>
                   <strong>{Math.max(0, Math.min(100, uploadProgress || 0))}%</strong>
                 </div>
@@ -2192,7 +2176,7 @@ function AboutSection({
             )}
 
             <small>
-              MP4, MOV or WebM · Up to 100 MB
+              MP4, MOV or WebM, up to 100 MB
             </small>
 
           </div>
@@ -2890,7 +2874,7 @@ function DocumentsSection({
                         ? `${item.name || "Document"} is stored as a protected document.`
                         : item.fileUrl
                           ? "Document uploaded"
-                          : "PDF, JPG, PNG, DOC or DOCX · Maximum 10 MB."}
+                          : "PDF, JPG, PNG, DOC or DOCX, up to 10 MB."}
                     </p>
                   </div>
 
@@ -2923,12 +2907,10 @@ function DocumentsSection({
 
       <div className="builder-document-protection-card">
         <div className="builder-document-protection-icon">
-          🔐
+          <ShieldCheck size={20} aria-hidden="true" />
         </div>
 
         <div className="builder-document-protection-content">
-          <span>DOCUMENT ACCESS</span>
-
           <h3>Protect your public documents</h3>
 
           <p>
@@ -3401,7 +3383,7 @@ function ReviewSection({
         <div className="review-completion-copy">
           <h2>
             {isComplete
-              ? "Your portfolio is ready!"
+              ? "Your portfolio is ready"
               : "One final check"}
           </h2>
 

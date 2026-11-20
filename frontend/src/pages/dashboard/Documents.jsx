@@ -153,11 +153,8 @@ export default function Documents() {
     <div className="documents-page">
       <div className="documents-header">
         <div>
-          <p className="documents-kicker">
-            DOCUMENT CENTER
-          </p>
 
-          <h2>Your documents</h2>
+          <h1>Your documents</h1>
 
           <p className="documents-description">
             Upload and manage the documents required for
@@ -171,7 +168,7 @@ export default function Documents() {
             {uploadedCount}/{DOCUMENT_TYPES.length}
           </strong>
 
-          <span>Documents uploaded</span>
+          <span>uploaded</span>
         </div>
       </div>
 
@@ -189,7 +186,7 @@ export default function Documents() {
             >
               <div className="document-card-top">
                 <div className="document-card-icon">
-                  <Icon size={24} strokeWidth={1.8} />
+                  <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
                 </div>
 
                 {uploaded && (
@@ -232,7 +229,7 @@ export default function Documents() {
                           document.id
                         )
                       }
-                      className="document-change-button"
+                      className="document-change-button btn btn-secondary btn-sm"
                     >
                       Replace
                     </button>
@@ -244,7 +241,7 @@ export default function Documents() {
                           document.id
                         )
                       }
-                      className="document-remove-button"
+                      className="document-remove-button btn btn-danger btn-sm"
                       aria-label={`Remove ${document.title}`}
                     >
                       <X size={17} />
@@ -254,7 +251,7 @@ export default function Documents() {
               ) : (
                 <button
                   type="button"
-                  className="document-upload-button"
+                  className="document-upload-button btn btn-secondary"
                   onClick={() =>
                     handleUploadClick(
                       document.id

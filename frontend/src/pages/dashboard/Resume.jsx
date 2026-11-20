@@ -73,9 +73,6 @@ export default function Resume() {
       <div className="dashboard-page">
         <div className="dashboard-page-header">
           <div>
-            <span className="dashboard-eyebrow">
-              WESTFORCE PORTFOLIO
-            </span>
 
             <h1>Resume</h1>
 
@@ -101,9 +98,6 @@ export default function Resume() {
     <div className="dashboard-page">
       <div className="dashboard-page-header">
         <div>
-          <span className="dashboard-eyebrow">
-            WESTFORCE PORTFOLIO
-          </span>
 
           <h1>Resume</h1>
 

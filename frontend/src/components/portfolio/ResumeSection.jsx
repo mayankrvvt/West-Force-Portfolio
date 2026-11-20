@@ -1,37 +1,32 @@
 import React from "react";
+import { FileText } from "lucide-react";
 import SectionTitle from "./SectionTitle";
 
 export default function ResumeSection({ data }) {
   return (
-    <section id="resume" className="portfolio-section resume-section">
-      <SectionTitle
-        eyebrow="RESUME"
-        title="My Resume"
-        description="Download my complete professional resume."
-      />
+    <section id="resume" className="portfolio-section">
+      <SectionTitle title="Resume" />
 
       <div className="resume-card">
-        <div className="resume-icon">
-          PDF
-        </div>
+        <FileText className="resume-card-icon" size={28} aria-hidden="true" />
 
-        <div>
+        <div className="resume-card-copy">
           <h3>{data.name}</h3>
-          <p>Professional Resume</p>
+          <p>Full resume</p>
         </div>
 
         {data.url && data.url !== "#" ? (
           <a
             href={data.url}
-            className="primary-button"
+            className="btn btn-primary"
             target="_blank"
             rel="noreferrer"
           >
-            Download Resume
+            Download resume
           </a>
         ) : (
-          <span className="primary-button document-button-disabled" aria-disabled="true">
-            Resume unavailable
+          <span className="btn btn-secondary" aria-disabled="true">
+            Resume not added yet
           </span>
         )}
       </div>

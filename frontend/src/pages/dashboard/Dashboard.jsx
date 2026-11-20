@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
-  ArrowUpRight,
   BriefcaseBusiness,
-  FileCheck2,
   ScanSearch,
   Sparkles,
   UserRound,
@@ -40,9 +38,9 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div className="dashboard-product"><div className="empty-product">Loading your workspace...</div></div>;
+  if (loading) return <div className="dashboard-product"><div className="empty-product">Loading your workspace…</div></div>;
 
-  const name = portfolio?.profile?.name || "there";
+  const name = portfolio?.profile?.name;
   const slug = portfolio?.slug;
   const stats = data?.stats || {};
   const recentApplications = data?.recentApplications || [];
@@ -51,85 +49,72 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-product">
-      <section className="dashboard-welcome product-welcome">
+      <header className="product-page-header">
         <div>
-          <p className="dashboard-eyebrow">YOUR CAREER WORKSPACE</p>
-          <h2>Good to see you, <span>{name}</span> 👋</h2>
-          <p>Build your portfolio, improve your resume, check ATS compatibility and keep your job search organized in one place.</p>
+          <h1>{name ? `Welcome back, ${name}` : "Welcome back"}</h1>
+          <p>Build your portfolio, improve your resume and keep your job search in one place.</p>
         </div>
-        <div className="product-inline-actions">
-          <button className="product-button primary" onClick={() => navigate("/dashboard/resume-builder")}><Sparkles size={15}/> Improve Resume</button>
+        <div className="product-actions">
+          <button type="button" className="product-button primary" onClick={() => navigate("/dashboard/resume-builder")}><Sparkles size={16} aria-hidden="true"/> Improve a resume</button>
         </div>
-      </section>
-
-      {error && <div className="product-notice" role="alert"><AlertCircle size={15}/><span>{error}</span></div>}
-
-      <div className="product-stat-grid">
-        <Stat icon={FileCheck2} label="Latest ATS score" value={typeof stats.latestAtsScore === "number" ? stats.latestAtsScore : "-"} suffix={typeof stats.latestAtsScore === "number" ? "/100" : ""} />
-        <Stat icon={FileCheck2} label="Resume versions" value={stats.resumes || 0} />
-        <Stat icon={BriefcaseBusiness} label="Applications" value={stats.applications || 0} />
-        <Stat icon={BriefcaseBusiness} label="Interviews" value={stats.interviews || 0} />
-      </div>
-
+      </header>
+      {error && <div className="product-notice" role="alert"><AlertCircle size={16} aria-hidden="true"/><span>{error}</span></div>}
+      <dl className="product-stat-grid">
+        <Stat label="Latest ATS score" value={typeof stats.latestAtsScore === "number" ? stats.latestAtsScore : "–"} suffix={typeof stats.latestAtsScore === "number" ? "/100" : ""} />
+        <Stat label="Resume versions" value={stats.resumes || 0} />
+        <Stat label="Applications" value={stats.applications || 0} />
+        <Stat label="Interviews" value={stats.interviews || 0} />
+      </dl>
       <div className="product-dashboard-grid">
         <section className="product-card">
           <div className="product-card-header">
-            <div><h2>Your professional portfolio</h2><p>Your live portfolio uses the Canadian template and your saved profile data.</p></div>
-            <span className="product-eyebrow">{portfolio?.status === "published" ? "PUBLISHED" : "DRAFT"}</span>
+            <div><h2>Your portfolio</h2><p>Your public page, built from your saved profile.</p></div>
+            <span className={`badge ${portfolio?.status === "published" ? "badge-success" : ""}`}>{portfolio?.status === "published" ? "Published" : "Draft"}</span>
           </div>
           <div className="product-portfolio-preview">
-            <div>
-              <span className="product-eyebrow" style={{color:"#8bd6ff"}}>WESTFORCE PORTFOLIO</span>
-              <h2>{portfolio?.profile?.title || "Your professional profile"}</h2>
-              <p>{portfolio?.hero?.description || "Create a polished online presence that brings your experience, skills and documents together."}</p>
-              <div className="product-inline-actions" style={{marginTop:22}}>
-                <button className="product-button" onClick={() => navigate("/dashboard/portfolio")}>Open Portfolio <ArrowUpRight size={14}/></button>
-                {slug && <a className="product-button" href={`/portfolio/${slug}`} target="_blank" rel="noreferrer">Public View</a>}
-              </div>
+            <h3>{portfolio?.profile?.title || "Your professional profile"}</h3>
+            <p>{portfolio?.hero?.description || "Bring your experience, skills and documents together on one page employers can open."}</p>
+            <div className="product-inline-actions">
+              <button type="button" className="product-button" onClick={() => navigate("/dashboard/portfolio")}>Open portfolio</button>
+              {slug && <a className="product-button" href={`/portfolio/${slug}`} target="_blank" rel="noreferrer">View public page</a>}
             </div>
-            <div className="product-preview-mark">WF</div>
           </div>
         </section>
-
         <section className="product-card">
-          <div className="product-card-header"><div><h2>Quick actions</h2><p>Jump straight into your next career task.</p></div></div>
+          <div className="product-card-header"><div><h2>Quick actions</h2><p>Jump to your next task.</p></div></div>
           <div className="product-quick-grid">
-            <Quick icon={UserRound} title="Edit Profile" text="Update your details" onClick={() => navigate("/dashboard/profile")} />
-            <Quick icon={Sparkles} title="AI Resume" text="Enhance a resume" onClick={() => navigate("/dashboard/resume-builder")} />
-            <Quick icon={ScanSearch} title="Check ATS" text="Analyze job match" onClick={() => navigate("/dashboard/ats-checker")} />
-            <Quick icon={BriefcaseBusiness} title="Find Jobs" text="Explore opportunities" onClick={() => navigate("/dashboard/jobs")} />
+            <Quick icon={UserRound} title="Edit profile" text="Update your details" onClick={() => navigate("/dashboard/profile")} />
+            <Quick icon={Sparkles} title="AI resume" text="Improve a resume" onClick={() => navigate("/dashboard/resume-builder")} />
+            <Quick icon={ScanSearch} title="Check ATS" text="Match a resume to a job" onClick={() => navigate("/dashboard/ats-checker")} />
+            <Quick icon={BriefcaseBusiness} title="Find jobs" text="Search open roles" onClick={() => navigate("/dashboard/jobs")} />
           </div>
         </section>
       </div>
-
-      <section className="product-card" style={{marginTop:18}}>
+      <section className="product-card">
         <div className="product-card-header"><div><h2>Recent activity</h2><p>Your latest applications and resumes.</p></div></div>
-        {recentApplications.length || recentResumes.length ? <div className="product-activity-list">
+        {recentApplications.length || recentResumes.length ? <ul className="product-activity-list">
           {recentApplications.map((item) => (
-            <div className="product-activity-item" key={`app-${item._id}`}><span className="activity-dot"/><div><strong>{item.role} at {item.company}</strong><p>Application · {item.status}</p></div><time>{new Date(item.updatedAt).toLocaleDateString()}</time></div>
+            <li className="product-activity-item" key={`app-${item._id}`}><div><strong>{item.role} at {item.company}</strong><p className="product-meta"><span>Application</span><span>{item.status}</span></p></div><time>{new Date(item.updatedAt).toLocaleDateString()}</time></li>
           ))}
           {recentResumes.map((item) => (
-            <div className="product-activity-item" key={`resume-${item._id}`}><span className="activity-dot"/><div><strong>{item.title}</strong><p>Resume{typeof item.atsScore === "number" ? ` · ATS ${item.atsScore}` : ""}</p></div><time>{new Date(item.updatedAt || item.createdAt).toLocaleDateString()}</time></div>
+            <li className="product-activity-item" key={`resume-${item._id}`}><div><strong>{item.title}</strong><p className="product-meta"><span>Resume</span>{typeof item.atsScore === "number" && <span>ATS score {item.atsScore}</span>}</p></div><time>{new Date(item.updatedAt || item.createdAt).toLocaleDateString()}</time></li>
           ))}
-        </div> : <div className="empty-product"><p>No activity yet. Save a job or create a resume to get started.</p></div>}
+        </ul> : <div className="empty-product"><p>No activity yet. Save a job or create a resume to get started.</p><button type="button" className="product-button primary" onClick={() => navigate("/dashboard/jobs")}>Find jobs</button></div>}
       </section>
-
-      {recommendedJobs.length > 0 && <section className="product-card" style={{marginTop:18}}>
-        <div className="product-card-header"><div><h2>Recommended jobs</h2><p>Picked from recent job searches.</p></div><button className="product-button" onClick={() => navigate("/dashboard/jobs")}>See all <ArrowUpRight size={14}/></button></div>
-        <div className="product-activity-list">
+      {recommendedJobs.length > 0 && <section className="product-card">
+        <div className="product-card-header"><div><h2>Recommended jobs</h2><p>Picked from your recent job searches.</p></div><button type="button" className="product-button" onClick={() => navigate("/dashboard/jobs")}>See all jobs</button></div>
+        <ul className="product-activity-list">
           {recommendedJobs.map((job) => (
-            <div className="product-activity-item" key={job._id}><span className="activity-dot"/><div><strong>{job.title}</strong><p>{[job.company, job.location].filter(Boolean).join(" · ")}</p></div>{job.url && <a href={job.url} target="_blank" rel="noopener noreferrer" style={{fontSize:10,fontWeight:700,color:"#087fbe"}}>View</a>}</div>
+            <li className="product-activity-item" key={job._id}><div><strong>{job.title}</strong><p className="product-meta">{job.company && <span>{job.company}</span>}{job.location && <span>{job.location}</span>}</p></div>{job.url && <a className="product-link" href={job.url} target="_blank" rel="noopener noreferrer">View<span className="sr-only"> {job.title}</span></a>}</li>
           ))}
-        </div>
+        </ul>
       </section>}
     </div>
   );
 }
-
-function Stat({icon: Icon,label,value,suffix}) {
-  return <div className="product-stat"><div className="product-stat-top"><div className="product-stat-icon"><Icon size={18}/></div></div><div className="product-stat-label">{label}</div><div className="product-stat-value">{value} {suffix && <small>{suffix}</small>}</div></div>;
+function Stat({label,value,suffix}) {
+  return <div className="product-stat"><dt className="product-stat-label">{label}</dt><dd className="product-stat-value">{value}{suffix && <small>{suffix}</small>}</dd></div>;
 }
-
 function Quick({icon: Icon,title,text,onClick}) {
-  return <button className="product-quick-action" onClick={onClick}><Icon size={18}/><div><strong>{title}</strong><span>{text}</span></div></button>;
+  return <button type="button" className="product-quick-action" onClick={onClick}><Icon size={18} aria-hidden="true"/><div><strong>{title}</strong><span>{text}</span></div></button>;
 }

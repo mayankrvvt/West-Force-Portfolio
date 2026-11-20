@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -9,9 +9,9 @@ import {
 
 import { auth } from "../../firebase/firebase";
 
-import gsap from "gsap";
-
 import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
+import AuthLayout from "../../components/layout/AuthLayout";
 import { useApp } from "../../app/providers";
 
 export default function SignIn() {
@@ -19,9 +19,6 @@ export default function SignIn() {
   const location = useLocation();
   const { openPaymentModal } = useApp();
 
-  const pageRef = useRef(null);
-  const cardRef = useRef(null);
-  const glowRef = useRef(null);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -30,178 +27,6 @@ export default function SignIn() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  /* -----------------------------------------
-     Entrance animations
-  ----------------------------------------- */
-
-  useLayoutEffect(() => {
-    const page = pageRef.current;
-    const card = cardRef.current;
-    const glow = glowRef.current;
-
-    if (!page || !card || !glow) {
-      return;
-    }
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        return;
-      }
-
-      gsap.fromTo(
-        card,
-        {
-          opacity: 0,
-          y: 45,
-          scale: 0.97,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 1,
-          ease: "power3.out",
-        }
-      );
-
-      gsap.fromTo(
-        glow,
-        {
-          opacity: 0,
-          scale: 0.7,
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 1.4,
-          delay: 0.15,
-          ease: "power2.out",
-        }
-      );
-
-      gsap.to(".signin-orb-one", {
-        x: 70,
-        y: -45,
-        duration: 7,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
-      gsap.to(".signin-orb-two", {
-        x: -55,
-        y: 50,
-        duration: 9,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
-      gsap.to(".signin-orb-three", {
-        x: 35,
-        y: 35,
-        duration: 6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    }, page);
-
-    return () => {
-      ctx.revert();
-    };
-  }, []);
-
-  /* -----------------------------------------
-     Background mouse interaction
-  ----------------------------------------- */
-
-  const handlePointerMove = (event) => {
-    if (
-      window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches
-    ) {
-      return;
-    }
-
-    const page = pageRef.current;
-    const glow = glowRef.current;
-
-    if (!page || !glow) {
-      return;
-    }
-
-    const rect = page.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    gsap.to(glow, {
-      x: x - 250,
-      y: y - 250,
-      duration: 1.2,
-      ease: "power3.out",
-      overwrite: true,
-    });
-  };
-
-  /* -----------------------------------------
-     Card tilt
-  ----------------------------------------- */
-
-  const handleCardPointerMove = (event) => {
-    if (
-      window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches
-    ) {
-      return;
-    }
-
-    const card = cardRef.current;
-
-    if (!card) {
-      return;
-    }
-
-    const rect = card.getBoundingClientRect();
-
-    const x =
-      (event.clientX - rect.left) / rect.width - 0.5;
-
-    const y =
-      (event.clientY - rect.top) / rect.height - 0.5;
-
-    gsap.to(card, {
-      rotateY: x * 3,
-      rotateX: y * -3,
-      transformPerspective: 1200,
-      duration: 0.45,
-      ease: "power3.out",
-      overwrite: true,
-    });
-  };
-
-  const handleCardPointerLeave = () => {
-    const card = cardRef.current;
-
-    if (!card) {
-      return;
-    }
-
-    gsap.to(card, {
-      rotateY: 0,
-      rotateX: 0,
-      duration: 0.7,
-      ease: "power3.out",
-    });
-  };
 
   /* -----------------------------------------
      Form handling
@@ -257,7 +82,7 @@ export default function SignIn() {
         return "Please sign in again to continue.";
 
       default:
-        return `Firebase error: ${errorCode || "unknown-error"}`;
+        return `Sign in failed (${errorCode || "unknown error"}). Check your details and try again.`;
     }
   };
 
@@ -549,174 +374,69 @@ export default function SignIn() {
   ----------------------------------------- */
 
   return (
-    <main
-      ref={pageRef}
-      className="signin-page"
-      onPointerMove={handlePointerMove}
+    <AuthLayout
+      title="Sign in"
+      lede="Sign in to manage your portfolio."
+      footer={
+        <p>
+          New to WestForce?{" "}
+          <Link to="/auth/sign-up">Create an account</Link>
+        </p>
+      }
     >
-      {/* Animated background */}
+      {location.state?.signupNotice && (
+        <p className="auth-notice" role="status">
+          {location.state.signupNotice}
+        </p>
+      )}
 
-      <div
-        className="signin-background"
-        aria-hidden="true"
-      >
-        <div
-          ref={glowRef}
-          className="signin-mouse-glow"
+      {error && (
+        <p className="auth-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <Input
+          id="email"
+          name="email"
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          autoComplete="email"
+          disabled={loading}
+          required
         />
 
-        <div className="signin-orb signin-orb-one" />
-
-        <div className="signin-orb signin-orb-two" />
-
-        <div className="signin-orb signin-orb-three" />
-
-        <div className="signin-grid-pattern" />
-      </div>
-
-      {/* Sign in card */}
-
-      <div
-        ref={cardRef}
-        className="signin-card"
-        onPointerMove={handleCardPointerMove}
-        onPointerLeave={handleCardPointerLeave}
-      >
-        {/* Logo */}
-
-        <Link
-          to="/"
-          className="signin-logo"
-          aria-label="WestForce home"
-        >
-          <img
-            src="/favicon.png"
-            alt="WestForce"
+        <div className="auth-field-group">
+          <Input
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            disabled={loading}
+            required
           />
-        </Link>
 
-        {/* Heading */}
-
-        <div className="signin-heading">
-          <p className="signin-eyebrow">
-            WESTFORCE PORTFOLIO
-          </p>
-
-          <h1>Welcome back</h1>
-
-          <p>
-            Sign in to access your professional
-            portfolio.
-          </p>
-        </div>
-
-        {location.state?.signupNotice && (
-          <div
-            className="signin-notice"
-            role="status"
-          >
-            {location.state.signupNotice}
-          </div>
-        )}
-
-        {/* Error */}
-
-        {error && (
-          <div
-            className="signin-error"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-
-        <form
-          className="signin-form"
-          onSubmit={handleSubmit}
-        >
-          {/* Email */}
-
-          <div className="signin-field">
-            <label htmlFor="email">
-              Email
-            </label>
-
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              autoComplete="email"
-              disabled={loading}
-              required
-            />
-          </div>
-
-          {/* Password */}
-
-          <div className="signin-field">
-            <label htmlFor="password">
-              Password
-            </label>
-
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              disabled={loading}
-              required
-            />
-          </div>
-
-          {/* Forgot password */}
-
-          <Link
-            to="/auth/forgot-password"
-            className="signin-forgot"
-          >
+          <Link to="/auth/forgot-password" className="auth-inline-link">
             Forgot your password?
           </Link>
+        </div>
 
-          {/* Submit */}
-
-          <button
-            type="submit"
-            className="signin-button"
-            disabled={loading}
-          >
-            <span>
-              {loading
-                ? "Signing in..."
-                : "Sign in"}
-            </span>
-
-            {!loading && (
-              <span className="signin-button-arrow">
-                →
-              </span>
-            )}
-          </button>
-        </form>
-
-        {/* Sign up */}
-
-        <div className="signin-divider" />
-
-        <p className="signin-signup">
-          Don't have an account?{" "}
-          <Link to="/auth/sign-up">
-            Create account
-          </Link>
-        </p>
-      </div>
-    </main>
+        <Button
+          type="submit"
+          size="lg"
+          className="full-width"
+          disabled={loading}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

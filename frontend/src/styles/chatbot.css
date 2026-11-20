@@ -32,29 +32,15 @@
 
   color: #ffffff;
 
-  background: #111111;
+  background: var(--wf-navy);
 
-  box-shadow:
-    0 14px 35px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-float);
 
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: background var(--duration) var(--ease-out);
 }
 
 .westforce-chatbot-launcher:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.28);
-}
-
-.westforce-chatbot-launcher:active {
-  transform: scale(0.96);
-}
-
-.westforce-chatbot-launcher.open {
-  transform: rotate(0deg);
+  background: var(--wf-navy-soft);
 }
 
 

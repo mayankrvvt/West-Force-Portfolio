@@ -1,66 +1,35 @@
 import { Link } from "react-router-dom";
 
+import { publicNavigation } from "../../constants/navigation";
+
 export default function Footer() {
   return (
-    <footer className="footer">
-
-      <div className="container footer-inner">
-
-        <div>
-
-          <Link
-            to="/"
-            className="brand"
-          >
-            <img
-              src="/favicon.png"
-              alt="WestForce"
-            />
-
-            <span>
-              WestForce Portfolio
-            </span>
+    <footer className="site-footer">
+      <div className="container site-footer-inner">
+        <div className="site-footer-about">
+          <Link to="/" className="site-brand">
+            <img src="/favicon.png" alt="" width="28" height="28" />
+            <span>WestForce Portfolio</span>
           </Link>
 
           <p>
-            One professional link.
-            Every credential.
-            Every employer.
+            One secure link for your resume, video and
+            credentials, ready for Canadian employers.
           </p>
-
         </div>
 
-        <div className="footer-links">
-
-          <Link to="/#services">
-            Services
-          </Link>
-
-          <Link to="/#portfolio">
-            Portfolio
-          </Link>
-
-          <Link to="/how-it-works">
-            How it works
-          </Link>
-
-          <Link to="/video-resume-guide">
-            Video resume guide
-          </Link>
-
-          <Link to="/pricing">
-            Pricing
-          </Link>
-
-        </div>
-
+        <nav className="site-footer-nav" aria-label="Footer">
+          {publicNavigation.map((item) => (
+            <Link key={item.label} to={item.href}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
 
-      <div className="container copyright">
-        © 2026 WestForce Professional
-        Portfolio
+      <div className="container site-footer-legal">
+        <p>© 2026 WestForce Professional Portfolio</p>
       </div>
-
     </footer>
   );
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
+import AuthLayout from "../../components/layout/AuthLayout";
 
 import {
   sendPasswordResetEmail,
@@ -74,71 +75,64 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">
-          ACCOUNT RECOVERY
+    <AuthLayout
+      title="Reset your password"
+      lede={
+        sent
+          ? undefined
+          : "Enter the email you signed up with. We will send you a link to set a new password."
+      }
+      footer={
+        <p>
+          <Link to="/auth/sign-in">Back to sign in</Link>
         </p>
-
-        <h1>Forgot password?</h1>
-
-        {sent ? (
-          <>
-            <p>
-              We've sent a password reset link to{" "}
-              <strong>{email}</strong>.
+      }
+    >
+      {sent ? (
+        <div className="auth-notice" role="status">
+          <p>
+            We sent a password reset link to{" "}
+            <strong>{email}</strong>.
+          </p>
+          <p>
+            Open the email and follow the link to create a new
+            password. If it is not in your inbox, check your spam
+            folder.
+          </p>
+        </div>
+      ) : (
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {error && (
+            <p className="auth-error" role="alert">
+              {error}
             </p>
+          )}
 
-            <p>
-              Check your inbox and follow the
-              instructions to create a new password.
-            </p>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div
-                className="signin-error"
-                role="alert"
-              >
-                {error}
-              </div>
-            )}
+          <Input
+            id="email"
+            name="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
+            placeholder="you@example.com"
+            autoComplete="email"
+            disabled={loading}
+            required
+          />
 
-            <Input
-              id="email"
-              name="email"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              placeholder="you@example.com"
-              autoComplete="email"
-              disabled={loading}
-              required
-            />
-
-            <Button
-              type="submit"
-              className="full-width"
-              disabled={loading}
-            >
-              {loading
-                ? "Sending..."
-                : "Send reset link"}
-            </Button>
-          </form>
-        )}
-
-        <Link
-          to="/auth/sign-in"
-          className="auth-link"
-        >
-          Back to sign in
-        </Link>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="full-width"
+            disabled={loading}
+          >
+            {loading ? "Sending link..." : "Send reset link"}
+          </Button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

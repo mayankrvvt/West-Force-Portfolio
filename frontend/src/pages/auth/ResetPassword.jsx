@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
+import AuthLayout from "../../components/layout/AuthLayout";
 
 import {
   confirmPasswordReset,
@@ -57,9 +58,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(
-        "Password must be at least 6 characters long."
+        "Password must be at least 8 characters long."
       );
       return;
     }
@@ -103,87 +104,74 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">
-          ACCOUNT RECOVERY
-        </p>
-
-        <h1>Reset password</h1>
-
-        {done ? (
-          <>
-            <p>
-              Your password has been successfully
-              reset.
+    <AuthLayout
+      title={done ? "Password updated" : "Set a new password"}
+      lede={
+        done
+          ? "You can now sign in with your new password."
+          : "Choose a password with at least 8 characters."
+      }
+      footer={
+        done ? undefined : (
+          <p>
+            Link not working?{" "}
+            <Link to="/auth/forgot-password">Request a new one</Link>
+          </p>
+        )
+      }
+    >
+      {done ? (
+        <Link to="/auth/sign-in" className="btn btn-primary btn-lg full-width">
+          Sign in
+        </Link>
+      ) : (
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {error && (
+            <p className="auth-error" role="alert">
+              {error}
             </p>
+          )}
 
-            <p>
-              You can now sign in using your new
-              password.
-            </p>
+          <Input
+            id="password"
+            name="password"
+            label="New password"
+            type="password"
+            value={password}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            autoComplete="new-password"
+            minLength={8}
+            disabled={loading}
+            required
+          />
 
-            <Link to="/auth/sign-in">
-              <Button className="full-width">
-                Sign in
-              </Button>
-            </Link>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div
-                className="signin-error"
-                role="alert"
-              >
-                {error}
-              </div>
-            )}
+          <Input
+            id="confirm"
+            name="confirm"
+            label="Confirm new password"
+            type="password"
+            value={confirm}
+            onChange={(event) =>
+              setConfirm(event.target.value)
+            }
+            autoComplete="new-password"
+            minLength={8}
+            disabled={loading}
+            required
+          />
 
-            <Input
-              id="password"
-              name="password"
-              label="New password"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
-              placeholder="Enter new password"
-              autoComplete="new-password"
-              minLength={6}
-              disabled={loading}
-              required
-            />
-
-            <Input
-              id="confirm"
-              name="confirm"
-              label="Confirm password"
-              type="password"
-              value={confirm}
-              onChange={(event) =>
-                setConfirm(event.target.value)
-              }
-              placeholder="Confirm new password"
-              autoComplete="new-password"
-              minLength={6}
-              disabled={loading}
-              required
-            />
-
-            <Button
-              type="submit"
-              className="full-width"
-              disabled={loading}
-            >
-              {loading
-                ? "Resetting..."
-                : "Reset password"}
-            </Button>
-          </form>
-        )}
-      </div>
-    </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="full-width"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save new password"}
+          </Button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

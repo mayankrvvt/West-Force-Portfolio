@@ -59,10 +59,10 @@ function StepHeader({ step }) {
       <span className="vrg-step-number" aria-hidden="true">
         {step.number}
       </span>
-      <div>
-        <span className="vrg-step-label">Step {step.number}</span>
-        <h2 id={`${step.id}-title`}>{step.title}</h2>
-      </div>
+      <h2 id={`${step.id}-title`}>
+        <span className="vrg-visually-hidden">Step {step.number}: </span>
+        {step.title}
+      </h2>
     </header>
   );
 }
@@ -72,7 +72,7 @@ export default function VideoResumeGuide() {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    document.title = "How to Make Your Video Resume | WestForce Portfolio";
+    document.title = "How to make your video resume | WestForce Portfolio";
     return () => clearTimeout(timerRef.current);
   }, []);
 
@@ -107,8 +107,7 @@ export default function VideoResumeGuide() {
       {/* Hero */}
       <section className="vrg-hero">
         <div className="vrg-container vrg-narrow vrg-hero-inner">
-          <p className="vrg-hero-eyebrow">Video resume guide</p>
-          <h1 id="vrg-title">How to Make Your Video Resume</h1>
+          <h1 id="vrg-title">How to make your video resume</h1>
           <p className="vrg-hero-subtitle">
             Show employers the person behind your resume.
           </p>
@@ -144,7 +143,6 @@ export default function VideoResumeGuide() {
       <section className="vrg-demo" aria-labelledby="vrg-demo-title">
         <div className="vrg-container vrg-narrow">
           <div className="vrg-demo-copy">
-            <p className="vrg-demo-eyebrow">See an example</p>
             <h2 id="vrg-demo-title">What a video resume can look like</h2>
             <p>
               Watch this short example for an idea of how to introduce your

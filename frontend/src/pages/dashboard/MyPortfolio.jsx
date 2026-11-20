@@ -232,7 +232,7 @@ export default function MyPortfolio() {
     return (
       <div className="dashboard-product">
         <div className="empty-product">
-          Loading your portfolio...
+          Loading your portfolio…
         </div>
       </div>
     );
@@ -286,7 +286,7 @@ export default function MyPortfolio() {
           </h2>
 
           <p>
-            Create your portfolio first.
+            Create your portfolio to see it here.
           </p>
 
           <button
@@ -297,7 +297,7 @@ export default function MyPortfolio() {
               )
             }
           >
-            Create Portfolio
+            Create portfolio
           </button>
 
         </div>
@@ -329,10 +329,6 @@ export default function MyPortfolio() {
       <header className="product-page-header">
 
         <div>
-
-          <span className="product-eyebrow">
-            OVERVIEW
-          </span>
 
           <h1>
             My Portfolio
@@ -487,14 +483,10 @@ export default function MyPortfolio() {
 
               <div className="toolbar-card">
 
-                <span className="toolbar-label">
-                  PORTFOLIO
-                </span>
-
                 <h3>
                   {portfolio.profile?.name
                     ? portfolio.profile.name
-                    : "Your Portfolio"}
+                    : "Your portfolio"}
                 </h3>
 
                 <p>
@@ -525,7 +517,7 @@ export default function MyPortfolio() {
                 <div>
 
                   <strong>
-                    Edit Portfolio
+                    Edit portfolio
                   </strong>
 
                   <small>
@@ -561,7 +553,7 @@ export default function MyPortfolio() {
                   <strong>
                     {publishing
                       ? "Publishing..."
-                      : "Publish Portfolio"}
+                      : "Publish portfolio"}
                   </strong>
 
                   <small>
@@ -592,7 +584,7 @@ export default function MyPortfolio() {
                 <div>
 
                   <strong>
-                    Copy Public Link
+                    Copy public link
                   </strong>
 
                   <small>
@@ -621,7 +613,7 @@ export default function MyPortfolio() {
                 <div>
 
                   <strong>
-                    Download Portfolio
+                    Download portfolio
                   </strong>
 
                   <small>
@@ -652,7 +644,7 @@ export default function MyPortfolio() {
                 <div>
 
                   <strong>
-                    Add Section
+                    Add section
                   </strong>
 
                   <small>
@@ -678,7 +670,7 @@ export default function MyPortfolio() {
                 <div>
 
                   <strong>
-                    AI Resume Tools
+                    AI resume tools
                   </strong>
 
                   <small>
@@ -695,13 +687,13 @@ export default function MyPortfolio() {
               <div className="toolbar-coming-soon">
 
                 <span>
-                  JOB
+                  Job
                 </span>
 
                 <div>
 
                   <strong>
-                    Job Applications
+                    Job applications
                   </strong>
 
                   <small>
@@ -725,8 +717,8 @@ export default function MyPortfolio() {
 
               <button
                 type="button"
-                title="Edit Portfolio"
-                aria-label="Edit Portfolio"
+                title="Edit portfolio"
+                aria-label="Edit portfolio"
                 onClick={() =>
                   navigate(
                     "/onboarding/create-portfolio"
@@ -739,8 +731,8 @@ export default function MyPortfolio() {
 
               <button
                 type="button"
-                title="Publish Portfolio"
-                aria-label="Publish Portfolio"
+                title="Publish portfolio"
+                aria-label="Publish portfolio"
                 onClick={publish}
               >
                 <Globe2 size={19} />
@@ -749,8 +741,8 @@ export default function MyPortfolio() {
 
               <button
                 type="button"
-                title="Copy Public Link"
-                aria-label="Copy Public Link"
+                title="Copy public link"
+                aria-label="Copy public link"
                 onClick={copyLink}
                 disabled={!publicUrl}
               >
@@ -760,8 +752,8 @@ export default function MyPortfolio() {
 
               <button
                 type="button"
-                title="Download Portfolio"
-                aria-label="Download Portfolio"
+                title="Download portfolio"
+                aria-label="Download portfolio"
                 onClick={downloadPortfolio}
               >
                 <Download size={19} />
@@ -770,8 +762,8 @@ export default function MyPortfolio() {
 
               <button
                 type="button"
-                title="Add Section"
-                aria-label="Add Section"
+                title="Add section"
+                aria-label="Add section"
                 onClick={() =>
                   window.alert(
                     "Add Section is ready for the next builder module."
@@ -788,7 +780,7 @@ export default function MyPortfolio() {
               <button
                 type="button"
                 className="toolbar-ai-icon"
-                title="AI Resume Tools"
+                title="AI resume tools"
                 aria-label="AI Resume Tools"
               >
                 AI
@@ -798,7 +790,7 @@ export default function MyPortfolio() {
               <button
                 type="button"
                 className="toolbar-job-icon"
-                title="Job Applications"
+                title="Job applications"
                 aria-label="Job Applications"
               >
                 JOB

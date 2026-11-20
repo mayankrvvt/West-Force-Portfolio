@@ -1,70 +1,21 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-
-const employerTypes = [
+const industries = [
   "Construction",
   "Healthcare",
   "Logistics",
   "Hospitality",
-  "Skilled Trades",
+  "Skilled trades",
   "Manufacturing",
   "Transportation",
-  "Professional Services",
+  "Professional services",
 ];
 
 export default function EmployerShowcase() {
-  const sectionRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (reduceMotion) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".employer-showcase-content",
-        {
-          opacity: 0,
-          y: 45,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.9,
-          ease: "power3.out",
-        }
-      );
-
-      gsap.to(".employer-marquee-track", {
-        xPercent: -50,
-        duration: 24,
-        ease: "none",
-        repeat: -1,
-      });
-    }, section);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section
-      ref={sectionRef}
-      className="employer-showcase-section"
-    >
-      <div className="container">
-
-        <div className="employer-showcase-content">
-          <p className="eyebrow">
-            SEE WESTFORCE IN ACTION
-          </p>
-
-          <h2>
-            Real candidates. Real Canadian employers.
+    <section className="home-section" aria-labelledby="industries-title">
+      <div className="container home-split">
+        <div className="home-section-head">
+          <h2 id="industries-title">
+            Show employers the whole picture
           </h2>
 
           <p>
@@ -74,22 +25,17 @@ export default function EmployerShowcase() {
           </p>
         </div>
 
-        <div className="employer-marquee">
-          <div className="employer-marquee-track">
-            {[...employerTypes, ...employerTypes].map(
-              (employer, index) => (
-                <div
-                  className="employer-marquee-item"
-                  key={`${employer}-${index}`}
-                >
-                  <span className="employer-marquee-dot" />
-                  {employer}
-                </div>
-              )
-            )}
-          </div>
-        </div>
+        <div>
+          <p className="home-list-label">
+            Built for job seekers in
+          </p>
 
+          <ul className="industry-list">
+            {industries.map((industry) => (
+              <li key={industry}>{industry}</li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

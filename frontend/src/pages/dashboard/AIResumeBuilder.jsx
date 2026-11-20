@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
-  ArrowRight,
   Check,
   FileText,
   Sparkles,
@@ -434,12 +433,8 @@ export default function AIResumeBuilder() {
 
         <div>
 
-          <span className="product-eyebrow">
-            BUILD & AI
-          </span>
-
           <h1>
-            AI Resume Builder
+            AI resume builder
           </h1>
 
           <p>
@@ -489,12 +484,8 @@ export default function AIResumeBuilder() {
 
               <div>
 
-                <span className="resume-mode-label">
-                  FROM YOUR PROFILE
-                </span>
-
                 <h2>
-                  Build a Resume
+                  Build a resume
                 </h2>
 
                 <p>
@@ -505,8 +496,6 @@ export default function AIResumeBuilder() {
                 </p>
 
               </div>
-
-              <ArrowRight size={20} />
 
             </button>
 
@@ -528,12 +517,8 @@ export default function AIResumeBuilder() {
 
               <div>
 
-                <span className="resume-mode-label">
-                  UPLOAD EXISTING RESUME
-                </span>
-
                 <h2>
-                  Enhance My Resume
+                  Enhance my resume
                 </h2>
 
                 <p>
@@ -543,8 +528,6 @@ export default function AIResumeBuilder() {
                 </p>
 
               </div>
-
-              <ArrowRight size={20} />
 
             </button>
 
@@ -584,7 +567,7 @@ export default function AIResumeBuilder() {
               <div>
 
                 <span className="resume-step">
-                  STEP 1
+                  Step 1
                 </span>
 
                 <h2>
@@ -757,18 +740,20 @@ export default function AIResumeBuilder() {
                   WestForce Profile
                 </strong>
 
-                <span>
+                <span className="product-meta">
+                  <span>
                   {portfolio?.profile?.name ||
                     portfolio?.personalDetails
                       ?.fullName ||
                     "Your profile"}
-
-                  {" · "}
+                  </span>
+                  <span>
 
                   {portfolio?.profile?.title ||
                     portfolio?.personalDetails
                       ?.headline ||
                     "Professional"}
+                  </span>
                 </span>
 
               </div>
@@ -885,7 +870,7 @@ export default function AIResumeBuilder() {
               <div>
 
                 <span className="resume-step">
-                  STEP 1
+                  Step 1
                 </span>
 
                 <h2>
@@ -981,7 +966,7 @@ export default function AIResumeBuilder() {
               <div>
 
                 <span className="resume-step">
-                  STEP 2
+                  Step 2
                 </span>
 
                 <h2>
@@ -1000,7 +985,7 @@ export default function AIResumeBuilder() {
 
               <ImprovementOption
                 id="summary"
-                title="Professional Summary"
+                title="Professional summary"
                 description="Make your opening profile clearer and more targeted."
                 selected={selected}
                 toggle={toggleOption}
@@ -1040,7 +1025,7 @@ export default function AIResumeBuilder() {
 
               <ImprovementOption
                 id="rewrite"
-                title="Full Resume Rewrite"
+                title="Full resume rewrite"
                 description="Apply all recommended improvements across the resume."
                 selected={selected}
                 toggle={toggleOption}
@@ -1081,17 +1066,12 @@ export default function AIResumeBuilder() {
               <button
                 type="button"
                 className="product-button"
-                style={{
-                  marginTop: 10,
-                }}
                 onClick={
                   editResume
                 }
               >
 
-                Open Editable Resume
-
-                <ArrowRight size={15} />
+                Open editable resume
 
               </button>
             )}
@@ -1244,7 +1224,7 @@ function EnhancementResult({
     <div className="resume-enhancement-result">
 
       <span className="resume-mode-label">
-        ENHANCEMENT COMPLETE
+        Enhancement complete
       </span>
 
       {/* =============================================
@@ -1256,7 +1236,7 @@ function EnhancementResult({
         <div>
 
           <small>
-            BEFORE
+            Before
           </small>
 
           <strong>
@@ -1265,14 +1245,14 @@ function EnhancementResult({
 
         </div>
 
-        <span>
-          →
+        <span aria-hidden="true">
+          to
         </span>
 
         <div>
 
           <small>
-            AFTER
+            After
           </small>
 
           <strong>
@@ -1327,9 +1307,7 @@ function EnhancementResult({
         onClick={onEdit}
       >
 
-        Open Editable Resume
-
-        <ArrowRight size={15} />
+        Open editable resume
 
       </button>
 
